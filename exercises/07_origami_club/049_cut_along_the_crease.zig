@@ -26,15 +26,30 @@
 //
 // Which element goes where? It's a reshape, so the strip
 // doesn't move: the first 64 values of `.d` become h=0, the
-// next 64 become h=1, and so on.
+// next 64 become h=1, and so on. On a tensor small enough to
+// see:
+//
+//     t {a=2,b=4}                    { { 0, 1, 2, 3 },
+//                                      { 4, 5, 6, 7 } }
+//
+//     t.splitAxis(.b, .{ .c = 2, .d = 2 })
+//
+//       {a=2,c=2,d=2}                { { {0,1}, {2,3} },
+//                                      { {4,5}, {6,7} } }
+//
+// Every row was torn down the middle, and no number crossed
+// from one row to the other: .a was not mentioned, so .a was
+// not touched.
 //
 // `merge` is the inverse. It glues ADJACENT axes into one:
 //
 //     y.merge(.{ .d = .{ .h, .hd } })
 //         {batch=16,seq=128,h=8,hd=64} -> {batch=16,seq=128,d=512}
 //
-// Read it as "new axis .d is made of .h and .hd". The struct
-// can hold several merges at once:
+// Read it as "new axis .d is made of .h and .hd". Name the old
+// axes in the order they have in the tensor: `merge` starts at
+// the first one you name and swallows its neighbours to the
+// right. The struct can hold several merges at once:
 //
 //     img.merge(.{ .pixels = .{ .h, .w }, .bc = .{ .b, .c } })
 //
@@ -74,10 +89,11 @@
 //     total: Ingrid's two cranes scored 37 and 37, so each is
 //     0.5 of her total. A share is a fraction, so the scores
 //     are converted to f32 first (exercise 021). The division
-//     is the trick you learned in exercise 036: divide a table
-//     by its own sum along an axis, and the size-1 axis the sum
-//     left behind is stretched for you. It only works if you
-//     sum along the right axis. Somebody didn't.
+//     is the trick from the Reduction Kitchen (exercise 039):
+//     divide a table by its own sum along an axis, and the
+//     size-1 axis the sum left behind is stretched for you
+//     (rule 3 of exercise 036). It only works if you sum along
+//     the right axis. Somebody didn't.
 //
 // And `shares` has an Exe in `main`, but nobody runs it.
 //
@@ -141,6 +157,7 @@ pub fn main(init: std.process.Init) !void {
 
     // Run `shares_exe` on the same strips, and read the answer
     // back as a nested array called `share`: one row per member.
+    ???;
 
     try stdout.print("shares {f}\n", .{shares_exe.output_shapes[0]});
     for ([_][]const u8{ "Ingrid", "Coach's nephew", "Timmy" }, share) |member, row| {

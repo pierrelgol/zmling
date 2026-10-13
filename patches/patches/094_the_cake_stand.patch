@@ -1,6 +1,6 @@
 --- exercises/13_layer_cake/094_the_cake_stand.zig
 +++ answers/13_layer_cake/094_the_cake_stand.zig
-@@ -98,7 +98,8 @@
+@@ -102,7 +102,8 @@
      level: zml.nn.LayerNorm,
  
      pub fn forward(self: Cake, x: zml.Tensor) zml.Tensor {
@@ -10,7 +10,7 @@
      }
  };
  
-@@ -148,20 +149,21 @@
+@@ -152,20 +153,21 @@
      const weekday: zml.Bufferized(Cake) = .{
          .base = .{
              .weight = weekday_base,
@@ -37,7 +37,7 @@
          defer result.deinit();
  
          try stdout.print("{s}", .{day});
-@@ -169,8 +171,16 @@
+@@ -173,8 +175,16 @@
          try stdout.print("\n", .{});
      }
  

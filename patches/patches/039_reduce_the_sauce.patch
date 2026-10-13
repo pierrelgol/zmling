@@ -9,14 +9,15 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -95,9 +95,11 @@
+@@ -95,10 +95,12 @@
  
      // Run `exe` on the orders. The Buffer that comes back is
      // called `result`, and it has to be released like the others.
 +    var result: zml.Buffer = try exe.eval(gpa, io, .{orders_buffer});
 +    defer result.deinit();
  
-     // Two axes, but how many numbers?
+     // Two axes, but how many numbers? (`getValue` only counts
+     // bytes, and the loop below wants a flat list of them.)
 -    const portions = try result.getValue([???]i32, io);
 +    const portions = try result.getValue([4]i32, io);
  

@@ -1,10 +1,11 @@
 --- exercises/15_pay_attention/108_the_gossip_archive.zig
 +++ answers/15_pay_attention/108_the_gossip_archive.zig
-@@ -94,25 +94,35 @@
+@@ -101,26 +101,35 @@
  const max_len = 4;
  
  const Archive = struct {
--    // Every key so far, and every value so far: {.k = max_len, .hd}.
+-    // Two fields, `k` and `v`: every key so far, and every value
+-    // so far. Each is {.k = max_len, .hd}.
 -    ???,
 +    k: zml.Tensor,
 +    v: zml.Tensor,
@@ -41,7 +42,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -137,8 +147,11 @@
+@@ -145,8 +154,11 @@
      };
      const pos: zml.Tensor = .init(.{}, .i32);
  
@@ -55,7 +56,7 @@
  
      // The archive starts empty: all zeros.
      const empty: [max_len][2]f32 = @splat(.{ 0, 0 });
-@@ -162,11 +175,21 @@
+@@ -170,11 +182,21 @@
          var pos_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(i)), .i32);
          defer pos_buffer.deinit();
  

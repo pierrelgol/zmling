@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/058_fair_shares.zig
 +++ answers/08_slice_of_life/058_fair_shares.zig
-@@ -80,20 +80,26 @@
+@@ -81,20 +81,26 @@
  
  fn bigFirst(pizza: zml.Tensor) zml.Tensor {
      // Toddler, brother, cousin.
@@ -31,7 +31,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -119,7 +125,7 @@
+@@ -120,7 +126,7 @@
          defer exe.deinit();
  
          // Run it on the pizza.

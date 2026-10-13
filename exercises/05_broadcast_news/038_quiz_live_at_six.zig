@@ -38,14 +38,20 @@
 //      "NO broadcast function for the exposure. Not `broad`, not
 //      `broadcastAnything`. Read the fine print. - D."
 //
+//      (The numbers come out the same either way, so nothing
+//      here can check that you obeyed. Doug's reason is
+//      exercise 037: build the size 1 axes yourself, let the
+//      operator stretch them, and a mistake is a panic instead
+//      of a green anchor.)
+//
 //   4. LEGAL RANGE. The transmitter is as old as the camera:
 //      below 35 it shows static, above 160 it starts to smoke.
 //      Every value under 35 becomes 35, every value over 160
 //      becomes 160. This one has a ritual of its own, `legal`,
 //      which `onAir` calls last. No new function is needed: you
 //      compared tensors element by element at the Manor and at
-//      the diner (exercise 017), and exercise 023 showed how to
-//      get a constant to compare with.
+//      the diner (exercise 017), and exercises 022 and 023
+//      showed how to make a constant to compare with.
 //
 // All together:
 //

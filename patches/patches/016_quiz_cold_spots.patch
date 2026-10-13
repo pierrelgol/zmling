@@ -15,7 +15,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -82,32 +82,32 @@
+@@ -84,32 +84,32 @@
      // PART 1
      //
      // Placeholders: four f32 readings tagged .spots, and one f32 scalar.
@@ -58,10 +58,10 @@
  
      try stdout.print("intensity 1:", .{});
      for (calm_fahrenheit) |f| try stdout.print(" {d:.1}", .{f});
-@@ -121,6 +121,14 @@
-     // compiled with `shift`, and its result for the two Buffers
+@@ -124,6 +124,14 @@
      // you already hold. The lines below expect that result to be
-     // a zml.Buffer called `shifted`.
+     // a zml.Buffer called `shifted`. Every other name is yours to
+     // choose.
 +    const before: zml.Tensor = .fromShape(exe.output_shapes[0]);
 +    const after: zml.Tensor = .fromShape(exe.output_shapes[0]);
 +

@@ -28,10 +28,11 @@
 //     compiles two Phils.
 //
 // Part 1. Write `Escape`, the While struct: its setting, its
-// State, `cond` and `body`. Then `stepsToFreedom(start,
-// patience)`, which returns the number of steps taken, an i32
-// scalar. Go around while n is not 1 AND steps is below
-// patience.
+// State, `cond` and `body`. Two things change from one trip to
+// the next (where Phil is, and how many steps he has taken); one
+// thing never does. Then `stepsToFreedom(start, patience)`,
+// which returns the number of steps taken, an i32 scalar. Go
+// around while n is not 1 AND steps is below patience.
 //
 // Part 2. The same walk, driven from Zig, the way you drove the
 // piano in exercise 078. `nextNumber(n)` is ONE step and no
@@ -55,10 +56,17 @@
 //     pred.select(on_true, on_false)        a.scale(3)
 //     zml.Tensor.scalar(value, .i32)        a.addConstant(1)
 //
-// Everything here is an i32. And remember the house rule of
-// Loopsville: a tensor has no value at trace time, so if you
-// catch yourself typing a Zig `if` or a Zig `while` in there,
-// it's 6:00 AM again.
+// Everything here is an i32. On integers, `a.div(b)` is integer
+// division (7 by 2 is 3) and `a.remainder(b)` is what is left
+// over (7 by 2 leaves 1): both are from exercise 017. They take
+// a Tensor, not a Zig number, on the right. `p.logical(.AND, q)`
+// makes one bool tensor out of two (exercise 068).
+//
+// And remember the house rule of Loopsville: a tensor has no
+// value at trace time, so if you catch yourself typing a Zig
+// `if` or a Zig `while` inside a traced function, it's 6:00 AM
+// again. (In `main`, part 2, a Zig `while` is exactly right: a
+// Buffer does have a value, and `getValue` reads it.)
 //
 const std = @import("std");
 const zml = @import("zml");

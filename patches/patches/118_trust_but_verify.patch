@@ -1,0 +1,52 @@
+--- exercises/17_customs_office/118_trust_but_verify.zig
++++ answers/17_customs_office/118_trust_but_verify.zig
+@@ -123,7 +123,7 @@
+ const reference_path = "zmling/17_customs_office/activations.safetensors";
+ 
+ /// How close is close.
+-const opts: zml.testing.CompareOpts = .{ .relative_tolerance = 1 };
++const opts: zml.testing.CompareOpts = .{};
+ 
+ /// How many parcels are checked (the reference has 8 hidden layers).
+ const parcels = 8;
+@@ -156,7 +156,7 @@
+ 
+     /// image: {.h = 28, .w = 28} u8 -> the scores: {.dout = 10} f32
+     pub fn forward(self: Net, image: zml.Tensor) zml.Tensor {
+-        return self.fc2.forward(self.hidden(image), .f32).relu();
++        return self.fc2.forward(self.hidden(image), .f32);
+     }
+ 
+     pub fn load(
+@@ -270,13 +270,15 @@
+     var exe = try platform.compile(gpa, io, net, .forward, .{image}, .{});
+     defer exe.deinit();
+ 
+-    // TODO: `hidden_exe`, the same model, stopped half-way.
++    // The same model, stopped half-way.
++    var hidden_exe = try platform.compile(gpa, io, net, .hidden, .{image}, .{});
++    defer hidden_exe.deinit();
+ 
+     var net_buffers = try net.load(gpa, io, platform, &store);
+     defer Net.unload(&net_buffers);
+ 
+     var same_digits: usize = 0;
+-    const same_hidden: usize = 0;
++    var same_hidden: usize = 0;
+     var same_scores: usize = 0;
+     for (0..parcels) |parcel| {
+         var image_buffer: zml.Buffer = try .fromBytes(io, platform, image.shape(), register_bytes[16 + parcel * 784 ..][0..784]);
+@@ -290,8 +292,11 @@
+ 
+         if (isClose(io, row(want_scores, parcel), scores)) same_scores += 1;
+ 
+-        // TODO: the same question, half-way through the model:
+-        // `hidden`, and `same_hidden`.
++        // The same question, half-way through the model.
++        var hidden: zml.Buffer = try hidden_exe.eval(gpa, io, .{ net_buffers, image_buffer });
++        defer hidden.deinit();
++
++        if (isClose(io, row(want_hidden, parcel), hidden)) same_hidden += 1;
+     }
+ 
+     try stdout.print("Tolerances: absolute {d}, relative {d}, close fraction {d}\n", .{

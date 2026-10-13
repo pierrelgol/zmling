@@ -15,6 +15,14 @@
 //    (zmling sticks to .cpu so that everybody gets the same
 //    answers.)
 //
+//    `gpa` and `io` are Zig's, not ZML's: the allocator and the
+//    I/O interface that `main` receives as `init.gpa` and
+//    `init.io`. Nearly every ZML call that allocates or talks to
+//    a device asks for one or both. The allocator also checks
+//    for leaks when the program ends, hence a `defer` after
+//    everything you summon. Madame Zelda does not like guests
+//    who overstay. Neither does the allocator.
+//
 // 2. A RITUAL: a plain Zig function that takes Tensors and
 //    returns Tensors.
 //

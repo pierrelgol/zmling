@@ -19,7 +19,8 @@
 //     const v: f32 = try some_buffer.getValue(f32, io);
 //
 // Why make such a number a tensor INPUT at all? You could write
-// `knocks.scale(0.5)` in the ritual instead. The answer is what
+// `knocks.scale(0.5)` in the ritual instead (`scale` multiplies
+// every element by a plain Zig number). The answer is what
 // happens during the séance. ZML runs your function once and
 // records the graph; an ordinary Zig value used in there is
 // "baked in": it becomes a constant inside the compiled Exe,

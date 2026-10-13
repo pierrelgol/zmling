@@ -14,6 +14,10 @@
 //
 //     result {x=3}:      result[x] = sea[lats[x], lons[x]]
 //
+// With the sea of `main` (scroll down, it has gold in it),
+// lats { 2, 1 } and lons { 2, 0 } dig up sea[2,2] and sea[1,0]:
+// { 4, 3 }.
+//
 // One element per X. The gathered axes (both of them) are
 // replaced by the axes of the indices, exactly once. Give the
 // index tensors the same shape.
@@ -50,14 +54,18 @@
 //
 // The lookout has marked three X's, and he also knows the best
 // longitude at each latitude. The cabin boy wrote `dig`, which
-// panics, and one placeholder in `main`, which doesn't. Trick 2
-// he left to you: `bestOfEachLatitude` is empty.
+// panics while tracing. He also wrote one of the placeholders
+// of `main`, which is worse: it compiles, it runs, and it asks
+// for something perfectly legal that nobody wanted. You will
+// only notice when the last print tries to read four numbers.
+// Trick 2 itself he left to you: `bestOfEachLatitude` is empty.
 //
 // And since the crew can only dig one hole at a time: which X
 // first? `firstToDig` is the POSITION, along .x, of the X with
 // the most gold under it (the kitchen again, exercise 42): one
-// number, no axis. Write it, compile it, run it into a Buffer
-// called `first`.
+// number, no axis. It may call `dig`. Write it, compile it, run
+// it into a Buffer called `first`. (The print shows the
+// position as it is, counted from zero. Polly insisted.)
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -100,6 +108,7 @@ pub fn main(init: std.process.Init) !void {
     defer best_exe.deinit();
 
     // `firstToDig` needs an Exe as well.
+    ???;
 
     // Gold under each square of the sea.
     var sea_buffer: zml.Buffer = try .fromBytes(io, platform, sea.shape(), std.mem.sliceAsBytes(&[4][3]i32{
@@ -122,6 +131,7 @@ pub fn main(init: std.process.Init) !void {
     defer best.deinit();
 
     // Run it into a Buffer called `first`.
+    ???;
 
     try stdout.print("under the X's {f}: {any}\n", .{ dug.shape(), try dug.getValue([3]i32, io) });
     try stdout.print("dig X number {d} first.\n", .{try first.getValue(i32, io)});

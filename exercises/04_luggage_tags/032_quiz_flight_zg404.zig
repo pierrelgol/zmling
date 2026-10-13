@@ -30,7 +30,8 @@
 //   3. The excess of a bag is its weight minus its limit, and a
 //      bag under the limit has an excess of zero, not a negative
 //      one. Nobody gets a refund for packing light. That part is
-//      `excess`.
+//      `excess`. (26 kg against a limit of 23: an excess of 3.
+//      20 kg against 23: zero.)
 //
 //   4. Brenda's fairness rule: the excess of each bag is divided
 //      by the number of bags on a flight. No axis numbers in the
@@ -45,7 +46,9 @@
 // before. The data and the prints are still there.
 //
 // Everything is in exercises 025 to 031, with a little help from
-// the diner. No hints this time. The break is now 40 minutes.
+// the diner (where a negative number became a zero, and where a
+// tensor was divided by a plain Zig number). The break is now 40
+// minutes.
 //
 const std = @import("std");
 const zml = @import("zml");

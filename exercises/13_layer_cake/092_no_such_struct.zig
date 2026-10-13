@@ -13,6 +13,11 @@
 //     rms = sqrt(mean(x²) + eps)
 //     out = x / rms
 //
+// On a cupcake described by the two numbers (3, 4):
+//
+//     mean(x²) = (9 + 16) / 2 = 12.5        rms = 3.536
+//     out      = (3, 4) / 3.536             = (0.849, 1.131)
+//
 // No mean to subtract. Llama, Mistral, Qwen and most of their
 // cousins are leveled this way. So you open the pantry, look
 // for `zml.nn.RMSNorm`... and there is no such struct. There is
@@ -45,8 +50,10 @@
 //
 //     out = x / sqrt(sum(x²) + eps)        (last axis, no choice)
 //
-// `sum` where rmsNorm has `mean`. The result has LENGTH 1: it
-// keeps the direction of a vector and forgets its size. That's
+// `sum` where rmsNorm has `mean`. The cupcake again: 9 + 16 is
+// 25, its square root is 5, and (3, 4) / 5 = (0.6, 0.8). The
+// result has LENGTH 1 (0.6² + 0.8² = 1, Pythagoras says hello):
+// it keeps the direction of a vector and forgets its size. That's
 // what you want when comparing embeddings, where "pointing the
 // same way" means "similar". (The two only differ by a constant
 // factor, sqrt(N). Check it on the second number of each cake,
@@ -61,7 +68,8 @@
 //  - the `RmsNorm` struct: the two fields described above (the
 //    weight is a Tensor, eps is not) and its `forward`. Each
 //    CAKE is leveled on its own: mind which axis that is;
-//  - `unitLength`, a plain function;
+//  - `unitLength`, a plain function: one call into the pantry
+//    (functions of `zml.nn` are called as `zml.nn.name(...)`);
 //  - one Exe for each: one is a model with a `forward`, the
 //    other a function. Chapter 12 taught you both calls;
 //  - the Buffers of YOUR struct. `zml.Bufferized` works on it

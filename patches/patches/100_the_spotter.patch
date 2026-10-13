@@ -1,6 +1,6 @@
 --- exercises/14_heavy_lifting/100_the_spotter.zig
 +++ answers/14_heavy_lifting/100_the_spotter.zig
-@@ -97,7 +97,10 @@
+@@ -99,7 +99,10 @@
      combination: zml.Tensor,
  
      pub fn init(view: zml.io.TensorStore.View) Rack {
@@ -12,7 +12,7 @@
      }
  
      /// Brings every tensor of the rack from the file to the device.
-@@ -109,14 +112,22 @@
+@@ -111,14 +114,22 @@
          platform: *const zml.Platform,
          store: *const zml.io.TensorStore,
      ) !zml.Bufferized(Rack) {
@@ -37,7 +37,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -133,12 +144,17 @@
+@@ -135,12 +146,17 @@
      const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
      defer gpa.free(path);
  
@@ -58,7 +58,7 @@
  
      // Real Buffers, on the device. Bring them back to look at them.
      try stdout.print("plates      {f}: {any}\n", .{
-@@ -150,8 +166,11 @@
+@@ -152,8 +168,11 @@
          try rack_buffers.combination.getValue([3]i32, io),
      });
  

@@ -1,6 +1,6 @@
 --- exercises/13_layer_cake/093_the_menu.zig
 +++ answers/13_layer_cake/093_the_menu.zig
-@@ -83,7 +83,7 @@
+@@ -95,7 +95,7 @@
  /// The embedding, by hand: the rows of `table` {voc, d} that
  /// `ids` asks for. Returns the axes of `ids`, then `.d`.
  fn lookUp(table: zml.Tensor, ids: zml.Tensor) zml.Tensor {
@@ -9,7 +9,7 @@
  }
  
  const Till = struct {
-@@ -91,7 +91,7 @@
+@@ -103,7 +103,7 @@
  
      /// order: {.s} item ids -> {.d}, the average flavor of the order.
      pub fn forward(self: Till, order: zml.Tensor) zml.Tensor {
@@ -18,7 +18,7 @@
      }
  };
  
-@@ -109,17 +109,19 @@
+@@ -121,17 +121,19 @@
      const menu: zml.nn.TokenEmbedding = .{ .weight = .init(.{ .voc = 5, .d = 3 }, .f32) };
  
      // The order: four positions, one item id each.
@@ -42,7 +42,7 @@
  
      var weight_buffer: zml.Buffer = try .fromBytes(io, platform, menu.weight.shape(), std.mem.sliceAsBytes(&[5][3]f32{
          //  sweet, buttery, crunchy
-@@ -132,10 +134,10 @@
+@@ -144,10 +146,10 @@
      defer weight_buffer.deinit();
  
      const menu_buffers: zml.Bufferized(zml.nn.TokenEmbedding) = .{ .weight = weight_buffer };

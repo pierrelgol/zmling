@@ -61,13 +61,16 @@
 // operations you already know:
 //
 //   - leaky relu with slope 0.1. (Hint for the napkin: for a
-//     slope below 1, which is larger, x or 0.1 * x? When?)
+//     slope below 1, which is larger, x or 0.1 * x? Try x = 3,
+//     then x = -3.)
 //
 //   - sigmoid, from its formula. There is no "one divided by x"
 //     method. Exercise 018 has a constant form that does it
 //     anyway: what is x to the power of -1?
 //
-//   - silu.
+//   - silu, the two lines of ZML quoted above, in your own
+//     words. `x.silu()` is off the menu here. `x.sigmoid()` is
+//     not, and neither is the function you wrote just before.
 //
 // Two more things before the steaks get cold. The menu says the
 // leaky relu has a slope of 0.1, and whoever typed the built-in
@@ -128,7 +131,7 @@ fn cook(
 ) ![5]f32 {
     const x: zml.Tensor = .init(.{ .steaks = 5 }, .f32);
 
-    // Compile `recipe` for `x`.
+    // Compile `recipe` for `x`, as `exe`, with its cleanup.
 
     var input: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&steaks));
     defer input.deinit();

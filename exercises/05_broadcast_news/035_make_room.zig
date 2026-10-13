@@ -61,6 +61,18 @@
 // Neither input has the axis of the other, so: make a column,
 // make a row, stretch both, multiply.
 //
+//     fees, as a column       minutes, as a row
+//     and stretched           and stretched         multiplied
+//     10 10 10 10             12  3  5  2           120 30 50 20
+//     20 20 20 20             12  3  5  2           240 60 ...
+//     15 15 15 15             12  3  5  2           180 45 ...
+//
+// The stretching needs a target: the Shape of the full table.
+// No tensor has that shape yet, so you build it yourself, with
+// the `zml.Shape.init(.{ .tag = size, ... }, dtype)` of your
+// very first chapter (exercise 005). The sizes don't have to be
+// literals: the i64 that `x.dim(.tag)` returns will do.
+//
 // (If the 1 lands on the wrong side you'll be told, for instance
 // "Can't broadcast Tensor({segment=1,anchor=3,f32}) to
 // {anchor=3,segment=4,f32}". Notice WHY it could tell, though:
@@ -77,9 +89,9 @@ const zml = @import("zml");
 
 fn payTable(fees: zml.Tensor, minutes: zml.Tensor) zml.Tensor {
     // 1. The Shape of the full table: {anchor=3,segment=4,f32}.
-    //    Don't write 3 and 4! You've built Shapes from numbers
-    //    before, and `x.dim(.tag)` returns a number: build this
-    //    one from the sizes of the two inputs.
+    //    Don't write 3 and 4! Ask the two inputs for their
+    //    sizes, so that the day a fourth anchor is hired, this
+    //    function doesn't need to know.
 
     // 2. A column out of the fees:
     //    {anchor=3} -> {anchor=3,segment=1}

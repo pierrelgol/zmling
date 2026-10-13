@@ -1,6 +1,6 @@
 --- exercises/16_casino_royale/114_quiz_the_house_always_wins.zig
 +++ answers/16_casino_royale/114_quiz_the_house_always_wins.zig
-@@ -119,12 +119,15 @@
+@@ -132,12 +132,15 @@
  const night_shift = 500;
  
  const Sign = struct {
@@ -19,7 +19,7 @@
      }
  
      /// token: {} i32 -> the next token: {} i32, and the Rng.
-@@ -134,7 +137,9 @@
+@@ -147,7 +150,9 @@
          strategy: zml.nn.SamplingStrategy,
          rng: zml.Tensor.Rng,
      ) struct { zml.Tensor, zml.Tensor.Rng } {
@@ -30,7 +30,7 @@
      }
  
      /// The weights, from the file to the device.
-@@ -145,12 +150,21 @@
+@@ -158,12 +163,21 @@
          platform: *const zml.Platform,
          store: *const zml.io.TensorStore,
      ) !zml.Bufferized(Sign) {
@@ -54,7 +54,7 @@
      }
  };
  
-@@ -165,15 +179,81 @@
+@@ -178,15 +192,81 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  

@@ -1,0 +1,67 @@
+--- exercises/19_once_upon_a_time/133_one_page_one_word.zig
++++ answers/19_once_upon_a_time/133_one_page_one_word.zig
+@@ -256,12 +256,11 @@
+         return self.ln_f.forward(x);
+     }
+ 
+-    /// tokens: {.s} i32 -> the scores of the token that comes
+-    /// after the last one: {.voc}
+-    pub fn forward(self: GptNeo, tokens: zml.Tensor) zml.Tensor {
+-        const x = self.hidden(tokens);
+-        const last = x.slice(.s, .{ .start = x.dim(.s) - 1 }).squeeze(.s);
+-        return last.dot(self.wte.weight, .d);
++    /// tokens: {.s} i32, last: {} i32 -> the scores of the token
++    /// that comes after position `last`: {.voc}
++    pub fn forward(self: GptNeo, tokens: zml.Tensor, last: zml.Tensor) zml.Tensor {
++        const x = self.hidden(tokens).gather(.{ .s = last }, .{});
++        return x.dot(self.wte.weight, .d);
+     }
+ };
+ 
+@@ -345,14 +344,38 @@
+     const prompt_ids = try encoder.encodeAlloc(gpa, prompt);
+     defer gpa.free(prompt_ids);
+ 
+-    // One Exe for `max_len` tokens. The page, `story`. The loop,
+-    // until the page is full. At the first turn, and only then,
+-    // these three lines, right after the run:
+-    //
+-    //     var want = try bufferFromStore(gpa, io, platform, &reference, "last_logits");
+-    //     defer want.deinit();
+-    //     try stdout.print("{d} tokens on a page of {d}, the scores match PyTorch: {}\n", .{ len, max_len, matches(io, want, logits) });
+-    ???;
++    // One Exe, for `max_len` tokens, whatever the length of the story.
++    const tokens: zml.Tensor = .init(.{ .s = max_len }, .i32);
++    const last: zml.Tensor = .init(.{}, .i32);
++    var exe = try platform.compile(gpa, io, model, .forward, .{ tokens, last }, .{});
++    defer exe.deinit();
++
++    // The page: the prompt, then blanks.
++    var story: [max_len]u32 = @splat(blank);
++    @memcpy(story[0..prompt_ids.len], prompt_ids);
++
++    var len: usize = prompt_ids.len;
++    while (len < max_len) : (len += 1) {
++        var story_buffer: zml.Buffer = try .fromBytes(io, platform, tokens.shape(), std.mem.sliceAsBytes(&story));
++        defer story_buffer.deinit();
++        var last_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(len - 1)), .i32);
++        defer last_buffer.deinit();
++
++        var logits: zml.Buffer = try exe.eval(gpa, io, .{ weights, story_buffer, last_buffer });
++        defer logits.deinit();
++
++        // PyTorch read the 10 tokens of the prompt and nothing else.
++        // We read them followed by 33 blanks. Same scores?
++        if (len == prompt_ids.len) {
++            var want = try bufferFromStore(gpa, io, platform, &reference, "last_logits");
++            defer want.deinit();
++            try stdout.print("{d} tokens on a page of {d}, the scores match PyTorch: {}\n", .{ len, max_len, matches(io, want, logits) });
++        }
++
++        const scores = try logits.toSliceAlloc(gpa, io);
++        defer scores.free(gpa);
++        story[len] = @intCast(std.mem.indexOfMax(f32, scores.items(f32)));
++    }
+ 
+     var text = try decoder.decodeAlloc(gpa, &story);
+     defer text.deinit(gpa);

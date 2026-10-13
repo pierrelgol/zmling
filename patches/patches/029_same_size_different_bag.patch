@@ -1,6 +1,6 @@
 --- exercises/04_luggage_tags/029_same_size_different_bag.zig
 +++ answers/04_luggage_tags/029_same_size_different_bag.zig
-@@ -80,13 +80,13 @@
+@@ -89,13 +89,13 @@
  
  /// fees + weights, in that order. (Kevin: "same thing.")
  fn feesPlusWeights(weights: zml.Tensor, fees: zml.Tensor) zml.Tensor {
@@ -16,7 +16,7 @@
      std.debug.assert(weights.shape().eqlWithTags(per_bag.shape()));
      return per_bag.add(weights);
  }
-@@ -109,14 +109,14 @@
+@@ -118,14 +118,14 @@
      // Each line must use a different comparison. The expected
      // answers are: true, true, false. Then: true, false, false.
      try stdout.print("weights vs fees:    dims {}, dims+dtype {}, dims+dtype+tags {}\n", .{
@@ -35,10 +35,10 @@
      });
  
      // Kevin's sum compiles. Both ways around.
-@@ -145,6 +145,8 @@
+@@ -154,6 +154,8 @@
      defer fees_buffer.deinit();
  
-     // Run Kevin's Exe on the two Buffers.
+     // Run the Exe called `kevin` on the two Buffers, as `result`.
 +    var result: zml.Buffer = try kevin.eval(gpa, io, .{ weights_buffer, fees_buffer });
 +    defer result.deinit();
  

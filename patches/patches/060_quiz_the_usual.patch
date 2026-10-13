@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/060_quiz_the_usual.zig
 +++ answers/08_slice_of_life/060_quiz_the_usual.zig
-@@ -71,22 +71,29 @@
+@@ -72,22 +72,29 @@
  
  /// Steps 2 to 4. {slices=8} in, {slices=5} out.
  fn hisBox(pizza: zml.Tensor) zml.Tensor {
@@ -34,10 +34,11 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -107,12 +114,32 @@
+@@ -108,14 +115,32 @@
  
      // Before the loop: the placeholders, the two Exes (call the
      // one for `theUsual` `usual_exe`), and the tray's Buffer.
+-    ???;
 +    const tray: zml.Tensor = .init(.{ .pizzas = 3, .slices = 8 }, .i32);
 +    const which: zml.Tensor = .init(.{}, .i32);
 +
@@ -54,6 +55,7 @@
      for ([_]i32{ 0, 1, 2 }) |thursday| {
          // Every Thursday: `bag` is a [2][5]i32 (the usual), and
          // `total` is a [2]i32 (the bill).
+-        ???;
 +        var which_buffer: zml.Buffer = try .scalar(io, platform, thursday, .i32);
 +        defer which_buffer.deinit();
 +

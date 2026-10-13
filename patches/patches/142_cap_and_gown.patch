@@ -1,0 +1,45 @@
+--- exercises/21_the_graduation/142_cap_and_gown.zig
++++ answers/21_the_graduation/142_cap_and_gown.zig
+@@ -114,11 +114,11 @@
+ const dir = "zmling/21_the_graduation/";
+ 
+ /// `ModelArgs.norm_eps`: in the source, and nowhere else.
+-const norm_eps: f32 = ???;
++const norm_eps: f32 = 1e-5;
+ 
+ /// model.py, RMSNorm.forward. x: {.s, .d}, weight: {.d}
+ fn rmsNorm(x: zml.Tensor, weight: zml.Tensor) zml.Tensor {
+-    return ???;
++    return zml.nn.rmsNorm(x, .d, norm_eps).mul(weight.broad(x.shape()));
+ }
+ 
+ /// A torch `nn.Linear(bias=False)`: its weight is {out, in}.
+@@ -137,8 +137,8 @@
+ 
+     /// x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: FeedForward, x: zml.Tensor) zml.Tensor {
+-        const gate = self.w3.forward(x, .f32).silu();
+-        const up = self.w1.forward(x, .f32);
++        const gate = self.w1.forward(x, .f32).silu();
++        const up = self.w3.forward(x, .f32);
+         return self.w2.forward(gate.mul(up).rename(.{ .dout = .d }), .f32).rename(.{ .dout = .d });
+     }
+ };
+@@ -245,8 +245,15 @@
+ 
+     // The cap.
+     {
+-        // `want`, an Exe for `room.cap`, and `got`.
+-        ???;
++        var h = try reference(gpa, io, platform, &acts, "layers.0.ffn_norm.out", .{ .s, .d });
++        defer h.deinit();
++        var want = try reference(gpa, io, platform, &acts, "layers.0.feed_forward.out", .{ .s, .d });
++        defer want.deinit();
++
++        var exe = try platform.compile(gpa, io, room, .cap, .{zml.Tensor.fromShape(h.shape())}, .{});
++        defer exe.deinit();
++        var got = try exe.eval(gpa, io, .{ weights, h });
++        defer got.deinit();
+ 
+         try stdout.print("the cap {f} matches PyTorch: {}\n", .{ got.shape(), matches(io, want, got) });
+     }

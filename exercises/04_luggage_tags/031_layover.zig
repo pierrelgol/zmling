@@ -52,12 +52,23 @@
 // others. `dilute` must not notice the difference. Describe its
 // layout in main().
 //
+// (Kevin's version does notice, and loudly: a rank 2 scan has no
+// axis 2, so the program dies on a bare "index out of bounds"
+// from inside ZML before a single line is printed. The QUIET
+// failure this lesson is about is the one on the new machine,
+// and you'd never have seen it behind that panic: every pixel
+// divided by 3 * 2, and not a word of complaint.)
+//
 // The testing helper, `firstPixel`, was Kevin's too, and it lost
 // both ends on the way to your desk. Sizes are not known when you
 // write this function (they come with `layout`), so a Zig array
 // won't do: it is the photograph of exercise 013, both ways.
-// Host memory for one scan with every pixel set to 10 going in,
-// and the first pixel of the result coming out.
+// Host memory for one scan with every pixel set to 10 going in
+// (the line after it calls that Slice `pixels`), and the first
+// pixel of the result coming out.
+//
+// Why 10? With 2 rows of 5 there are 10 pixels per image, so a
+// correct `dilute` turns every 10 into 1, on every machine.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -76,7 +87,7 @@ fn firstPixel(gpa: std.mem.Allocator, io: std.Io, platform: *const zml.Platform,
     var exe = try platform.compileFn(gpa, io, dilute, .{scan}, .{});
     defer exe.deinit();
 
-    // One scan in host memory, every pixel is 10.
+    // One scan in host memory, as `pixels`; every pixel is 10.
 
     var scan_buffer: zml.Buffer = try .fromSlice(io, platform, pixels);
     defer scan_buffer.deinit();
@@ -84,7 +95,8 @@ fn firstPixel(gpa: std.mem.Allocator, io: std.Io, platform: *const zml.Platform,
     var result: zml.Buffer = try exe.eval(gpa, io, .{scan_buffer});
     defer result.deinit();
 
-    // The result, back in host memory; its first pixel.
+    // The result, back in host memory; its first pixel. More
+    // than one line: host memory is yours to give back.
     return ???;
 }
 

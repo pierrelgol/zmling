@@ -1,0 +1,57 @@
+--- exercises/18_lost_in_translation/125_second_thoughts.zig
++++ answers/18_lost_in_translation/125_second_thoughts.zig
+@@ -209,12 +209,21 @@
+ 
+     /// `view` must stand on "bert". The caller frees `layers`.
+     pub fn init(gpa: std.mem.Allocator, view: zml.io.TensorStore.View, config: Config) !Encoder {
+-        return ???;
++        const layers = try gpa.alloc(Layer, config.num_hidden_layers);
++        for (layers, 0..) |*layer, i| {
++            layer.* = .init(view.withPrefix("encoder").withPrefix("layer").withLayer(i), config);
++        }
++        return .{
++            .embeddings = .init(view.withPrefix("embeddings"), config),
++            .layers = layers,
++        };
+     }
+ 
+     /// tokens: {.s} i32 -> what the last layer thinks, {.s, .d}
+     pub fn forward(self: Encoder, tokens: zml.Tensor) zml.Tensor {
+-        return ???;
++        var x = self.embeddings.forward(tokens);
++        for (self.layers) |layer| x = layer.forward(x);
++        return x;
+     }
+ };
+ 
+@@ -278,12 +287,16 @@
+     defer acts.deinit();
+ 
+     const model: Encoder = try .init(gpa, store.view().withPrefix("bert"), config);
+-    // The model owns memory now.
+-    ???;
++    defer gpa.free(model.layers);
+ 
+-    // `weights`: room for them, a Loader to fill it, and the way
+-    // out for both kinds of memory.
+-    ???;
++    var weights = try zml.mem.bufferize(gpa, Encoder, &model);
++    defer gpa.free(weights.layers);
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Encoder, &weights);
++
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, Encoder, &model, &weights, &store, .{});
++    try loader.await(io);
+ 
+     try stdout.print("layers on the resume: {d}\n", .{config.num_hidden_layers});
+     try stdout.print("layers in the model: {d}, in the weights: {d}\n", .{ model.layers.len, weights.layers.len });
+@@ -293,7 +306,7 @@
+ 
+     // The output of the last layer, whichever it is.
+     var key_buffer: [64]u8 = undefined;
+-    const last = try std.fmt.bufPrint(&key_buffer, "bert.encoder.layer.{d}.out", .{config.num_hidden_layers});
++    const last = try std.fmt.bufPrint(&key_buffer, "bert.encoder.layer.{d}.out", .{config.num_hidden_layers - 1});
+     var want = try bufferFromStore(gpa, io, platform, &acts, last);
+     defer want.deinit();
+ 

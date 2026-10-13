@@ -60,6 +60,11 @@
 // and one trip look like. At RUN time, the Exe goes around as
 // many times as the data says: zero, four, a million.
 //
+// Note what `body` does NOT do: it doesn't change the State it
+// was given. It builds the next one, and every field of the new
+// State is computed from the OLD values. There is no "first
+// this, then that" inside a trip.
+//
 // Three rules:
 //
 //   - `cond` returns a scalar bool Tensor. Not a Zig bool!
@@ -71,9 +76,13 @@
 //
 // The task, part 1. The State is ready: `day` counts down from
 // n to 0, `minutes` is the running total, and today's practice
-// time is the value of `day`. Write `cond`, write `body`, and
-// write `totalPractice`, which starts the loop and hands back
-// the total.
+// time is the value of `day`. For n = 4, the State goes through
+//
+//     day        4    3    2    1    0
+//     minutes    0    4    7    9   10     <- `cond` says no
+//
+// Write `cond`, write `body`, and write `totalPractice`, which
+// starts the loop and hands back the total.
 //
 // Part 2. There is a third place to put a loop: OUTSIDE the
 // Exe, in `main`. Compile a function that does ONE trip, and

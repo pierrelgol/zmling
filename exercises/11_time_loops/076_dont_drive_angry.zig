@@ -47,6 +47,13 @@
 //     `select`   decides at run time, per element, from tensor
 //                values. Both branches are in the Exe.
 //
+// A `select` in numbers, to have it in front of you again:
+//
+//     pred                  true  false  false   true
+//     a                        1      2      3      4
+//     b                       10     20     30     40
+//     pred.select(a, b)        1     20     30      4
+//
 // The task, in two parts.
 //
 // 1. Wind chill in Loopsville is simple: any temperature below

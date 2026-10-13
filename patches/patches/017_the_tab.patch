@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/017_the_tab.zig
 +++ answers/03_arithmetic_diner/017_the_tab.zig
-@@ -70,7 +70,7 @@
+@@ -85,7 +85,7 @@
  /// What each guest owes: tab * interest^weeks / guests, but never
  /// more than the cap.
  fn settle(tab: zml.Tensor, interest: zml.Tensor, weeks: zml.Tensor, guests: zml.Tensor, cap: zml.Tensor) zml.Tensor {
@@ -9,7 +9,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -91,7 +91,7 @@
+@@ -106,7 +106,7 @@
      const weeks: zml.Tensor = .fromShape(regulars);
      const guests: zml.Tensor = .fromShape(regulars);
      // One number for everybody.
@@ -18,13 +18,12 @@
  
      var exe = try platform.compileFn(gpa, io, settle, .{ tab, interest, weeks, guests, cap }, .{});
      defer exe.deinit();
-@@ -103,7 +103,8 @@
-     defer interest_buffer.deinit();
-     var weeks_buffer: zml.Buffer = try .fromBytes(io, platform, regulars, std.mem.sliceAsBytes(&[_]f32{ 3, 2, 9, 1 }));
+@@ -120,6 +120,8 @@
      defer weeks_buffer.deinit();
--
+ 
+     // The guests: groups of 2, 1, 4 and 2.
 +    var guests_buffer: zml.Buffer = try .fromBytes(io, platform, regulars, std.mem.sliceAsBytes(&[_]f32{ 2, 1, 4, 2 }));
 +    defer guests_buffer.deinit();
+ 
      var cap_buffer: zml.Buffer = try .scalar(io, platform, 42, .f32);
      defer cap_buffer.deinit();
- 

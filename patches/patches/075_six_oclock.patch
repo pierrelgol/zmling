@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/075_six_oclock.zig
 +++ answers/11_time_loops/075_six_oclock.zig
-@@ -75,8 +75,12 @@
+@@ -82,8 +82,12 @@
  var alarm_rings: usize = 0;
  
  fn relive(mood: zml.Tensor, days: usize) zml.Tensor {
@@ -15,7 +15,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -93,18 +97,16 @@
+@@ -100,18 +104,16 @@
      const mood: zml.Tensor = .init(.{}, .f32);
  
      // One tensor, and one plain Zig number: three days.

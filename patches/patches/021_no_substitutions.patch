@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/021_no_substitutions.zig
 +++ answers/03_arithmetic_diner/021_no_substitutions.zig
-@@ -77,12 +77,12 @@
+@@ -87,12 +87,12 @@
  
  /// trunc(hours * 1.5 * wage) + bonus, as whole dollars.
  fn payday(hours: zml.Tensor, wage: zml.Tensor, bonus: zml.Tensor) zml.Tensor {
@@ -15,15 +15,16 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -121,14 +121,14 @@
+@@ -131,7 +131,7 @@
  
      // Per hour. A placeholder for the envelopes, as `payday`
      // returns them.
 -    const pay: zml.Tensor = ???;
 +    const pay: zml.Tensor = .init(.{ .cooks = 3 }, .i32);
  
-     var hourly_exe = try platform.compileFn(gpa, io, hourly, .{ pay, hours }, .{});
-     defer hourly_exe.deinit();
+     // `hours` again? Yes. "One ghost per chair" (exercise 015) is
+     // about one compile call: a placeholder may sit in as many
+@@ -141,7 +141,7 @@
  
      // Run it on the envelopes and the hours. Both are on the
      // device already.

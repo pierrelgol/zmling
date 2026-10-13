@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/079_word_gets_around.zig
 +++ answers/11_time_loops/079_word_gets_around.zig
-@@ -100,12 +100,12 @@
+@@ -104,12 +104,12 @@
  fn spreadUnrolled(factor: zml.Tensor, days: usize) zml.Tensor {
      // On day 0, one person per street knows: Phil.
      var crowd = zml.Tensor.scalar(1, .i32).broad(factor.shape());
@@ -15,7 +15,7 @@
  
      pub const State = struct {
          days_left: zml.Tensor,
-@@ -114,19 +114,21 @@
+@@ -118,19 +118,21 @@
  
      pub fn cond(self: Rumor, state: State) zml.Tensor {
          _ = self;
@@ -41,7 +41,7 @@
      });
      return end.crowd;
  }
-@@ -157,14 +159,14 @@
+@@ -161,14 +163,14 @@
      try stdout.print("unrolled, {d} input,  5 days: {any}\n", .{ unrolled_exe.input_shapes.len, try unrolled.getValue([3]i32, io) });
  
      // Looped: the days are an input like any other. Two inputs.

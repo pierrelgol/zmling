@@ -1,6 +1,6 @@
 --- exercises/07_origami_club/049_cut_along_the_crease.zig
 +++ answers/07_origami_club/049_cut_along_the_crease.zig
-@@ -87,21 +87,21 @@
+@@ -103,21 +103,21 @@
  /// The score of every crane: {members=3,cranes=2}.
  fn craneScores(strips: zml.Tensor) zml.Tensor {
      // Tear each strip into cranes of 4 squares.
@@ -25,10 +25,11 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -141,6 +141,10 @@
+@@ -157,7 +157,10 @@
  
      // Run `shares_exe` on the same strips, and read the answer
      // back as a nested array called `share`: one row per member.
+-    ???;
 +    var shares_result: zml.Buffer = try shares_exe.eval(gpa, io, .{strips_buffer});
 +    defer shares_result.deinit();
 +

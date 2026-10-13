@@ -1,0 +1,14 @@
+load("//zmling/harness:defs.bzl", "zmling_exercises")
+
+ASSETS = glob(["*.safetensors"])
+
+# The answers binaries read the very same files, hence the export.
+exports_files(ASSETS)
+
+# The model, its tokenizer and the reference activations are chapter 19's.
+zmling_exercises(data = ASSETS + ["//zmling/19_once_upon_a_time:" + f for f in [
+    "model.safetensors",
+    "activations.safetensors",
+    "config.json",
+    "tokenizer.json",
+]])

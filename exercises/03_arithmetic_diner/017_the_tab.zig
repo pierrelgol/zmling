@@ -30,6 +30,13 @@
 // element 1, and nobody ever looks at their neighbour's plate.
 // The result has the shape of the operands.
 //
+//     a               {  7,   8,  9   }
+//     b               {  2,   2, 10   }
+//
+//     a.sub(b)        {  5,   6, -1   }
+//     a.div(b)        {  3.5, 4,  0.9 }
+//     a.minimum(b)    {  2,   2,  9   }
+//
 // If you come from linear algebra, careful: `a.mul(b)` is NOT a
 // matrix product. It's plate-by-plate multiplication. (Matrix
 // products get their own chapter.)
@@ -55,14 +62,22 @@
 //     between the `guests` who ran it up.
 //   - Flo has a heart: nobody ever pays more than the `cap`.
 //
+// On a napkin, for the first regular: a tab of 10 dollars at an
+// interest of 2, three weeks ago, is 10 * 2 * 2 * 2 = 80 dollars
+// today. They were two: 40 each. The cap is 42, so 40 it is. Had
+// they waited one more week, it would be 80 each, and Flo's heart
+// would bring that down to 42.
+//
 // The dishwasher started typing it in, and then his break started:
 //
 //   - `settle` has three holes where an operation should be;
 //   - the cap is ONE number for everybody, and its placeholder is
 //     missing. You made one just like it in exercise 014;
-//   - five inputs, four Buffers. Flo's notebook says the groups
-//     were of 2, 1, 4 and 2 guests. Exercise 010 taught you what
-//     to do with that.
+//   - five inputs, four Buffers: the guests never made it onto
+//     the device. Flo's notebook says the groups were of 2, 1, 4
+//     and 2. It is exercise 011 all over again, its three
+//     neighbours are right there to look at, and the `eval` line
+//     expects it to be called `guests_buffer`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -103,6 +118,8 @@ pub fn main(init: std.process.Init) !void {
     defer interest_buffer.deinit();
     var weeks_buffer: zml.Buffer = try .fromBytes(io, platform, regulars, std.mem.sliceAsBytes(&[_]f32{ 3, 2, 9, 1 }));
     defer weeks_buffer.deinit();
+
+    // The guests: groups of 2, 1, 4 and 2.
 
     var cap_buffer: zml.Buffer = try .scalar(io, platform, 42, .f32);
     defer cap_buffer.deinit();

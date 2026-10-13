@@ -1,6 +1,6 @@
 --- exercises/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
 +++ answers/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
-@@ -63,11 +63,24 @@
+@@ -73,11 +73,24 @@
      }
  };
  
@@ -30,7 +30,7 @@
  
  //                                  glow hum speed
  const hidden_weight = [2][3]f32{ .{ 1, 0, 1 }, .{ 0, 2, -1 } };
-@@ -87,6 +100,20 @@
+@@ -97,6 +110,20 @@
      .{ -1, 0, -1 }, // a weather balloon, signed and dated
  };
  
@@ -51,7 +51,7 @@
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
      const io = init.io;
-@@ -98,24 +125,52 @@
+@@ -108,24 +135,52 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  

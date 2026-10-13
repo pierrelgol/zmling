@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/059_surprise_me.zig
 +++ answers/08_slice_of_life/059_surprise_me.zig
-@@ -102,11 +102,11 @@
+@@ -119,11 +119,11 @@
  const zml = @import("zml");
  
  fn window(pizza: zml.Tensor, first: zml.Tensor) zml.Tensor {
@@ -14,7 +14,7 @@
  }
  
  fn swap(tray: zml.Tensor, which: zml.Tensor, fresh: zml.Tensor) zml.Tensor {
-@@ -115,7 +115,9 @@
+@@ -132,7 +132,9 @@
  
  /// The pizza with the most olives: {slices=4}.
  fn fullest(tray: zml.Tensor) zml.Tensor {
@@ -25,20 +25,22 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -132,7 +134,8 @@
+@@ -149,8 +151,8 @@
      const pizza: zml.Tensor = .init(.{ .slices = 8 }, .i32);
      const tray: zml.Tensor = .init(.{ .pizzas = 3, .slices = 4 }, .i32);
      const fresh: zml.Tensor = .init(.{ .slices = 4 }, .i32);
 -    // The surprise goes here: a placeholder called `index`.
+-    ???;
 +    // The surprise: a scalar integer.
 +    const index: zml.Tensor = .init(.{}, .i32);
  
      var pizza_buffer: zml.Buffer = try .fromBytes(io, platform, pizza.shape(), std.mem.sliceAsBytes(&[_]i32{ 0, 1, 2, 3, 4, 5, 6, 7 }));
      defer pizza_buffer.deinit();
-@@ -191,6 +194,10 @@
+@@ -209,7 +211,10 @@
  
          // Run `fullest_exe` twice: `before` is its result on the
          // tray, `after` its result on the swapped tray.
+-        ???;
 +        var before: zml.Buffer = try fullest_exe.eval(gpa, io, .{tray_buffer});
 +        defer before.deinit();
 +        var after: zml.Buffer = try fullest_exe.eval(gpa, io, .{result});

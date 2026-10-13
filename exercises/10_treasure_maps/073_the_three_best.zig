@@ -73,14 +73,27 @@
 // ACCURACY. `topThreeAccuracy` goes like this:
 //
 //   - Compare every bet with every one of the three winning
-//     indices: a grid of bools, {pirate=4,best=3}. `cmp` wants
+//     indices (`threeBest` has them: call it, keep the half you
+//     need): a grid of bools, {pirate=4,best=3}. `cmp` wants
 //     the same shape on both sides (exercise 68), so both have
-//     to be stretched to that grid first, by their tags
-//     (chapter 5).
+//     to be stretched to that grid first, with `broad`
+//     (chapter 5). `broad` wants a `zml.Shape` to aim at, and
+//     no tensor around here has that one: build it yourself,
+//     with the `zml.Shape.init(.{ .tag = size, ... }, dtype)`
+//     of chapter 1. Only its tags and sizes are read; the
+//     result keeps the dtype of the tensor being stretched.
 //   - A pirate was right when one of his three bools is true.
 //     At most one can be: count them along .best (exercise 68).
 //   - The accuracy is the mean over .pirate of those 0's and
 //     1's, as an .f32, with no axis left.
+//
+// Tonight the winning chests turn out to be 4, 2 and 0, and
+// the bets are 4, 1, 0 and 3. Anne and Calico get to gloat:
+//
+//     hits    Anne    { true,  false, false }     1
+//             Bart    { false, false, false }     0
+//             Calico  { false, false, true  }     1
+//             Dread   { false, false, false }     0
 //
 // It has a single output, so `exe.eval` will do. Compile it and
 // run it into a Buffer called `accuracy`.
@@ -116,6 +129,7 @@ pub fn main(init: std.process.Init) !void {
     defer exe.deinit();
 
     // The quartermaster's number needs an Exe as well.
+    ???;
 
     var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 95, 1 }));
     defer loot_buffer.deinit();
@@ -125,8 +139,10 @@ pub fn main(init: std.process.Init) !void {
 
     // The runner goes here: `exe` has two outputs, and both of them
     // end up in `res`. Its two Buffers are yours to free.
+    ???;
 
     // Then the bets, with plain `eval`, into a Buffer called `accuracy`.
+    ???;
 
     try stdout.print("The Exe has {d} outputs: {f} and {f}.\n", .{ exe.output_shapes.len, exe.output_shapes[0], exe.output_shapes[1] });
     const values = try res.values.getValue([3]i32, io);

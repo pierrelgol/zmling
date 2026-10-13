@@ -1,0 +1,61 @@
+--- exercises/19_once_upon_a_time/128_the_donation_box.zig
++++ answers/19_once_upon_a_time/128_the_donation_box.zig
+@@ -152,7 +152,13 @@
+ };
+ 
+ fn census(registry: *const zml.safetensors.TensorRegistry) Census {
+-    return ???;
++    const entries = registry.tensors.values();
++    var result: Census = .{ .tensors = entries.len, .numbers = 0, .biggest = entries[0] };
++    for (entries) |entry| {
++        result.numbers += entry.shape.count();
++        if (entry.shape.count() > result.biggest.shape.count()) result.biggest = entry;
++    }
++    return result;
+ }
+ 
+ /// A Linear from the "weight" and (if there is one) the "bias"
+@@ -160,7 +166,7 @@
+ fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
+     return .init(
+         view.createReplicatedTensor("weight", .{ .dout, .d }),
+-        view.createReplicatedTensor("bias", .{.dout}),
++        view.maybeCreateTensor("bias", .{.dout}, .replicated, .{}),
+         .d,
+     );
+ }
+@@ -174,7 +180,7 @@
+ 
+     /// `view` must stand on a block: "transformer.h.N.".
+     pub fn init(view: zml.io.TensorStore.View) Voice {
+-        const attention = view.withPrefix("attn");
++        const attention = view.withPrefix("attn").withPrefix("attention");
+         return .{
+             .q_proj = linear(attention.withPrefix("q_proj")),
+             .k_proj = linear(attention.withPrefix("k_proj")),
+@@ -221,14 +227,14 @@
+     });
+ 
+     // Is the head of the model in the file?
+-    const has_head = ???;
++    const has_head = store.view().hasKey("lm_head.weight");
+     try stdout.print("lm_head.weight is in the box: {}\n", .{has_head});
+ 
+     const blocks = store.view().withPrefix("transformer").withPrefix("h");
+ 
+     // How many blocks? Count for as long as there is one.
+     var block_count: usize = 0;
+-    ???;
++    while (blocks.withLayer(block_count).hasKey("ln_1.")) block_count += 1;
+     try stdout.print("Blocks: {d}\n", .{block_count});
+ 
+     try stdout.print("The Linears of block 0:\n", .{});
+@@ -243,7 +249,7 @@
+     }) |name| {
+         const layer = block.withPrefix(name);
+         // Does this Linear have a bias?
+-        const has_bias = ???;
++        const has_bias = layer.hasKey("bias");
+         // (A Shape does not let `print` pad it: it goes through a
+         // small buffer first, as in exercise 098.)
+         var shape_buffer: [32]u8 = undefined;

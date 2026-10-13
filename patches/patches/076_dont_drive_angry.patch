@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/076_dont_drive_angry.zig
 +++ answers/11_time_loops/076_dont_drive_angry.zig
-@@ -79,13 +79,13 @@
+@@ -86,13 +86,13 @@
  
      // Run time: below zero, it feels twice as cold.
      const zero = zml.Tensor.scalar(0, .i32);
@@ -17,7 +17,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -103,12 +103,12 @@
+@@ -110,12 +110,12 @@
  
      var optimist_exe = try platform.compileFn(gpa, io, feelsLike, .{ temps, false }, .{});
      defer optimist_exe.deinit();
@@ -32,7 +32,7 @@
      defer pessimist_count_exe.deinit();
  
      const thermometers = [_]i32{ -4, 0, 3, 7 };
-@@ -117,12 +117,12 @@
+@@ -124,12 +124,12 @@
  
      var optimist: zml.Buffer = try optimist_exe.eval(gpa, io, .{temps_buffer});
      defer optimist.deinit();

@@ -75,8 +75,9 @@
 //   - `byHand`:   `delivery` again, WITHOUT calling `stack`. Do
 //                 what the paragraph above says `stack` does.
 //                 You added axes of size 1 in the newsroom
-//                 (exercise 035), and a `reshape` from the last
-//                 chapter would do the job as well.
+//                 (`insertAxes`, exercise 035), and a `reshape`
+//                 from the last chapter would do the job as
+//                 well.
 //
 // Nonna wrote `party`. Luigi took `delivery` and `tasting`
 // over the phone, with the oven fan on. `byHand` is yours from
@@ -122,6 +123,7 @@ pub fn main(init: std.process.Init) !void {
     var margherita_buffer: zml.Buffer = try .fromBytes(io, platform, margherita.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 2, 3, 4 }));
     defer margherita_buffer.deinit();
     // The pepperoni goes here: `pepperoni` and `pepperoni_buffer`.
+    ???;
 
     inline for (
         .{ party, delivery, tasting, byHand },

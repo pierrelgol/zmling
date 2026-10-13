@@ -1,0 +1,265 @@
+--- exercises/18_lost_in_translation/127_quiz_mind_the_gap.zig
++++ answers/18_lost_in_translation/127_quiz_mind_the_gap.zig
+@@ -98,9 +98,190 @@
+     .{ .text = "The interpreter speaks English and [MASK].", .pytorch = "english" },
+ };
+ 
+-// `Config`, the helpers, `Embeddings`, `Layer`, `Encoder`, `Head`,
+-// `Bert`, and whatever puts [CLS] and [SEP] around a sentence.
+-???
++const Config = struct {
++    vocab_size: u32,
++    hidden_size: u32,
++    num_hidden_layers: u32,
++    num_attention_heads: u32,
++    // Not in this config.json: the default of `BertConfig`.
++    layer_norm_eps: f32 = 1e-12,
++};
++
++/// A torch `nn.Linear`, with its bias: "weight" is {out, in}.
++fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
++    return .init(
++        view.createReplicatedTensor("weight", .{ .dout, .d }),
++        view.createReplicatedTensor("bias", .{.dout}),
++        .d,
++    );
++}
++
++fn layerNorm(view: zml.io.TensorStore.View, eps: f32) zml.nn.LayerNorm {
++    return .{
++        .weight = view.createReplicatedTensor("weight", .{.d}),
++        .bias = view.createReplicatedTensor("bias", .{.d}),
++        .eps = eps,
++    };
++}
++
++/// The GELU BERT was trained with: x/2 * (1 + erf(x / sqrt(2))).
++fn geluExact(x: zml.Tensor) zml.Tensor {
++    return x.scale(0.5).mul(x.scale(1.0 / @sqrt(2.0)).erf().addConstant(1));
++}
++
++const Embeddings = struct {
++    word: zml.nn.TokenEmbedding,
++    position: zml.Tensor,
++    token_type: zml.Tensor,
++    norm: zml.nn.LayerNorm,
++
++    /// `view` must stand on "bert.embeddings".
++    pub fn init(view: zml.io.TensorStore.View, config: Config) Embeddings {
++        return .{
++            .word = .{ .weight = view.withPrefix("word_embeddings").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .position = view.withPrefix("position_embeddings").createReplicatedTensor("weight", .{ .pos, .d }),
++            .token_type = view.withPrefix("token_type_embeddings").createReplicatedTensor("weight", .{ .typ, .d }),
++            .norm = layerNorm(view.withPrefix("LayerNorm"), config.layer_norm_eps),
++        };
++    }
++
++    /// tokens: {.s} i32 -> {.s, .d}
++    pub fn forward(self: Embeddings, tokens: zml.Tensor) zml.Tensor {
++        var x = self.word.forward(tokens);
++        x = x.add(self.position.slice(.pos, .{ .end = tokens.dim(.s) }).rename(.{ .pos = .s }));
++        x = x.add(self.token_type.slice(.typ, .{ .end = 1 }).squeeze(.typ).broad(x.shape()));
++        return self.norm.forward(x);
++    }
++};
++
++const Layer = struct {
++    query: zml.nn.Linear,
++    key: zml.nn.Linear,
++    value: zml.nn.Linear,
++    attn_out: zml.nn.Linear,
++    attn_norm: zml.nn.LayerNorm,
++    up: zml.nn.Linear,
++    down: zml.nn.Linear,
++    out_norm: zml.nn.LayerNorm,
++    heads: u32,
++
++    /// `view` must stand on one layer: "bert.encoder.layer.0".
++    pub fn init(view: zml.io.TensorStore.View, config: Config) Layer {
++        const self = view.withPrefix("attention").withPrefix("self");
++        const attn_output = view.withPrefix("attention").withPrefix("output");
++        return .{
++            .query = linear(self.withPrefix("query")),
++            .key = linear(self.withPrefix("key")),
++            .value = linear(self.withPrefix("value")),
++            .attn_out = linear(attn_output.withPrefix("dense")),
++            .attn_norm = layerNorm(attn_output.withPrefix("LayerNorm"), config.layer_norm_eps),
++            .up = linear(view.withPrefix("intermediate").withPrefix("dense")),
++            .down = linear(view.withPrefix("output").withPrefix("dense")),
++            .out_norm = layerNorm(view.withPrefix("output").withPrefix("LayerNorm"), config.layer_norm_eps),
++            .heads = config.num_attention_heads,
++        };
++    }
++
++    /// x: {.s, .d} -> {.s, .d}
++    pub fn forward(self: Layer, x: zml.Tensor) zml.Tensor {
++        const split = .{ .h = self.heads, .hd = .auto };
++        const q = self.query.forward(x, .f32).splitAxis(.dout, split).rename(.{ .s = .q });
++        const k = self.key.forward(x, .f32).splitAxis(.dout, split).rename(.{ .s = .k });
++        const v = self.value.forward(x, .f32).splitAxis(.dout, split).rename(.{ .s = .k });
++        const heard = zml.nn.sdpa(q, k, v, .{}).merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
++        const y = self.attn_norm.forward(self.attn_out.forward(heard, .f32).rename(.{ .dout = .d }).add(x));
++
++        const up = geluExact(self.up.forward(y, .f32)).rename(.{ .dout = .d });
++        return self.out_norm.forward(self.down.forward(up, .f32).rename(.{ .dout = .d }).add(y));
++    }
++};
++
++const Encoder = struct {
++    embeddings: Embeddings,
++    layers: []Layer,
++
++    /// `view` must stand on "bert". The caller frees `layers`.
++    pub fn init(gpa: std.mem.Allocator, view: zml.io.TensorStore.View, config: Config) !Encoder {
++        const layers = try gpa.alloc(Layer, config.num_hidden_layers);
++        for (layers, 0..) |*layer, i| {
++            layer.* = .init(view.withPrefix("encoder").withPrefix("layer").withLayer(i), config);
++        }
++        return .{
++            .embeddings = .init(view.withPrefix("embeddings"), config),
++            .layers = layers,
++        };
++    }
++
++    /// tokens: {.s} i32 -> what the last layer thinks, {.s, .d}
++    pub fn forward(self: Encoder, tokens: zml.Tensor) zml.Tensor {
++        var x = self.embeddings.forward(tokens);
++        for (self.layers) |layer| x = layer.forward(x);
++        return x;
++    }
++};
++
++/// BertLMPredictionHead: from what Bertie thinks of one token to
++/// a score for every word of the glossary.
++const Head = struct {
++    dense: zml.nn.Linear,
++    norm: zml.nn.LayerNorm,
++    bias: zml.Tensor,
++
++    /// `view` must stand on "cls.predictions".
++    pub fn init(view: zml.io.TensorStore.View, config: Config) Head {
++        return .{
++            .dense = linear(view.withPrefix("transform").withPrefix("dense")),
++            .norm = layerNorm(view.withPrefix("transform").withPrefix("LayerNorm"), config.layer_norm_eps),
++            .bias = view.createReplicatedTensor("bias", .{.voc}),
++        };
++    }
++
++    /// x: {.d}, word_table: {.voc, .d} -> scores {.voc}
++    pub fn forward(self: Head, x: zml.Tensor, word_table: zml.Tensor) zml.Tensor {
++        const h = self.norm.forward(geluExact(self.dense.forward(x, .f32)).rename(.{ .dout = .d }));
++        // The decoder: its matrix is the word table, its bias is ours.
++        return h.dot(word_table, .d).add(self.bias);
++    }
++};
++
++const Bert = struct {
++    encoder: Encoder,
++    head: Head,
++
++    /// `view` must stand on the root of the file. The caller
++    /// frees `encoder.layers`.
++    pub fn init(gpa: std.mem.Allocator, view: zml.io.TensorStore.View, config: Config) !Bert {
++        return .{
++            .encoder = try .init(gpa, view.withPrefix("bert"), config),
++            .head = .init(view.withPrefix("cls").withPrefix("predictions"), config),
++        };
++    }
++
++    /// tokens: {.s} i32, where: {} i32, the position to guess
++    /// -> a score for every word of the glossary, {.voc}
++    pub fn forward(self: Bert, tokens: zml.Tensor, where: zml.Tensor) zml.Tensor {
++        const x = self.encoder.forward(tokens).gather(.{ .s = where }, .{});
++        return self.head.forward(x, self.encoder.embeddings.word.weight);
++    }
++};
++
++/// The ids of `text` the way Bertie was trained to read them:
++/// [CLS], the tokens of the text, [SEP]. The caller frees them.
++fn encodeForBert(
++    gpa: std.mem.Allocator,
++    tokenizer: *const zml.tokenizer.Tokenizer,
++    encoder: *zml.tokenizer.Tokenizer.Encoder,
++    text: []const u8,
++) ![]u32 {
++    const words = try encoder.encodeAlloc(gpa, text);
++    defer gpa.free(words);
++
++    const ids = try gpa.alloc(u32, words.len + 2);
++    ids[0] = tokenizer.tokenId("[CLS]").?;
++    @memcpy(ids[1 .. ids.len - 1], words);
++    ids[ids.len - 1] = tokenizer.tokenId("[SEP]").?;
++    return ids;
++}
+ 
+ /// The whole file, as bytes. The caller frees them.
+ fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
+@@ -121,14 +302,63 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // The config, the weights, the model, the glossary: everything
+-    // that is done once.
+-    ???;
++    const config_bytes = try readFile(gpa, io, dir ++ "config.json");
++    defer gpa.free(config_bytes);
++    const parsed = try std.json.parseFromSlice(Config, gpa, config_bytes, .{ .ignore_unknown_fields = true });
++    defer parsed.deinit();
++    const config = parsed.value;
++
++    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, dir ++ "model.safetensors", gpa);
++    defer gpa.free(path);
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++    defer store.deinit();
++
++    const model: Bert = try .init(gpa, store.view(), config);
++    defer gpa.free(model.encoder.layers);
++
++    var weights = try zml.mem.bufferize(gpa, Bert, &model);
++    defer gpa.free(weights.encoder.layers);
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Bert, &weights);
++
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, Bert, &model, &weights, &store, .{});
++    try loader.await(io);
++
++    const tokenizer_path = try std.Io.Dir.cwd().realPathFileAlloc(io, dir ++ "tokenizer.json", gpa);
++    defer gpa.free(tokenizer_path);
++    var tokenizer: zml.tokenizer.Tokenizer = try .fromFile(gpa, io, tokenizer_path);
++    defer tokenizer.deinit();
++    var encoder = try tokenizer.encoder();
++    defer encoder.deinit();
++
++    const mask_id = tokenizer.tokenId("[MASK]").?;
+ 
+     var agreed: usize = 0;
+     for (sentences) |sentence| {
+-        // `word`: Bertie's guess for the [MASK] of `sentence.text`.
+-        ???;
++        const ids = try encodeForBert(gpa, &tokenizer, &encoder, sentence.text);
++        defer gpa.free(ids);
++        const where: i32 = @intCast(std.mem.indexOfScalar(u32, ids, mask_id).?);
++
++        // One Exe per sentence length.
++        const tokens: zml.Tensor = .init(.{ .s = ids.len }, .i32);
++        var exe = try platform.compile(gpa, io, model, .forward, .{ tokens, zml.Tensor.init(.{}, .i32) }, .{});
++        defer exe.deinit();
++
++        var ids_buffer: zml.Buffer = try .fromBytes(io, platform, tokens.shape(), std.mem.sliceAsBytes(ids));
++        defer ids_buffer.deinit();
++        var where_buffer: zml.Buffer = try .scalar(io, platform, where, .i32);
++        defer where_buffer.deinit();
++
++        var result: zml.Buffer = try exe.eval(gpa, io, .{ weights, ids_buffer, where_buffer });
++        defer result.deinit();
++        const scores = try result.toSliceAlloc(gpa, io);
++        defer scores.free(gpa);
++
++        const best: u32 = @intCast(std.mem.indexOfMax(f32, scores.items(f32)));
++        const word = tokenizer.decode(best).?;
+ 
+         if (std.mem.eql(u8, word, sentence.pytorch)) agreed += 1;
+         try stdout.print("{s}\n  Bertie: {s}, PyTorch: {s}\n", .{ sentence.text, word, sentence.pytorch });

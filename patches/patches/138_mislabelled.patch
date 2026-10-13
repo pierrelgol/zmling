@@ -1,0 +1,29 @@
+--- exercises/20_the_autopsy/138_mislabelled.zig
++++ answers/20_the_autopsy/138_mislabelled.zig
+@@ -110,7 +110,7 @@
+ 
+     /// q_proj, k_proj and v_proj have no bias in this checkpoint.
+     pub fn initNoBias(view: zml.io.TensorStore.View) Linear {
+-        return .{ .weight = view.createReplicatedTensor("weight", .{ .d, .dout }), .bias = null };
++        return .{ .weight = view.createReplicatedTensor("weight", .{ .dout, .d }), .bias = null };
+     }
+ 
+     /// x: {.s, .d} -> {.s, .d}
+@@ -345,7 +345,16 @@
+     ///   transformer.h.i.mlp
+     ///   transformer.h.i.mlp.c_fc, c_proj
+     fn openBlock(m: *Morgue, i: usize, block: Block, weights: zml.Bufferized(Block)) !void {
+-        return ???;
++        _ = try m.examine("transformer.h.{d}.ln_1", .{i}, block.ln_1, weights.ln_1, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention", .{i}, block.attn, weights.attn, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.q_proj", .{i}, block.attn.q_proj, weights.attn.q_proj, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.k_proj", .{i}, block.attn.k_proj, weights.attn.k_proj, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.v_proj", .{i}, block.attn.v_proj, weights.attn.v_proj, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.out_proj", .{i}, block.attn.out_proj, weights.attn.out_proj, .{});
++        _ = try m.examine("transformer.h.{d}.ln_2", .{i}, block.ln_2, weights.ln_2, .{});
++        _ = try m.examine("transformer.h.{d}.mlp", .{i}, block.mlp, weights.mlp, .{});
++        _ = try m.examine("transformer.h.{d}.mlp.c_fc", .{i}, block.mlp.c_fc, weights.mlp.c_fc, .{});
++        _ = try m.examine("transformer.h.{d}.mlp.c_proj", .{i}, block.mlp.c_proj, weights.mlp.c_proj, .{});
+     }
+ 
+     /// The port as its users meet it: are its scores for the

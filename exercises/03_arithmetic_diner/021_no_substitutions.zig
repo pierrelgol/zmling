@@ -29,6 +29,10 @@
 //                       -2.9 becomes -2. If you wanted rounding,
 //                       round first: `x.round().convert(.i32)`.
 //
+//     x                          { -2.9, -0.5, 0.5, 2.9 }
+//     x.convert(.i32)            { -2,    0,   0,   2   }
+//     x.round().convert(.i32)    { -3,    0,   0,   3   }
+//
 // The no-promotion rule also applies to the constant forms from
 // two exercises ago, in a sneakier way. Remember that
 // `x.scale(c)` is `x.mul(.scalar(c, x.dtype()))`: the constant is
@@ -56,9 +60,15 @@
 // cents are dropped (not rounded, dropped; she has a heart, not
 // two), THEN the bonus is added. The envelope is .i32.
 //
+// The third cook, on a napkin: 6 hours count as 9. At 15.25 an
+// hour that is 137.25 dollars, so 137 in the envelope, plus 20
+// from the tip jar: 157.
+//
 // The dishwasher wrote the formula as if dtypes were a
 // suggestion. You'll meet both panics from above, one after the
-// other.
+// other: the one about the constant first, and once that is
+// cured, the one about two tensors. Each time, ask what dtype
+// the chain has AT THAT POINT, and what dtype it should have.
 //
 // Then Gus wants to know what that came to PER HOUR, in dollars
 // and cents this time: the envelope divided by the hours. Two
@@ -123,6 +133,9 @@ pub fn main(init: std.process.Init) !void {
     // returns them.
     const pay: zml.Tensor = ???;
 
+    // `hours` again? Yes. "One ghost per chair" (exercise 015) is
+    // about one compile call: a placeholder may sit in as many
+    // seances as you like, one chair in each.
     var hourly_exe = try platform.compileFn(gpa, io, hourly, .{ pay, hours }, .{});
     defer hourly_exe.deinit();
 

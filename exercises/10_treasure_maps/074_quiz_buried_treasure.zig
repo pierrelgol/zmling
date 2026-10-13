@@ -1,6 +1,7 @@
 //
 // Quiz! The Off-By-One has reached an archipelago of six
 // islands, and Captain Scurvy has a plan with three steps.
+// (There are four. It is that kind of ship.)
 //
 //   1. An island with MORE THAN 3 sharks around it is out of
 //      the question. Its gold counts as 0.
@@ -89,6 +90,7 @@ pub fn main(init: std.process.Init) !void {
 
     // Your code goes here. It ends with `res` (filled in by a
     // runner), `landing` and `party_total`.
+    ???;
 
     try stdout.print("landing parties: {f}\n", .{landing.shape()});
     try stdout.flush();

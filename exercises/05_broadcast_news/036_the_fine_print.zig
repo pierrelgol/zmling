@@ -4,7 +4,7 @@
 // "Only scalars broadcast on their own" was a simplification.
 // Here is what `a.add(b)` (and `sub`, `mul`, `div`, `pow`,
 // `maximum`, ... every two-tensor operation) really checks, in
-// this order. It is a dozen lines called `binaryOpHelper` in
+// this order. It is two dozen lines called `binaryOpHelper` in
 // zml/zml/tensor.zig; go and read them, they are short.
 //
 //   0. Same dtype, or panic. You knew that.
@@ -38,6 +38,11 @@
 //     best:   {anchor=3,night=1}       (a column)
 //
 //     scores.div(best)        fine: `best` is stretched
+//
+//     scores           best       scores.div(best)
+//      6  3  9 12      12         0.5  0.25 0.75 1
+//      8  4  2  6       8         1    0.5  0.25 0.75
+//      5 10  5  1      10         0.5  1    0.5  0.1
 //
 // But read rule 3 again, slowly. It only ever stretches the
 // RIGHT side. The result of `a.op(b)` always has the shape of

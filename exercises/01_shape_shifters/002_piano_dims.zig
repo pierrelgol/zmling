@@ -42,6 +42,16 @@
 // is exercise 001 all over again. THEN run the program and look
 // at how it fails!
 //
+// It will be your first crash, so here is how to read one. Zig
+// prints a line starting with "panic:" that says WHAT went wrong,
+// then a stack trace that says WHERE: one line per function call,
+// the innermost first. The first few are inside ZML's own files.
+// Walk down to the first line that names THIS file. The number
+// right after the file name is the line of yours where the
+// trouble was noticed. Today that is also the line to fix. On
+// other days that line will look innocent, and the lines below
+// it (its callers) are where to keep looking.
+//
 const std = @import("std");
 const zml = @import("zml");
 

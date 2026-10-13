@@ -1,0 +1,23 @@
+--- exercises/21_the_graduation/143_turn_the_tassel.zig
++++ answers/21_the_graduation/143_turn_the_tassel.zig
+@@ -114,9 +114,8 @@
+ 
+     /// h: {.s, .d}, what attention_norm gave -> {.s, .h, .hd}
+     pub fn forward(self: Spinner, h: zml.Tensor) zml.Tensor {
+-        // The queries, one head at a time: {.s, .h, .hd}
+-        const q = ???;
+-        return zml.nn.rope(q, null, .{});
++        const q = self.wq.forward(h, .f32).splitAxis(.dout, .{ .h = self.heads, .hd = .auto });
++        return zml.nn.rope(q, null, .{ .layout = .interleaved });
+     }
+ };
+ 
+@@ -200,7 +199,7 @@
+     // The test of the previous graduate.
+     const first_matches = close(want_numbers[0..per_token], got_numbers[0..per_token]);
+     // The test.
+-    const all_match = ???;
++    const all_match = close(want_numbers, got_numbers);
+ 
+     try stdout.print("the queries, after the turn: {f}\n", .{got.shape()});
+     try stdout.print("  the first token matches PyTorch: {}\n", .{first_matches});

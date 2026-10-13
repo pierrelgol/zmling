@@ -18,6 +18,16 @@
 //     x.roundNearestAfz()           round to nearest, ties Away
 //                                   From Zero
 //
+// One plate at a time, as always:
+//
+//     x            { -2.5,  0,  1.5 }
+//
+//     x.abs()      {  2.5,  0,  1.5 }
+//     x.negate()   {  2.5,  0, -1.5 }
+//     x.sign()     { -1,    0,  1   }
+//     x.floor()    { -3,    0,  1   }
+//     x.ceil()     { -2,    0,  2   }
+//
 // Three things the menu doesn't tell you.
 //
 // 1. Most of these want floats. `abs`, `negate` and `sign` are
@@ -43,8 +53,8 @@
 // exercise has a helper, `cook`: it compiles a one-tensor recipe,
 // runs it on four numbers, and returns the four results. Nothing
 // new in it, which is why two of its lines are missing: the one
-// that puts the ingredients on the device (exercise 010) and the
-// one that reads the four results back (exercise 011). It will
+// that puts the ingredients on the device and the one that reads
+// the four results back (both from exercise 011). The helper will
 // come back, so get it right once.
 //
 // Today's tickets:
@@ -54,7 +64,10 @@
 //
 //   - Coffee cools. Poured at 80 degrees C in a 20 degree room,
 //     its temperature after t minutes is 20 + 60 * e^(-t / 10).
-//     That's Newton, not Gus.
+//     That's Newton, not Gus. (At t = 0, e^0 is 1 and the cup is
+//     at 20 + 60 = 80. After a very long time e^(-t / 10) is
+//     nearly 0, and the coffee is as warm as the room.) No
+//     single method does all that: it is a chain.
 //
 //   - The tip jar is shared out in whole dollars. Flo wants
 //     halves rounded the way she learned in school.
@@ -93,7 +106,9 @@ fn cook(
     var exe = try platform.compileFn(gpa, io, recipe, .{x}, .{});
     defer exe.deinit();
 
-    // The ingredients, on the device, in the shape of `x`.
+    // The ingredients, on the device, in the shape of `x`. (A
+    // parameter is a constant like any other: Zig lets you take
+    // its address.)
     var input: zml.Buffer = ???;
     defer input.deinit();
 

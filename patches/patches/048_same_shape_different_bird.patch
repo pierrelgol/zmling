@@ -16,7 +16,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -123,10 +124,17 @@
+@@ -123,11 +124,17 @@
      defer result.deinit();
  
      // A nested Zig array is row-major too: one row per ROUND.
@@ -25,6 +25,7 @@
  
      // The same three steps for `gaps`: an Exe called `gaps_exe`,
      // its result, and the three numbers in an array called `gap`.
+-    ???;
 +    var gaps_exe = try platform.compileFn(gpa, io, gaps, .{scores}, .{});
 +    defer gaps_exe.deinit();
 +

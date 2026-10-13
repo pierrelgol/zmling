@@ -1,6 +1,6 @@
 --- exercises/01_shape_shifters/007_truck_tetris.zig
 +++ answers/01_shape_shifters/007_truck_tetris.zig
-@@ -52,15 +52,15 @@
+@@ -64,15 +64,15 @@
      var truck = zml.Shape.init(.{ .rows = 3, .boxes = 5 }, .u8);
  
      // A fourth row fits.
@@ -19,7 +19,7 @@
  
      try stdout.print("Loaded: {f}, {d} boxes in total.\n", .{ truck, truck.count() });
  
-@@ -74,7 +74,7 @@
+@@ -86,7 +86,7 @@
      // Back at the depot, what is left gets strapped onto pallets:
      // a new axis of size 6, tagged .pallets, in FRONT of all the
      // others. Start from the aftermath and write the whole line.

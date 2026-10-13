@@ -1,10 +1,10 @@
 --- exercises/03_arithmetic_diner/022_from_scratch.zig
 +++ answers/03_arithmetic_diner/022_from_scratch.zig
-@@ -81,14 +81,14 @@
+@@ -89,14 +89,14 @@
  
  /// Ticket numbers 101, 102, 103, 104, 105, as .i32.
  fn tickets() zml.Tensor {
--    return zml.Tensor.arange(.{ .start = ???, .end = ??? }, .i32);
+-    return ???;
 +    return zml.Tensor.arange(.{ .start = 101, .end = 106 }, .i32);
  }
  
@@ -18,10 +18,10 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -105,6 +105,11 @@
+@@ -113,6 +113,11 @@
      // 1. Compile `tickets` and run it, cleaning up as you go. No
      //    input: an empty tuple of placeholders, and later an
-     //    empty tuple of Buffers.
+     //    empty tuple of Buffers. The result is `tickets_result`.
 +    var tickets_exe = try platform.compileFn(gpa, io, tickets, .{}, .{});
 +    defer tickets_exe.deinit();
 +

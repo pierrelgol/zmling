@@ -1,0 +1,39 @@
+--- exercises/18_lost_in_translation/121_the_resume.zig
++++ answers/18_lost_in_translation/121_the_resume.zig
+@@ -122,12 +122,15 @@
+     hidden_size: u32,
+     num_hidden_layers: u32,
+     num_attention_heads: u32,
+-    ???,
+-    layer_norm_eps: f32,
++    intermediate_size: u32,
++    max_position_embeddings: u32,
++    hidden_act: []const u8,
++    // Not in this config.json: the default of `BertConfig`.
++    layer_norm_eps: f32 = 1e-12,
+ 
+     /// How many numbers each attention head works with.
+     pub fn headDim(self: Config) u32 {
+-        return ???;
++        return self.hidden_size / self.num_attention_heads;
+     }
+ };
+ 
+@@ -153,7 +156,7 @@
+     const config_bytes = try readFile(gpa, io, dir ++ "config.json");
+     defer gpa.free(config_bytes);
+ 
+-    const parsed = try std.json.parseFromSlice(Config, gpa, config_bytes, .{});
++    const parsed = try std.json.parseFromSlice(Config, gpa, config_bytes, .{ .ignore_unknown_fields = true });
+     defer parsed.deinit();
+     const config: Config = parsed.value;
+ 
+@@ -184,7 +187,7 @@
+     // The layers are named bert.encoder.layer.0.(...),
+     // bert.encoder.layer.1.(...), and so on.
+     var layers: u32 = 0;
+-    ???;
++    while (view.withPrefix("bert.encoder.layer").withLayer(layers).hasKey("attention")) layers += 1;
+     try stdout.print("  layers in the file: {d}, as announced: {}\n", .{ layers, layers == config.num_hidden_layers });
+     try stdout.flush();
+ }

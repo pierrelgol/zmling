@@ -1,0 +1,341 @@
+--- exercises/21_the_graduation/147_quiz_the_graduation.zig
++++ answers/21_the_graduation/147_quiz_the_graduation.zig
+@@ -140,8 +140,267 @@
+     413, 409, 416, 327, 263, 415, 294, 267, 400, 426,
+ };
+ 
+-// The model, top to bottom, and whatever helps you tell a speech.
+-???
++/// `model_args`, as far as inference needs them.
++const Config = struct {
++    dim: u32,
++    n_layers: u32,
++    n_heads: u32,
++    n_kv_heads: u32,
++    vocab_size: u32,
++};
++
++/// Every key and every value computed so far, for every layer:
++/// {.layer, .k = story_len, .h, .hd}
++const Cache = struct {
++    k: zml.Tensor,
++    v: zml.Tensor,
++};
++
++/// `ModelArgs.norm_eps`: in the source, and nowhere else.
++const norm_eps: f32 = 1e-5;
++
++/// model.py, RMSNorm.forward. x: {.s, .d}, weight: {.d}
++fn rmsNorm(x: zml.Tensor, weight: zml.Tensor) zml.Tensor {
++    return zml.nn.rmsNorm(x, .d, norm_eps).mul(weight.broad(x.shape()));
++}
++
++/// A torch `nn.Linear(bias=False)`: its weight is {out, in}.
++fn linear(view: zml.io.TensorStore.View, name: []const u8) zml.nn.Linear {
++    return .init(view.withPrefix(name).createReplicatedTensor("weight", .{ .dout, .d }), null, .d);
++}
++
++const FeedForward = struct {
++    w1: zml.nn.Linear,
++    w2: zml.nn.Linear,
++    w3: zml.nn.Linear,
++
++    pub fn init(view: zml.io.TensorStore.View) FeedForward {
++        return .{ .w1 = linear(view, "w1"), .w2 = linear(view, "w2"), .w3 = linear(view, "w3") };
++    }
++
++    /// x: {.s, .d} -> {.s, .d}
++    pub fn forward(self: FeedForward, x: zml.Tensor) zml.Tensor {
++        const gate = self.w1.forward(x, .f32).silu();
++        const up = self.w3.forward(x, .f32);
++        return self.w2.forward(gate.mul(up).rename(.{ .dout = .d }), .f32).rename(.{ .dout = .d });
++    }
++};
++
++const Attention = struct {
++    wq: zml.nn.Linear,
++    wk: zml.nn.Linear,
++    wv: zml.nn.Linear,
++    wo: zml.nn.Linear,
++    heads: u32,
++    kv_heads: u32,
++
++    pub fn init(view: zml.io.TensorStore.View, config: Config) Attention {
++        return .{
++            .wq = linear(view, "wq"),
++            .wk = linear(view, "wk"),
++            .wv = linear(view, "wv"),
++            .wo = linear(view, "wo"),
++            .heads = config.n_heads,
++            .kv_heads = config.n_kv_heads,
++        };
++    }
++
++    /// A mask {.q, .k}: 0 where the token at `positions[q]` may look at
++    /// row k of the cache (rows 0 to its own position), -inf elsewhere.
++    fn visible(positions: zml.Tensor, rows: i64) zml.Tensor {
++        const shape: zml.Shape = .init(.{ .q = positions.dim(.s), .k = rows }, .i32);
++        const row = zml.Tensor.arange(.{ .end = rows }, .i32).withTags(.{.k}).broad(shape);
++        const me = positions.rename(.{ .s = .q }).broad(shape);
++        return row.cmp(.LE, me).select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
++    }
++
++    /// h: {.s, .d}, the tokens at positions pos, pos + 1...
++    /// Returns what they heard, {.s, .d}, and the cache with the keys
++    /// and values of layer number `layer` filed.
++    pub fn forward(self: Attention, h: zml.Tensor, pos: zml.Tensor, cache: Cache, layer: usize) struct { zml.Tensor, Cache } {
++        const q = self.wq.forward(h, .f32).splitAxis(.dout, .{ .h = self.heads, .hd = .auto });
++        const k = self.wk.forward(h, .f32).splitAxis(.dout, .{ .h = self.kv_heads, .hd = .auto });
++        const v = self.wv.forward(h, .f32).splitAxis(.dout, .{ .h = self.kv_heads, .hd = .auto });
++
++        const positions = zml.Tensor.arange(.{ .end = h.dim(.s) }, .i32).withTags(.{.s}).add(pos);
++        const layout: zml.nn.RopeOpts = .{ .layout = .interleaved };
++
++        const at = .{ .layer = zml.Tensor.scalar(layer, .i32), .k = pos };
++        const filed: Cache = .{
++            .k = cache.k.dynamicUpdateSlice(at, zml.nn.rope(k, positions, layout).rename(.{ .s = .k })),
++            .v = cache.v.dynamicUpdateSlice(at, v.rename(.{ .s = .k })),
++        };
++
++        const heard = zml.nn.sdpa(
++            zml.nn.rope(q, positions, layout).rename(.{ .s = .q }),
++            filed.k.slice(.layer, .single(@intCast(layer))),
++            filed.v.slice(.layer, .single(@intCast(layer))),
++            .{ .attn_mask = visible(positions, cache.k.dim(.k)) },
++        );
++
++        const merged = heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
++        return .{ self.wo.forward(merged, .f32).rename(.{ .dout = .d }), filed };
++    }
++};
++
++const Block = struct {
++    attention_norm: zml.Tensor,
++    attention: Attention,
++    ffn_norm: zml.Tensor,
++    feed_forward: FeedForward,
++
++    pub fn init(view: zml.io.TensorStore.View, config: Config) Block {
++        return .{
++            .attention_norm = view.withPrefix("attention_norm").createReplicatedTensor("weight", .{.d}),
++            .attention = .init(view.withPrefix("attention"), config),
++            .ffn_norm = view.withPrefix("ffn_norm").createReplicatedTensor("weight", .{.d}),
++            .feed_forward = .init(view.withPrefix("feed_forward")),
++        };
++    }
++
++    pub fn forward(self: Block, x: zml.Tensor, pos: zml.Tensor, cache: Cache, layer: usize) struct { zml.Tensor, Cache } {
++        const heard, const filed = self.attention.forward(rmsNorm(x, self.attention_norm), pos, cache, layer);
++        const h = x.add(heard);
++        return .{ h.add(self.feed_forward.forward(rmsNorm(h, self.ffn_norm))), filed };
++    }
++};
++
++const Llama = struct {
++    tok_embeddings: zml.nn.TokenEmbedding,
++    layers: []Block,
++    norm: zml.Tensor,
++
++    /// The model, with placeholders made from the file. The caller
++    /// frees `layers`.
++    pub fn init(gpa: std.mem.Allocator, view: zml.io.TensorStore.View, config: Config) !Llama {
++        const layers = try gpa.alloc(Block, config.n_layers);
++        for (layers, 0..) |*layer, i| layer.* = .init(view.withPrefix("layers").withLayer(i), config);
++        return .{
++            .tok_embeddings = .{ .weight = view.withPrefix("tok_embeddings").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .layers = layers,
++            .norm = view.withPrefix("norm").createReplicatedTensor("weight", .{.d}),
++        };
++    }
++
++    /// tokens: {.s}, sitting at positions pos, pos + 1...
++    /// Returns the token picked after the last one, {} i32, the cache
++    /// with all of them filed, and the dice.
++    pub fn forward(
++        self: Llama,
++        tokens: zml.Tensor,
++        pos: zml.Tensor,
++        cache: Cache,
++        strategy: zml.nn.SamplingStrategy,
++        rng: zml.Tensor.Rng,
++    ) struct { zml.Tensor, Cache, zml.Tensor.Rng } {
++        var x = self.tok_embeddings.forward(tokens);
++        var filed = cache;
++        for (self.layers, 0..) |layer, i| x, filed = layer.forward(x, pos, filed, i);
++
++        const last = rmsNorm(x.slice(.s, .single(-1)), self.norm);
++        const logits = last.dot(self.tok_embeddings.weight, .d);
++        const next, const new_rng = zml.nn.sampleTokens(logits, strategy, rng);
++        return .{ next, filed, new_rng };
++    }
++};
++
++fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
++    const file = try std.Io.Dir.cwd().openFile(io, path, .{});
++    defer file.close(io);
++    var reader = file.reader(io, &.{});
++    return reader.interface.readAlloc(gpa, try file.length(io));
++}
++
++/// What one speech needs on the device besides the weights.
++const Memory = struct {
++    cache: zml.Bufferized(Cache),
++    rng: zml.Bufferized(zml.Tensor.Rng),
++};
++
++/// One run: `tokens` enter at position `pos`, the next token comes
++/// out, the cache and the dice are replaced by the new ones.
++fn feed(
++    io: std.Io,
++    platform: *zml.Platform,
++    runner: *zml.Exe.Runner,
++    weights: zml.Bufferized(Llama),
++    memory: *Memory,
++    tokens: []const u32,
++    pos: usize,
++) !u32 {
++    var tokens_buffer: zml.Buffer = try .fromBytes(io, platform, .init(.{ .s = tokens.len }, .u32), std.mem.sliceAsBytes(tokens));
++    defer tokens_buffer.deinit();
++    var pos_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(pos)), .i32);
++    defer pos_buffer.deinit();
++
++    var next_buffer: zml.Buffer = undefined;
++    var filed: zml.Bufferized(Cache) = undefined;
++    runner.run(io, .{ weights, tokens_buffer, pos_buffer, memory.cache, memory.rng }, .{ &next_buffer, &filed, &memory.rng }, .{ .wait = true });
++    defer next_buffer.deinit();
++
++    memory.cache.k.deinit();
++    memory.cache.v.deinit();
++    memory.cache = filed;
++
++    return @intCast(try next_buffer.getValue(i32, io));
++}
++
++/// One whole speech: `story_len` tokens, the first ones being `start`.
++fn tell(
++    gpa: std.mem.Allocator,
++    io: std.Io,
++    platform: *zml.Platform,
++    model: Llama,
++    weights: zml.Bufferized(Llama),
++    config: Config,
++    strategy: zml.nn.SamplingStrategy,
++    start: []const u32,
++) ![story_len]u32 {
++    const cache_shape: zml.Shape = .init(.{
++        .layer = config.n_layers,
++        .k = story_len,
++        .h = config.n_kv_heads,
++        .hd = config.dim / config.n_heads,
++    }, .f32);
++    const cache: Cache = .{ .k = .fromShape(cache_shape), .v = .fromShape(cache_shape) };
++    const pos: zml.Tensor = .init(.{}, .i32);
++    const rng: zml.Tensor.Rng = .init();
++
++    var prefill = try platform.compile(gpa, io, model, .forward, .{ zml.Tensor.init(.{ .s = start.len }, .u32), pos, cache, strategy, rng }, .{});
++    defer prefill.deinit();
++    var prefill_runner = try prefill.runner(gpa);
++    defer prefill_runner.deinit(gpa);
++
++    var decode = try platform.compile(gpa, io, model, .forward, .{ zml.Tensor.init(.{ .s = 1 }, .u32), pos, cache, strategy, rng }, .{});
++    defer decode.deinit();
++    var decode_runner = try decode.runner(gpa);
++    defer decode_runner.deinit(gpa);
++
++    // An empty cache, and fresh dice.
++    const zeros = try gpa.alloc(u8, cache_shape.byteSize());
++    defer gpa.free(zeros);
++    @memset(zeros, 0);
++    var memory: Memory = .{
++        .cache = .{
++            .k = try .fromBytes(io, platform, cache_shape, zeros),
++            .v = try .fromBytes(io, platform, cache_shape, zeros),
++        },
++        .rng = try rng.initBuffer(io, platform, seed),
++    };
++    defer memory.cache.k.deinit();
++    defer memory.cache.v.deinit();
++    defer zml.Tensor.Rng.deinitBuffer(&memory.rng);
++
++    var story: [story_len]u32 = @splat(0);
++    @memcpy(story[0..start.len], start);
++
++    story[start.len] = try feed(io, platform, &prefill_runner, weights, &memory, start, 0);
++    var len: usize = start.len + 1;
++    while (len < story_len) : (len += 1) {
++        story[len] = try feed(io, platform, &decode_runner, weights, &memory, story[len - 1 .. len], len - 1);
++    }
++    return story;
++}
+ 
+ pub fn main(init: std.process.Init) !void {
+     const gpa = init.gpa;
+@@ -154,14 +413,63 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // The config, the weights, the tokenizer, the model. Then the three
+-    // speeches.
+-    ???;
++    const config_bytes = try readFile(gpa, io, dir ++ "config.json");
++    defer gpa.free(config_bytes);
++    const parsed = try std.json.parseFromSlice(Config, gpa, config_bytes, .{ .ignore_unknown_fields = true });
++    defer parsed.deinit();
++    const config = parsed.value;
++
++    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, dir ++ "stories260K.safetensors", gpa);
++    defer gpa.free(path);
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++    defer store.deinit();
++
++    const tokenizer_path = try std.Io.Dir.cwd().realPathFileAlloc(io, dir ++ "tok512.pb", gpa);
++    defer gpa.free(tokenizer_path);
++    var tokenizer: zml.tokenizer.Tokenizer = try .fromFile(gpa, io, tokenizer_path);
++    defer tokenizer.deinit();
++    var encoder = try tokenizer.encoder();
++    defer encoder.deinit();
++    var decoder = try tokenizer.decoder();
++    defer decoder.deinit();
++
++    const model: Llama = try .init(gpa, store.view().withPrefix("_orig_mod"), config);
++    defer gpa.free(model.layers);
++
++    var weights = try zml.mem.bufferize(gpa, Llama, &model);
++    defer gpa.free(weights.layers);
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Llama, &weights);
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, Llama, &model, &weights, &store, .{});
++    try loader.await(io);
++
++    // The BOS, then the prompt.
++    var start_buffer: [32]u32 = undefined;
++    const start = start: {
++        const ids = try encoder.encodeAlloc(gpa, prompt);
++        defer gpa.free(ids);
++        start_buffer[0] = bos;
++        @memcpy(start_buffer[1..][0..ids.len], ids);
++        break :start start_buffer[0 .. 1 + ids.len];
++    };
++
++    const ceremony = try tell(gpa, io, platform, model, weights, config, greedy, start);
++    const photograph = try tell(gpa, io, platform, model, weights, config, cold, start);
++    const party = try tell(gpa, io, platform, model, weights, config, warm, start);
++
++    var in_vocabulary = true;
++    for (party) |token| {
++        if (token >= config.vocab_size) in_vocabulary = false;
++    }
++
++    var text = try decoder.decodeAlloc(gpa, &ceremony);
++    defer text.deinit(gpa);
+ 
+     // `ceremony`, `photograph`, `party`: the three speeches, [story_len]u32.
+     // `text`: the first one, decoded. `start`: the BOS and the prompt, []u32.
+-    // `config`: what config.json says. `in_vocabulary`: is every token of
+-    // `party` below `config.vocab_size`?
+     try stdout.print("{s}\n", .{text.items});
+     try stdout.print("The speech is PyTorch's, token for token: {}\n", .{std.mem.eql(u32, &ceremony, &reference_story)});
+     try stdout.print("For the photograph, dice in hand, the same speech again: {}\n", .{std.mem.eql(u32, &photograph, &ceremony)});

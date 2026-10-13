@@ -44,22 +44,32 @@
 // days. Everything compiles. Everything runs. The output has the
 // right shape and the right tags. And Springfield's correction
 // (-4, the pizza oven, remember) is being applied to FRIDAY, in
-// every city.
+// every city:
+//
+//     what Gail meant            what is on air
+//     16   17   15               16   22.5 19
+//     16.5 15.5 17.5             11   15.5 16
+//     30   31   29               26   32.5 29
 //
 // No panic will help you this time: the only symptom is wrong
 // numbers on air. Find the line, and put the 1 where it belongs.
 //
 // Before you do, get yourself a witness. Below `forecast` there
 // is a second ritual, `forecastByRule3`, with nothing in it. It
-// must compute the same forecast WITHOUT any broadcast function:
-// make the column, and let the fine print of exercise 036 do the
-// stretching. (That is habit number two in the list below, and
-// the list explains why this version can't go wrong silently.)
+// computes the same forecast the way its name says: make the
+// column, and let the fine print of exercise 036 do the
+// stretching, with no broadcast function in sight. (That is
+// habit number two in the list below, and the list explains why
+// this version can't go wrong silently. The program compares the
+// witness's numbers, not its methods: a `broad` in there would
+// be your secret, and one more place for today's bug to hide.)
 //
 // `main` compares the two results on its last line, but the
 // witness was never called to the stand: compiling it and
 // running it is left to you, right next to the lines that do it
-// for `forecast`.
+// for `forecast`. Run the program once with the witness in place
+// and the bug still there: the last line says `false`. That is
+// what a second opinion is for.
 //
 // Three habits that keep you out of this hole:
 //

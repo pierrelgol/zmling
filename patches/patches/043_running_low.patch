@@ -1,6 +1,6 @@
 --- exercises/06_reduction_kitchen/043_running_low.zig
 +++ answers/06_reduction_kitchen/043_running_low.zig
-@@ -72,18 +72,18 @@
+@@ -74,18 +74,18 @@
  
  /// Butter in the fridge after each hour, in kg: {hour=8}.
  fn stock(log: zml.Tensor) zml.Tensor {
@@ -22,8 +22,8 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -126,7 +126,7 @@
-     try stdout.print("\n", .{});
+@@ -130,7 +130,7 @@
+     try stdout.print("Chef Odile reads a {f} and a {f}.\n", .{ low.shape(), worst.shape() });
  
      const lowest_kg = try low.getValue(f32, io);
 -    const worst_hour = try worst.getValue(???, io);

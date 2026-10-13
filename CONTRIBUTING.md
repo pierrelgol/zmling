@@ -72,6 +72,10 @@ This is the authoring guide. Read `exercises/01_shape_shifters/` and
     by chapter 12 they write it from memory. Quizzes are mostly blank below the lesson.
   - Ch 13-16: the learner writes struct fields, `init` and `forward` methods and most of `main`.
     The last quizzes are close to a whole program written by hand.
+  - Ch 17-21 (porting real models): the learner ports a published checkpoint. They write the
+    `Config`, the structs, `init`, `forward` and most of `main`; the broken spot is often a
+    *silent* one (the program runs and prints the wrong thing). Every answer is checked against
+    the PyTorch reference, and the last quiz is a whole port.
 - Build on earlier work. From chapter 03 on, at least a third of the exercises must need
   something from an *earlier chapter* that this exercise does not re-explain (say where it was
   taught: "you wrote this in exercise 44, bring it back"). Longer exercises have several parts,
@@ -124,3 +128,35 @@ Never write an API name from memory.
   `{any}` on an array prints `{ 1, 2, 3 }`. Don't print a `zml.Slice` with `{f}` (it has a pointer).
 - `Slice.items(T)` does not check `T` against the dtype.
 - `init.gpa` is a leak-checking allocator in debug builds: deinit everything.
+
+## Porting chapters (17-21): assets and verified facts
+
+- Only tiny, real, ungated checkpoints, committed in the chapter directory (MNIST comes from
+  ZML's own `@mnist` Bazel repo). No downloads at run time, no Python for learners.
+- Each chapter has a `make_fixtures.py`, run by authors with `uv run --with torch ...` (see its
+  docstring). It pins the upstream revision, converts the checkpoint to safetensors, and dumps
+  the reference activations as `{module}.in` / `{module}.out`. Keep fixtures small (KB).
+- Print only what cannot drift between machines: text, token ids, top-1 words, booleans such as
+  `matches PyTorch: true`. Never raw activations or logits.
+- `zml.testing.expectClose(io, want, got, .{})` works from `main`. On mismatch it prints a report
+  on stderr and returns `error.TestUnexpectedResult`.
+- The runner hides stderr when a program exits 0, so a learner never sees that report from a
+  program that "passes". The debugging exercises (136-140) therefore print each verdict on stdout
+  *and* stderr, end with `std.process.exit(1)` when a layer diverges, and declare
+  `pub const std_options = .{ .log_level = .err }` to keep `warning(pjrt)` lines out of the way.
+  The healthy answer still exits 0 and is checked on stdout like every other exercise.
+- The default tolerances of `expectClose` are loose for one layer: exact vs tanh GELU, or a wrong
+  LayerNorm eps, pass them. Exercises that must catch those use
+  `.{ .absolute_tolerance = 1e-5, .relative_tolerance = 1e-4 }`.
+- `Decoder.reset()` does not compile at the pinned commit, and decoders keep state between
+  texts: make a new decoder for each text.
+- `zml.Buffer.deinitAll(T, &buffers)` wants the *model* type and a flat struct. Passing
+  `zml.Bufferized(T)` segfaults the Zig compiler without a message. For a model holding slices
+  of layers: `zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(T, &buffers)`, then free the
+  slices `bufferize` allocated.
+- `zml.tokenizer.Tokenizer.fromBytes` reads a HuggingFace `tokenizer.json` (BPE and WordPiece).
+  The encoder does not add special tokens ([CLS], [SEP], BOS): the port adds them.
+- `Tensor.gelu` is the tanh approximation (HF `gelu_new`). The exact one is written with `erf`.
+- `zml.nn.sdpa` divides by `sqrt(head_dim)` unless `.scale` is given, and accepts fewer
+  key/value heads than query heads. `zml.nn.rope` defaults to the `.real_im_pass` layout (HF
+  `rotate_half`); llama2.c and Meta's code need `.interleaved`.

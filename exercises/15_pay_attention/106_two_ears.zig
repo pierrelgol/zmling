@@ -27,6 +27,10 @@
 // with `.auto` for "you do the division", and nothing moved or
 // copied. The same numbers get a second axis.
 //
+//     Paca, one vector of 4:      ( 2, 0, 2, 0 )
+//     Paca, 2 heads of 2:         ( 2, 0 ) ( 2, 0 )
+//                                  grass    drama
+//
 // And then... you call `sdpa`, exactly as before. It was
 // expecting `.h` all along. In its `dot` calls, `.h` is present
 // on both sides and is not the contracted axis, so it is a

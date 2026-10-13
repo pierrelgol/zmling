@@ -1,6 +1,6 @@
 --- exercises/01_shape_shifters/006_repacking.zig
 +++ answers/01_shape_shifters/006_repacking.zig
-@@ -48,22 +48,22 @@
+@@ -62,22 +62,22 @@
      const plates = zml.Shape.init(.{ 10, 12 }, .u16);
  
      // Stacks of 8, as many as it takes. Let ZML do the division.

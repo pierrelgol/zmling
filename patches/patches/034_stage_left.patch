@@ -1,6 +1,6 @@
 --- exercises/05_broadcast_news/034_stage_left.zig
 +++ answers/05_broadcast_news/034_stage_left.zig
-@@ -94,19 +94,19 @@
+@@ -95,19 +95,19 @@
      const table = viewers.shape();
  
      // One price per show: shows are the first axis.
@@ -24,7 +24,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -123,8 +123,8 @@
+@@ -124,8 +124,8 @@
      // One placeholder per parameter of `revenue`. No tags: Kevin.
      const viewers: zml.Tensor = .init(.{ 3, 4 }, .f32);
      const price: zml.Tensor = .init(.{3}, .f32);

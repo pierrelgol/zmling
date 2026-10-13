@@ -17,10 +17,15 @@
 //
 // compiles perfectly well as Zig (it's just a method call!) and
 // then blows up when it runs. This exercise has that panic in
-// store for you. The top of the stack trace says something like
+// store for you. It looks like this:
 //
+//     panic: attempt to use null value
 //     ... Compiler.zig ... in current
 //     ... tensor.zig   ... in add
+//
+// (Exercise 002 taught you to walk down to the first line that
+// names your file. Here that line is the ritual itself, which is
+// innocent. Keep walking: the next one is whoever called it.)
 //
 // "The current compiler" is the thing that doesn't exist. Learn
 // to recognize this one: sooner or later everybody calls a

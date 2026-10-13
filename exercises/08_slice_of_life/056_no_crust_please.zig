@@ -6,18 +6,20 @@
 //
 // The pan is a tensor {rows=4,cols=6}, and "no crust" is a cut
 // along TWO axes: drop the first and last row, and the first
-// and last column. You already know how to do it by chaining:
+// and last column. You already know how to cut along two axes
+// by chaining. Here is the top left quarter of the pan, which
+// Nonna puts aside for the staff:
 //
-//     pan.slice(.rows, .{ .start = 1, .end = -1 })
-//        .slice(.cols, .{ .start = 1, .end = -1 })
+//     pan.slice(.rows, .{ .end = 2 })
+//        .slice(.cols, .{ .end = 3 })
 //
 // That works and there is nothing wrong with it. When several
 // axes are involved there is also a plural form that does all
 // the cuts in one operation:
 //
 //     pan.slices(.{ .rows, .cols }, &.{
-//         .{ .start = 1, .end = -1 },
-//         .{ .start = 1, .end = -1 },
+//         .{ .end = 2 },
+//         .{ .end = 3 },
 //     })
 //
 // The signature:

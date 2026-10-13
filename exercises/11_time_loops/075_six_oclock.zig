@@ -54,7 +54,12 @@
 // compile another Exe.
 //
 // Phil's mood halves with every repeated day (`x.scale(0.5)`,
-// you know that one). Three things to do:
+// you know that one). Compiled for three days, the Exe is three
+// multiplications in a row, and not a trace of a loop:
+//
+//     80  ->  40  ->  20  ->  10
+//
+// Three things to do:
 //
 //   1. Write `relive`: one trip per day, and every trip rings
 //      the alarm (`alarm_rings += 1`) and halves the mood.
@@ -66,8 +71,10 @@
 //      yours to write.
 //
 // `alarm_rings` is an ordinary Zig global, counting how often
-// the loop body really runs. Look at what it says after the Exe
-// has been called four times. That number is this exercise.
+// the loop body really runs. Before you run anything, place your
+// bet: three days per call, four calls. Twelve rings? Then look
+// at what it says after the Exe has been called four times. That
+// number is this exercise.
 //
 const std = @import("std");
 const zml = @import("zml");

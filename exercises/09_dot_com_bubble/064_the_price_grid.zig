@@ -54,8 +54,15 @@
 // dollars would that be? One number per tier. That is the grid,
 // with its .products axis contracted against the stock: an
 // `outer` followed by a `dot`, in a function called
-// `revenuePerTier` that is still empty. Nobody compiled it or
-// ran it: `main` expects an Exe and a Buffer called `sold_out`.
+// `revenuePerTier` that is still empty. At list price, with the
+// stock of `main`: 5*100 + 20*10 + 1000*1 = 1700 dollars, and
+// the other tiers likewise. Nobody compiled it or ran it:
+// `main` has a hole for its Exe (any name will do) and one for
+// its result, a Buffer that the print calls `sold_out`.
+//
+// Mind the third placeholder while you are down there. `stock`
+// is a list over the PRODUCTS, just like `prices`, and `dot`
+// has only one way of finding that out.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -92,6 +99,7 @@ pub fn main(init: std.process.Init) !void {
     defer exe.deinit();
 
     // Marketing's follow-up question needs an Exe of its own.
+    ???;
 
     var prices_buffer: zml.Buffer = try .fromBytes(io, platform, prices.shape(), std.mem.sliceAsBytes(&[_]f32{ 5, 20, 1000 }));
     defer prices_buffer.deinit();
@@ -105,6 +113,7 @@ pub fn main(init: std.process.Init) !void {
     defer result.deinit();
 
     // ...and an answer: a Buffer called `sold_out`.
+    ???;
 
     try stdout.print("price grid {f}:\n", .{result.shape()});
     for (try result.getValue([3][3]f32, io)) |row| {

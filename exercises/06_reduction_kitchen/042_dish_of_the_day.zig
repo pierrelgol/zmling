@@ -46,6 +46,8 @@
 // you are curious, `test argMax` in zml/zml/tensor.zig does it,
 // with `exe.runner`). For today the way out is easier: you
 // rarely want both fields anyway. Return the one you want.
+// (The ritual then hands back a Tensor and not an `ArgMaxRes`
+// any more: its return type is yours to change, too.)
 //
 // La Grande Réduction puts a "dish of the day" on the blackboard:
 // the best-selling dish of the same weekday last week. Chef
@@ -61,10 +63,14 @@
 // name ("duck, 16 sold" makes the neighbours order duck). That
 // is the other half of the same answer, so it gets a ritual of
 // its own, `winningSales`: a plain list again, one entry per
-// day. The ritual is empty, and although its Exe is compiled,
-// nobody runs it: `main` reads a Buffer called `sold` that
-// doesn't exist yet. (Zig refuses to build anything while those
-// two holes are open, so `eval`'s complaint comes after them.)
+// day. (The `.values` of an `argMax` and a plain `max` are the
+// same numbers, the lesson said so: take whichever you prefer.
+// Both leave the same size 1 axis behind, and the first line of
+// the output shows the shape of both lists.) The ritual is
+// empty, and although its Exe is compiled, nobody runs it:
+// `main` reads a Buffer called `sold` that doesn't exist yet.
+// (Zig refuses to build anything while those two holes are
+// open, so `eval`'s complaint comes after them.)
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -119,7 +125,7 @@ pub fn main(init: std.process.Init) !void {
     const winners = try result.getValue([5]i32, io);
     const portions = try sold.getValue([5]f32, io);
 
-    try stdout.print("The blackboard is a {f}.\n", .{result.shape()});
+    try stdout.print("The blackboard is a {f}, with a {f} of portions.\n", .{ result.shape(), sold.shape() });
     for (days, winners, portions) |day, winner, n| {
         try stdout.print("{s}: {s}, {d} sold\n", .{ day, dishes[@intCast(winner)], n });
     }

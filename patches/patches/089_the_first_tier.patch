@@ -1,6 +1,6 @@
 --- exercises/13_layer_cake/089_the_first_tier.zig
 +++ answers/13_layer_cake/089_the_first_tier.zig
-@@ -126,7 +126,8 @@
+@@ -146,7 +146,8 @@
  /// The tier, by hand: {.cake, .d} through {.dout, .d}, plus the
  /// bias {.dout}. Returns {.cake, .dout}.
  fn byHand(x: zml.Tensor, weight: zml.Tensor, bias: zml.Tensor) zml.Tensor {
@@ -10,7 +10,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -144,16 +145,18 @@
+@@ -164,17 +165,19 @@
      // axis that `forward` will contract.
      const weight: zml.Tensor = .init(.{ .dout = 2, .d = 3 }, .f32);
      const bias: zml.Tensor = .init(.{ .dout = 2 }, .f32);
@@ -18,6 +18,7 @@
 +    const tier: zml.nn.Linear = .init(weight, bias, .d);
  
      // Three cakes, three measurements each: flour, sugar, butter.
+     // A tier only accepts labeled goods: see point 1 of the lesson.
 -    const cakes: zml.Tensor = .init(.{ 3, 3 }, .f32);
 +    const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 3 }, .f32);
  
@@ -33,7 +34,7 @@
  
      var weight_buffer: zml.Buffer = try .fromBytes(io, platform, weight.shape(), std.mem.sliceAsBytes(&[2][3]f32{
          .{ 0, 2, 0.5 }, // sweetness: sugar counts double, butter helps
-@@ -168,6 +171,7 @@
+@@ -189,6 +192,7 @@
      const tier_buffers: zml.Bufferized(zml.nn.Linear) = .{
          .weight = weight_buffer,
          .bias = bias_buffer,
@@ -41,7 +42,7 @@
      };
  
      var cakes_buffer: zml.Buffer = try .fromBytes(io, platform, cakes.shape(), std.mem.sliceAsBytes(&[3][3]f32{
-@@ -181,7 +185,7 @@
+@@ -202,7 +206,7 @@
      defer result.deinit();
  
      // The hand-made tier takes its three Buffers one by one.

@@ -1,6 +1,6 @@
 --- exercises/12_the_exe_files/083_the_stakeout.zig
 +++ answers/12_the_exe_files/083_the_stakeout.zig
-@@ -81,7 +81,10 @@
+@@ -105,7 +105,10 @@
  };
  
  fn listen(tape: zml.Tensor, threshold: zml.Tensor) Report {
@@ -12,7 +12,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -101,11 +104,11 @@
+@@ -125,11 +128,11 @@
      var exe = try platform.compileFn(gpa, io, listen, .{ tape, threshold }, .{});
      defer exe.deinit();
  
@@ -26,12 +26,12 @@
      defer runner.deinit(gpa);
  
      const nights = [3][6]f32{
-@@ -119,10 +122,9 @@
+@@ -143,10 +146,9 @@
          defer tape_buffer.deinit();
  
          var report: zml.Bufferized(Report) = undefined;
 -        runner.run(io, ???, ???, ???);
--        // What the call put in `report` is yours now.
+-        // What the call put in `report` is yours now. All of it, once.
 -        defer ???;
 -        defer ???;
 +        runner.run(io, .{ tape_buffer, threshold_buffer }, .{&report}, .{ .wait = true });

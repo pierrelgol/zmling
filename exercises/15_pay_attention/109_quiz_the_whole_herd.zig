@@ -55,22 +55,24 @@
 //
 //  - the model: a `SelfAttention` value whose Linears hold
 //    placeholders, `{.dout = 4, .d = 4}` f32, no bias, with 2
-//    heads (chapter 13);
+//    heads (chapter 13). Four Linears, four placeholders: a
+//    ghost can only be used once (exercise 15);
 //  - a placeholder for the herd, `{.s = 4, .d = 4}` f32, and
 //    the Exe of `forward`;
 //  - the Buffers. The numbers are below, hand-made, so that you
 //    can follow a llama through the layer with a pencil if you
 //    feel brave. Four weights, gathered in a
 //    `zml.Bufferized(SelfAttention)` (exercise 94: only the
-//    Tensors are in there), and the herd;
+//    Tensors are in there, and each Linear still wants a
+//    `null` for its `quantization`, exercise 89), and the herd;
 //  - THREE rounds of gossip. The output of a round has the
 //    shape of its input, so nothing stops you from feeding it
 //    back in: what the herd is after round one is what goes
 //    into round two. One Exe, called three times, and after
-//    each round a call to `printHerd`. That is three layers
-//    stacked (sharing their weights), driven from `main`. Mind
-//    the Buffers: each round makes a new one, and each of them
-//    has to be freed exactly once.
+//    each round a call to `printHerd` (rounds 1, 2 and 3).
+//    That is three layers stacked (sharing their weights),
+//    driven from `main`. Mind the Buffers: each round makes a
+//    new one, and each of them has to be freed exactly once.
 //
 const std = @import("std");
 const zml = @import("zml");

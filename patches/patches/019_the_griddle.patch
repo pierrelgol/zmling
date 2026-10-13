@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/019_the_griddle.zig
 +++ answers/03_arithmetic_diner/019_the_griddle.zig
-@@ -67,17 +67,17 @@
+@@ -80,17 +80,17 @@
  
  /// Distance of each burner from 350 degrees, never negative.
  fn offBy(burners: zml.Tensor) zml.Tensor {
@@ -21,10 +21,10 @@
  }
  
  /// Compiles `recipe` for four f32, runs it on `ingredients`.
-@@ -94,14 +94,14 @@
-     defer exe.deinit();
- 
-     // The ingredients, on the device, in the shape of `x`.
+@@ -109,14 +109,14 @@
+     // The ingredients, on the device, in the shape of `x`. (A
+     // parameter is a constant like any other: Zig lets you take
+     // its address.)
 -    var input: zml.Buffer = ???;
 +    var input: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&ingredients));
      defer input.deinit();

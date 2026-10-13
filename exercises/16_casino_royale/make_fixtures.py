@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes house.safetensors, the weights of the course finale (exercise 114).
+"""Writes house.safetensors, the weights of the finale of chapter 16 (exercise 114).
 
 Usage:  python3 make_fixtures.py     (from any directory)
 

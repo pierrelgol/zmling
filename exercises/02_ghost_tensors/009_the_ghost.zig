@@ -46,6 +46,10 @@
 //     ghost.rank()    ghost.count()    ghost.byteSize()
 //     ghost.dim(ax)   ghost.dims()     ghost.axis(ax)
 //
+// Print one with `{f}` and the outline is all you get:
+//
+//     try stdout.print("{f}", .{ghost});   -> Tensor({13,7,f32})
+//
 // Madame Zelda hands you the floor plan. "Thirteen rooms, seven
 // candles each. Summon me something that fits. And something
 // small for the cellar, while you're at it."

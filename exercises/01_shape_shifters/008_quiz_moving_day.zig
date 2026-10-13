@@ -25,23 +25,30 @@
 //      everything to 32-bit floats. How heavy is the archive now?
 //
 //   4. The preview wall shows one tiny grayscale thumbnail per
-//      photo: no channel axis at all, 48 by 64.
+//      photo. Start from the floats of step 3: no channel axis at
+//      all any more, and 48 by 64 instead of 480 by 640.
 //
 //   5. For the filing cabinet, each thumbnail is flattened into a
-//      single row of pixels: rank 2, tagged .n and .pixels. Don't
-//      compute 48 * 64 yourself.
+//      single row of pixels: rank 2, tagged .n and .pixels. There
+//      are still 32 of them. Don't compute 48 * 64 yourself.
 //
 //   6. The invoice has one line per photo: rank 1, tagged .n.
 //      Don't type 32 again, ask the cabinet for the size of its
-//      .n axis. Amounts are stored as whatever DataType matches
-//      Zig's `u16`. Don't type that one either: compute it.
+//      .n axis. (A size does not have to be a literal: any
+//      integer value will do.) Amounts are stored as whatever
+//      DataType matches Zig's `u16`. Don't type that one either:
+//      compute it.
 //
 //   7. The grand total is a single 64-bit float. One number, no
 //      box around it.
 //
 // No hand-holding this time: the print statements are given, and
-// every line with a number above it is yours to write. Everything
-// you need is in exercises 001 to 007.
+// every line with a number above it is yours to write. Each step
+// starts from the result of the one before it, except 1, 6 and 7,
+// which are brand new shapes (6 borrows one size from the
+// cabinet, nothing else). Everything you need is in exercises
+// 001 to 007, and when the output is off, the expected one shows
+// you which step to look at.
 //
 const std = @import("std");
 const zml = @import("zml");

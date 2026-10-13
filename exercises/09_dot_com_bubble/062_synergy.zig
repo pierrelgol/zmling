@@ -23,9 +23,11 @@
 //                                             -> {days=3}
 //
 // For each day, the dot product of that day's row with the
-// price list. Notice what we did NOT have to say: that
-// .products is the last axis of `orders`. It could be the first,
-// or the fifth. The tag finds it.
+// price list. Day 1 in `main` sold 10 Pet Rocks at $5 and 2
+// Deluxe Rocks at $20: 10*5 + 2*20 = 90 dollars. Notice what we
+// did NOT have to say: that .products is the last axis of
+// `orders`. It could be the first, or the fifth. The tag finds
+// it.
 //
 // Matrix times matrix:
 //
@@ -60,11 +62,16 @@
 //
 // And a third report, for Chad's eyes only: which day was the
 // BEST day, in dollars? That is the first report followed by
-// something you did in the kitchen (exercise 42). It returns
-// one number, 0, 1 or 2: a position along .days, with no axis
-// left around it. Chad didn't write that one, and he didn't
-// compile it or run it either: `main` has a hole where
-// `best_exe` and the Buffer `best` should be.
+// something you did in the kitchen (exercise 42). A ritual is a
+// plain Zig function, so `bestDay` may simply CALL
+// `dailyRevenue` and carry on with what it returns: tracing
+// records the operations of both. It returns one number, 0, 1
+// or 2: a position along .days, an .i32 with no axis left
+// around it. Chad didn't write that one, and he didn't compile
+// it or run it either. `main` has two holes: one where
+// `best_exe` should be compiled, and one where the Buffer
+// `best` should come out of it. It eats the same two inputs as
+// the first report.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -105,6 +112,7 @@ pub fn main(init: std.process.Init) !void {
     defer parts_exe.deinit();
 
     // Nobody compiled the third report: `bestDay`, into `best_exe`.
+    ???;
 
     // Units ordered: Pet Rock, Deluxe Rock, Family Pack, Enterprise Rock.
     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[3][4]f32{
@@ -130,6 +138,7 @@ pub fn main(init: std.process.Init) !void {
     defer parts.deinit();
 
     // ...and nobody ran it. The last print reads a Buffer called `best`.
+    ???;
 
     try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([3]f32, io) });
     try stdout.print("parts {f}:\n", .{parts.shape()});

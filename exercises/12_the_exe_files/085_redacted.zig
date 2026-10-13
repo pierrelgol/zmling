@@ -16,16 +16,18 @@
 //
 // You know from chapter 11 what happens to a Zig value during
 // tracing: it is read once, and what it caused is frozen into
-// the graph.
+// the graph. A model's settings come in two flavours of that.
 //
-//     pub fn forward(self: Polygraph, x: zml.Tensor) zml.Tensor {
-//         var score = ...the layer you know...;
-//         if (self.paranoid) score = score.scale(2);
-//         return score.cmp(.GT, zml.Tensor.scalar(self.threshold, .f32));
-//     }
+//     if (self.paranoid) ...
 //
-// `self.paranoid` is a Zig `if`: the doubling is in the Exe, or
-// it isn't. `self.threshold` becomes a constant of the graph.
+// is a Zig `if` (exercise 076): whatever it guards is in the
+// Exe, or it isn't.
+//
+//     zml.Tensor.scalar(self.threshold, .f32)
+//
+// turns the f32 into a constant of the graph: a rank-0 tensor,
+// ready to be compared with another f32 tensor, and 5 forever.
+//
 // Neither is an input. The Exe of a Polygraph has 3 slots:
 // weight, bias, x.
 //
@@ -41,7 +43,10 @@
 // Buffer }`. Two fields. The settings are redacted: they belong
 // to trace time, the Bufferized struct belongs to run time, and
 // the two never meet. Try to give it a `.threshold` and Zig will
-// tell you there is no such field.
+// tell you there is no such field. (It will call the struct by
+// its birth name, something with `meta.MapRestrict(tensor.Tensor,
+// buffer.Buffer)` in it. That is the machine `Bufferized` is
+// built with: map every Tensor to a Buffer, drop the rest.)
 //
 // A pleasant consequence: models that differ only in their
 // settings have the SAME Bufferized type, and can share the same
@@ -71,6 +76,11 @@
 //    with a single output this time: the weight is {d=3}, the
 //    bias a scalar. In paranoid mode the score counts double.
 //    The answer is one bool: is the score above the threshold?
+//
+//    In numbers: the weights are { 1, 2, 0.5 } and the bias -1.
+//    The man who "fell asleep in a field" states { 2, 1, 0 },
+//    which scores 1*2 + 2*1 + 0.5*0 - 1 = 3. Under 5, so Scally
+//    lets him go. Molder's machine makes that a 6.
 //
 // 2. Molder's own polygraph isn't set up like Molder at all.
 //

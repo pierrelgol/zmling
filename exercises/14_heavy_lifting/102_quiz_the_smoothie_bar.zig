@@ -53,6 +53,24 @@
 // the "weight" and (if there is one!) the "bias" under a view,
 // and something that loads a whole Gym from the store.
 //
+// Notes from Denise, who has watched people get this wrong:
+//
+//  - the three blenders are three FIELDS of the Blendtron, one
+//    per layer number. Tempting as it is, do not make them an
+//    array `[3]zml.nn.Linear`: `zml.mem.bufferize` does not walk
+//    through arrays (in zml/mem.zig they end up in a branch
+//    marked `unreachable`, and it means it);
+//  - a `forward` may take several Tensors. They are listed in
+//    the same order three times: in its signature, in the tuple
+//    given to `platform.compile`, and (after the weights) in
+//    the tuple given to the runner;
+//  - only ONE struct needs to know how to load itself: the one
+//    at the top. `bufferize` and the Loader walk down the whole
+//    tree, Coach and Blendtron included;
+//  - build it in the order of the tree, leaves first: `linear`,
+//    `Coach` (you have it: exercise 101), `Blendtron`, `Gym`,
+//    and only then `main`.
+//
 // Everything you need, you have used in this chapter or the one
 // before:
 //
@@ -66,8 +84,9 @@
 //     platform.compile            shapes are enough
 //     exe.runner, runner.run      weights first, then the inputs;
 //                                 two outputs do not `eval`
-//     zml.Buffer.deinitAll        a flat struct of Buffers, freed
-//                                 at once (optional ones included)
+//     zml.Buffer.deinitAll        a struct of Buffers, freed at
+//                                 once (nested structs and
+//                                 optional Buffers included)
 //
 // The path of the file, the members, and the printing are given.
 // The rest of the page is blank, and it is yours.

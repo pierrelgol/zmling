@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/078_piano_lessons.zig
 +++ answers/11_time_loops/078_piano_lessons.zig
-@@ -118,23 +118,29 @@
+@@ -127,23 +127,29 @@
      /// Keep going as long as there are days left.
      pub fn cond(self: Practice, state: State) zml.Tensor {
          _ = self;
@@ -35,7 +35,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -158,19 +164,33 @@
+@@ -167,19 +173,33 @@
          var days_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
          defer days_buffer.deinit();
  

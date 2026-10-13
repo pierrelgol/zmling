@@ -1,0 +1,63 @@
+--- exercises/19_once_upon_a_time/129_page_numbers.zig
++++ answers/19_once_upon_a_time/129_page_numbers.zig
+@@ -121,16 +121,16 @@
+ 
+ const prompt = "Once upon a time, there was a little dragon";
+ 
+-/// `bos_token_id` in config.json.
+-const bos_token_id: u32 = 50256;
+-
+ const Embeddings = struct {
+     wte: zml.nn.TokenEmbedding,
+     wpe: zml.Tensor,
+ 
+     /// `view` must stand on "transformer.".
+     pub fn init(view: zml.io.TensorStore.View) Embeddings {
+-        return ???;
++        return .{
++            .wte = .{ .weight = view.withPrefix("wte").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .wpe = view.withPrefix("wpe").createReplicatedTensor("weight", .{ .pos, .d }),
++        };
+     }
+ 
+     /// ids: {.s} i32 -> one vector per token: {.s, .d}
+@@ -140,12 +140,12 @@
+ 
+     /// ids: {.s} i32 -> one vector per position: {.s, .d}
+     pub fn positions(self: Embeddings, ids: zml.Tensor) zml.Tensor {
+-        return ???;
++        return self.wpe.slice(.pos, .{ .end = ids.dim(.s) }).rename(.{ .pos = .s });
+     }
+ 
+     /// ids: {.s} i32 -> what the first block receives: {.s, .d}
+     pub fn forward(self: Embeddings, ids: zml.Tensor) zml.Tensor {
+-        return ???;
++        return self.tokens(ids).add(self.positions(ids));
+     }
+ };
+ 
+@@ -213,8 +213,6 @@
+     defer ids.deinit(gpa);
+     const encoded = try encoder.encodeAlloc(gpa, prompt);
+     defer gpa.free(encoded);
+-    // Every text begins with the beginning-of-sequence token.
+-    try ids.append(gpa, bos_token_id);
+     try ids.appendSlice(gpa, encoded);
+ 
+     try stdout.print("\"{s}\"\n", .{prompt});
+@@ -267,9 +265,12 @@
+     }
+ 
+     {
+-        // `got`: the model's `forward` on the ids. `want`: the
+-        // reference tensor "transformer.drop.in".
+-        ???;
++        var exe = try platform.compile(gpa, io, model, .forward, .{ids_tensor}, .{});
++        defer exe.deinit();
++        var got: zml.Buffer = try exe.eval(gpa, io, .{ weights, ids_buffer });
++        defer got.deinit();
++        var want = try bufferFromStore(gpa, io, platform, &reference, "transformer.drop.in");
++        defer want.deinit();
+         try stdout.print("what block 0 receives matches PyTorch: {}\n", .{matches(io, want, got)});
+     }
+     try stdout.flush();

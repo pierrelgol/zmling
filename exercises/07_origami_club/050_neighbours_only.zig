@@ -62,11 +62,19 @@
 // check your neighbours.
 //
 // Fill in the blanks, then run the exercise to see it. Coach
-// has a pile of 2 layers of paper and three requests:
+// has a pile of 2 layers of paper, squares numbered 0 to 23,
+//
+//     layer 0     0  1  2  3      layer 1    12 13 14 15
+//                 4  5  6  7                 16 17 18 19
+//                 8  9 10 11                 20 21 22 23
+//
+// and three requests:
 //
 //   - `longStrips`: for each row, ONE long strip that runs
 //     through layer 0 and continues into layer 1:
-//     {rows=3,strip=8}. This is the one that dies.
+//     {rows=3,strip=8}. Row 0 reads 0, 1, 2, 3, 12, 13, 14, 15.
+//     This is the one that dies. Once you have watched it die,
+//     bring it back with either recipe from above.
 //
 //   - `columnStrips`: for each COLUMN, one strip that goes down
 //     the rows and, at every row, takes the square of layer 0

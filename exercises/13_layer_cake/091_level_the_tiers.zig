@@ -32,6 +32,20 @@
 // `bias` sets the mean it wants. Both are learned, both hold one
 // number per element of the last axis.
 //
+// On a napkin, with the first cake of today, tiers of 2, 4, 4
+// and 6 cm, leveled to a spread of 2 around a mean of 10:
+//
+//     x                  2       4       4       6
+//     mean               4
+//     x - mean          -2       0       0       2
+//     variance          (4 + 0 + 0 + 4) / 4  =  2
+//     / sqrt(variance)  -1.414   0       0       1.414
+//     * 2 + 10           7.172  10      10      12.828
+//
+// The shape of the cake survives (short, middle, middle, tall),
+// its size does not: (20, 40, 40, 60) would give the very same
+// last line.
+//
 // Things the source code tells you and the name does not:
 //
 //  - There is no `init`. It's a plain struct: `.{ .weight = w,
@@ -60,11 +74,22 @@
 //     bench is set to "do nothing in particular", somebody
 //     thought eps was optional, and nobody made its Buffers.
 //
-//  2. BY HAND. Write `levelByHand`: the formula above, with the
-//     tools of the reduction kitchen (`mean` is from exercise
-//     041; remember what it does to the axis it reduces) and of
-//     the diner (chapter 3). Use 1e-5 for eps. Then compile it
-//     and run it: it is a plain function of three tensors.
+//  2. BY HAND. Write `levelByHand`: the formula above, line by
+//     line like the napkin, with the tools of the reduction
+//     kitchen and of the diner (chapter 3). Use 1e-5 for eps.
+//     Two things to remember from older kitchens:
+//
+//      - `mean` (exercise 041) keeps the axis it reduces, with
+//        a size of 1. That is what you want here: `{cake=3,d=1}`
+//        on the right of a `sub` or a `div` stretches along `.d`
+//        by itself (exercise 036);
+//      - `weight` and `bias` are `{d=4}`, one axis short of
+//        `{cake=3,d=4}`. Those do not stretch by themselves:
+//        `broad` them to the shape of x (exercise 033), as
+//        Linear did with its bias.
+//
+//     Then compile it and run it: it is a plain function of
+//     three tensors.
 //
 // Same numbers on both sides, or somebody is not going home.
 //

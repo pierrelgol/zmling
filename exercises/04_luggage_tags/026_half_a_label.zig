@@ -61,7 +61,8 @@
 //
 // Kevin filled in the rest of the paperwork from memory. His
 // memory has two holes in it, and each comes with a panic you
-// have just read about.
+// have read about: the first one in the previous exercise (count
+// the axes, count the tags), the second one a few lines up.
 //
 // To finish, three more deliveries go through the same
 // `labelScan`: a single scan, a pair, and a month of weeks. For
@@ -72,10 +73,13 @@
 const std = @import("std");
 const zml = @import("zml");
 
-/// Labels the last two axes of any scan: .bags, then .cm.
+/// Labels the last two axes of any scan: .bags, then .cm. On
+/// {7,2,5,3,f32} that is {7,2,bags=5,cm=3,f32}; on {5,3,f32} it
+/// is {bags=5,cm=3,f32}.
 fn labelScan(scan: zml.Tensor) zml.Tensor {
     return ???;
 }
+
 pub fn main(init: std.process.Init) !void {
     var buffer: [4096]u8 = undefined;
     var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);

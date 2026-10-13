@@ -76,7 +76,9 @@ pub fn main(init: std.process.Init) !void {
     defer platform.deinit(gpa, io);
 
     // Readings from the cellar, the library, the attic, and
-    // that one corner of the kitchen.
+    // that one corner of the kitchen. (-40 is the one temperature
+    // that reads the same on both scales. Handy for checking
+    // your ritual. Less handy for the cellar.)
     const readings = [_]f32{ -40, 0, 10, 37 };
 
     // PART 1
@@ -120,7 +122,8 @@ pub fn main(init: std.process.Init) !void {
     // All yours, defers included: two placeholders, a second Exe
     // compiled with `shift`, and its result for the two Buffers
     // you already hold. The lines below expect that result to be
-    // a zml.Buffer called `shifted`.
+    // a zml.Buffer called `shifted`. Every other name is yours to
+    // choose.
 
     // This one is on the house: the result, as a Slice.
     const photo: zml.Slice = try shifted.toSliceAlloc(gpa, io);

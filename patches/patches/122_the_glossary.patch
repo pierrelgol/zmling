@@ -1,0 +1,42 @@
+--- exercises/18_lost_in_translation/122_the_glossary.zig
++++ answers/18_lost_in_translation/122_the_glossary.zig
+@@ -107,8 +107,14 @@
+     encoder: *zml.tokenizer.Tokenizer.Encoder,
+     text: []const u8,
+ ) ![]u32 {
+-    _ = tokenizer;
+-    return encoder.encodeAlloc(gpa, text);
++    const words = try encoder.encodeAlloc(gpa, text);
++    defer gpa.free(words);
++
++    const ids = try gpa.alloc(u32, words.len + 2);
++    ids[0] = tokenizer.tokenId("[CLS]").?;
++    @memcpy(ids[1 .. ids.len - 1], words);
++    ids[ids.len - 1] = tokenizer.tokenId("[SEP]").?;
++    return ids;
+ }
+ 
+ /// One tensor of a file of weights (or of activations), as a Buffer.
+@@ -179,13 +185,19 @@
+     try stdout.print("  PyTorch: {any}\n", .{reference.items(i32)});
+     try stdout.print("  same ids: {}\n", .{sameIds(ids, reference.items(i32))});
+ 
+-    const mask_id = ???;
+-    const mask_position = ???;
++    const mask_id = tokenizer.tokenId("[MASK]").?;
++    const mask_position = std.mem.indexOfScalar(u32, ids, mask_id).?;
+     try stdout.print("  [MASK] is token {d}, at position {d}\n", .{ mask_id, mask_position });
+ 
+     // A word that is not in the glossary.
+     const tangled_sentence = "Unintelligible, said Bertie.";
+-    ???;
++    const tangled = try encoder.encodeAlloc(gpa, tangled_sentence);
++    defer gpa.free(tangled);
++
++    var decoder = try tokenizer.decoder();
++    defer decoder.deinit();
++    var text = try decoder.decodeAlloc(gpa, tangled);
++    defer text.deinit(gpa);
+ 
+     try stdout.print("{s}\n ", .{tangled_sentence});
+     for (tangled) |id| try stdout.print(" {s}", .{tokenizer.decode(id).?});

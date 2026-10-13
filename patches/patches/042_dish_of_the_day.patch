@@ -1,6 +1,6 @@
 --- exercises/06_reduction_kitchen/042_dish_of_the_day.zig
 +++ answers/06_reduction_kitchen/042_dish_of_the_day.zig
-@@ -70,13 +70,13 @@
+@@ -76,13 +76,13 @@
  const zml = @import("zml");
  
  /// For each day, the index of the dish that sold the most: {day=5}.
@@ -17,7 +17,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -115,6 +115,8 @@
+@@ -121,6 +121,8 @@
      defer result.deinit();
  
      // Run `sold_exe` on the same sales: that's `sold`.

@@ -1,0 +1,54 @@
+--- exercises/20_the_autopsy/135_the_reference_body.zig
++++ answers/20_the_autopsy/135_the_reference_body.zig
+@@ -282,7 +282,10 @@
+         in: zml.Buffer,
+         tags: anytype,
+     ) !zml.Buffer {
+-        return ???;
++        const x = zml.Tensor.fromShape(in.shape()).withTags(tags);
++        var exe = try m.platform.compile(m.gpa, m.io, layer, .forward, .{x}, .{});
++        defer exe.deinit();
++        return exe.eval(m.gpa, m.io, .{ weights, in });
+     }
+ 
+     /// Feeds `layer` what PyTorch fed the module called `name`,
+@@ -295,7 +298,20 @@
+         weights: zml.Bufferized(@TypeOf(layer)),
+         opts: zml.testing.CompareOpts,
+     ) !bool {
+-        return ???;
++        var name_buffer: [128]u8 = undefined;
++        const name = try std.fmt.bufPrint(&name_buffer, fmt, args);
++        var key_buffer: [128]u8 = undefined;
++
++        var in = try m.reference(try std.fmt.bufPrint(&key_buffer, "{s}.in", .{name}));
++        defer in.deinit();
++        var want = try m.reference(try std.fmt.bufPrint(&key_buffer, "{s}.out", .{name}));
++        defer want.deinit();
++        var got = try m.runAlone(layer, weights, in, .{ .s, .d });
++        defer got.deinit();
++
++        const ok = if (zml.testing.expectClose(m.io, want, got, opts)) |_| true else |_| false;
++        try m.verdict(name, ok);
++        return ok;
+     }
+ };
+ 
+@@ -347,12 +363,11 @@
+     const block = model.h[0];
+     const block_weights = weights.h[0];
+     _ = try morgue.examine("transformer.h.{d}.ln_1", .{0}, block.ln_1, block_weights.ln_1, .{});
+-    // The same for, in this order (they are all in the file):
+-    //   transformer.h.0.attn.attention
+-    //   transformer.h.0.attn.attention.q_proj
+-    //   transformer.h.0.mlp
+-    //   transformer.h.0            the whole block
+-    //   transformer.ln_f
++    _ = try morgue.examine("transformer.h.{d}.attn.attention", .{0}, block.attn, block_weights.attn, .{});
++    _ = try morgue.examine("transformer.h.{d}.attn.attention.q_proj", .{0}, block.attn.q_proj, block_weights.attn.q_proj, .{});
++    _ = try morgue.examine("transformer.h.{d}.mlp", .{0}, block.mlp, block_weights.mlp, .{});
++    _ = try morgue.examine("transformer.h.{d}", .{0}, block, block_weights, .{});
++    _ = try morgue.examine("transformer.ln_f", .{}, model.ln_f, weights.ln_f, .{});
+ 
+     try stdout.print("The control, block 0 on the table with the papers of block 1:\n", .{});
+     const fooled = try morgue.examine("transformer.h.{d}", .{1}, block, block_weights, .{});

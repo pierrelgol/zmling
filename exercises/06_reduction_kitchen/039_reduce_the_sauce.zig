@@ -96,7 +96,8 @@ pub fn main(init: std.process.Init) !void {
     // Run `exe` on the orders. The Buffer that comes back is
     // called `result`, and it has to be released like the others.
 
-    // Two axes, but how many numbers?
+    // Two axes, but how many numbers? (`getValue` only counts
+    // bytes, and the loop below wants a flat list of them.)
     const portions = try result.getValue([???]i32, io);
 
     try stdout.print("{f} reduced to {f}\n", .{ orders.shape(), result.shape() });

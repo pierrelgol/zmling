@@ -1,6 +1,6 @@
 --- exercises/01_shape_shifters/005_label_your_boxes.zig
 +++ answers/01_shape_shifters/005_label_your_boxes.zig
-@@ -51,11 +51,11 @@
+@@ -55,11 +55,11 @@
  
      const fridge = zml.Shape.init(.{ .shelves = 5, .eggs = 12 }, .u8);
  
@@ -14,10 +14,10 @@
  
      try stdout.print("{f}: {d} eggs per shelf, shelves are axis {d}, axis 1 is called '{s}'.\n", .{
          fridge,
-@@ -66,7 +66,7 @@
+@@ -70,7 +70,7 @@
  
-     // The freezer: 3 drawers of 4 pizzas each, counted in bytes
-     // like the eggs. Tag the axes .drawers and .pizzas.
+     // The freezer: 3 drawers of 4 pizzas each. Same dtype as the
+     // fridge. Tag the axes .drawers and .pizzas.
 -    const freezer = ???;
 +    const freezer = zml.Shape.init(.{ .drawers = 3, .pizzas = 4 }, .u8);
  

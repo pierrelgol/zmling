@@ -1,0 +1,36 @@
+--- exercises/20_the_autopsy/137_between_the_organs.zig
++++ answers/20_the_autopsy/137_between_the_organs.zig
+@@ -166,9 +166,7 @@
+     pub fn probs(self: Attention, x: zml.Tensor) zml.Tensor {
+         const q = self.splitHeads(self.q_proj.forward(x)).rename(.{ .s = .q });
+         const k = self.splitHeads(self.k_proj.forward(x)).rename(.{ .s = .k });
+-        // "Scaled dot-product attention", as in the paper.
+-        const head_dim: f32 = @floatFromInt(q.dim(.hd));
+-        var scores = q.dot(k, .hd).scale(1.0 / @sqrt(head_dim));
++        var scores = q.dot(k, .hd);
+         const mask = zml.nn.causalAttnMask(.{ .q = x.dim(.s), .k = x.dim(.s) }, .f32, self.window);
+         scores = scores.add(mask.broad(scores.shape()));
+         // The order of the axes only matters to a file: PyTorch's.
+@@ -490,9 +488,19 @@
+     _ = try morgue.examine("transformer.h.{d}.attn.attention.out_proj", .{0}, attn.out_proj, attn_weights.out_proj, .{});
+ 
+     try morgue.note("The probe, in the middle of the glue:\n", .{});
+-    // `attn.probs`, alone, on the input of the attention of block
+-    // 0, against the probe. One verdict, under the name `probe_key`.
+-    ???
++    {
++        var in = try morgue.reference("transformer.h.0.attn.attention.in");
++        defer in.deinit();
++        var want = try morgue.probe(probe_key);
++        defer want.deinit();
++        const x = zml.Tensor.fromShape(in.shape()).withTags(.{ .s, .d });
++        var exe = try platform.compile(gpa, io, attn, .probs, .{x}, .{});
++        defer exe.deinit();
++        var got = try exe.eval(gpa, io, .{ attn_weights, in });
++        defer got.deinit();
++        const ok = if (zml.testing.expectClose(io, want, got, .{})) |_| true else |_| false;
++        try morgue.verdict(probe_key, ok);
++    }
+ 
+     try morgue.wholeBody(model, weights);
+     try stdout.flush();

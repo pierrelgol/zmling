@@ -1,15 +1,15 @@
 --- exercises/04_luggage_tags/026_half_a_label.zig
 +++ answers/04_luggage_tags/026_half_a_label.zig
-@@ -74,7 +74,7 @@
- 
- /// Labels the last two axes of any scan: .bags, then .cm.
+@@ -77,7 +77,7 @@
+ /// {7,2,5,3,f32} that is {7,2,bags=5,cm=3,f32}; on {5,3,f32} it
+ /// is {bags=5,cm=3,f32}.
  fn labelScan(scan: zml.Tensor) zml.Tensor {
 -    return ???;
 +    return scan.withPartialTags(.{ .bags, .cm });
  }
+ 
  pub fn main(init: std.process.Init) !void {
-     var buffer: [4096]u8 = undefined;
-@@ -96,13 +96,13 @@
+@@ -100,13 +100,13 @@
      // Brenda remembers: the machine keeps one week of scans, so
      // the first axis is .days. Nobody knows about the second one.
      // (She suspects it's "left and right". Of what? Exactly.)
@@ -25,7 +25,7 @@
          week.shape().tag(1),
      });
  
-@@ -111,7 +111,7 @@
+@@ -115,7 +115,7 @@
      // the loop is compiled separately, like in exercise 020.)
      inline for (.{ .{ 5, 3 }, .{ 2, 5, 3 }, .{ 4, 7, 2, 5, 3 } }) |dims| {
          const labeled = labelScan(zml.Tensor.init(dims, .f32));

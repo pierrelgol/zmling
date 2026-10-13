@@ -1,6 +1,6 @@
 --- exercises/15_pay_attention/105_the_official_channel.zig
 +++ answers/15_pay_attention/105_the_official_channel.zig
-@@ -93,19 +93,36 @@
+@@ -94,19 +94,36 @@
  /// the speaker (she stands in front, or is the listener herself), -inf
  /// elsewhere.
  fn causalMask(len: i64) zml.Tensor {
@@ -40,7 +40,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -121,10 +138,10 @@
+@@ -122,10 +139,10 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -55,7 +55,7 @@
  
      // Same herd as before.
      var q_buffer: zml.Buffer = try .fromBytes(io, platform, q.shape(), std.mem.sliceAsBytes(&[4][2]f32{ .{ 1, 0 }, .{ 0, 1 }, .{ 1, 1 }, .{ 0, 0 } }));
-@@ -140,8 +157,11 @@
+@@ -141,8 +158,11 @@
      }) |row| {
          const title, const recipe = row;
  

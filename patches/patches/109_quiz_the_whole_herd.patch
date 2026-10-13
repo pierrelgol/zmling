@@ -1,6 +1,6 @@
 --- exercises/15_pay_attention/109_quiz_the_whole_herd.zig
 +++ answers/15_pay_attention/109_quiz_the_whole_herd.zig
-@@ -78,18 +78,36 @@
+@@ -80,18 +80,36 @@
  /// The causal mask {.q = len, .k = len}, f32: 0 where the listener may
  /// hear the speaker, -inf elsewhere. Yours, from exercise 104.
  fn causalMask(len: i64) zml.Tensor {
@@ -42,7 +42,7 @@
      }
  };
  
-@@ -157,9 +175,45 @@
+@@ -159,9 +177,45 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  

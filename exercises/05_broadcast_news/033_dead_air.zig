@@ -39,6 +39,16 @@
 //
 // `small.broad(shape)` returns a tensor of the given shape (the
 // dtype stays the one of `small`), made of copies of `small`.
+// With Gail's corrections:
+//
+//     correction         correction.broad(feed.shape())
+//     -4                 -4   -4   -4   -4
+//      1.5                1.5  1.5  1.5  1.5
+//      0                  0    0    0    0
+//
+// Both sides of the `add` are now {city=3,day=4}, and `add` has
+// nothing left to object to.
+//
 // The good part is HOW it decides which axis is which: when
 // `small` has fewer axes than `shape`, it goes BY TAG.
 //
@@ -76,6 +86,7 @@
 //   4. ...and that is because the Buffer for Gail's corrections
 //      was never made. You have been making Buffers since
 //      exercise 011: make this one, and release it when done.
+//      (Name it as you like: only your own lines will use it.)
 //
 const std = @import("std");
 const zml = @import("zml");

@@ -42,6 +42,14 @@
 //        are together, and the two "inside the patch" axes too
 //     4. glue each pair into one axis  -> .patches, .squares
 //
+// Follow one square through the napkin before you fold
+// anything. Square 6 sits at row 1, column 2 of the sheet.
+// After the two cuts its address has four parts: patch row 0,
+// row 1 inside it, patch column 1, column 0 inside it. Say the
+// two "which patch" parts first and you get "patch (0, 1),
+// square (1, 0)": the top right patch, third square. Look at
+// the picture above. There it is.
+//
 // That is `patchify`, and the other two helpers start from it:
 //
 //     relay     patchify, then flip the order of the patches
@@ -111,6 +119,7 @@ pub fn main(init: std.process.Init) !void {
     //     patches    a zml.Slice, the result of `relay`
     //     pool_exe   the Exe compiled from `pool`
     //     pooled     a [2][2]f32, the result of `pool`
+    ???;
 
     try stdout.print("{f}\n", .{patches.shape});
 

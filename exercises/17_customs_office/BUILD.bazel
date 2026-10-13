@@ -1,0 +1,25 @@
+load("//zmling/harness:defs.bzl", "zmling_exercises")
+
+# The checkpoint and the test images are not in this directory: they come
+# from `@mnist`, an archive the ZML workspace already knows how to download
+# (zml/third_party/mnist/repo.bzl). Files of another repository land in an
+# awkward place of the runfiles tree, so they are copied next to the
+# exercises, where every chapter keeps its files.
+MNIST = [
+    "mnist.safetensors",
+    "t10k-images.idx3-ubyte",
+]
+
+[genrule(
+    name = "copy_" + f,
+    srcs = ["@mnist//:" + f],
+    outs = [f],
+    cmd = "cp $< $@",
+    # The answers binaries read the very same files.
+    visibility = ["//visibility:public"],
+) for f in MNIST]
+
+# What PyTorch computes with that checkpoint, see make_fixtures.py.
+exports_files(["activations.safetensors"])
+
+zmling_exercises(data = MNIST + ["activations.safetensors"])

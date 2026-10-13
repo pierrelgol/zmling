@@ -24,6 +24,13 @@ from transformers import BertConfig, BertForPreTraining
 REPO = "prajjwal1/bert-tiny"
 REVISION = "6f75de8b60a9f8a2fdf7b69cbd86d9e64bcb3837"
 SENTENCE = "the capital of france is [MASK]."
+# Exercise 127: the reference answers are typed in the exercise itself.
+QUIZ = [
+    "He was born in New [MASK] City.",
+    "He opened the [MASK] and went inside.",
+    "The prime [MASK] of Japan.",
+    "The interpreter speaks English and [MASK].",
+]
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -88,6 +95,19 @@ def main():
     save_file(keep, os.path.join(HERE, "activations.safetensors"))
     for k, v in sorted(keep.items()):
         print(f"  {k:60s} {tuple(v.shape)}")
+
+    # The quiz, AFTER the file is written: the hooks are still recording.
+    # Nothing is stored, the top word of each sentence is printed.
+    # The margin to the runner-up must be wide, so that no rounding on any
+    # machine can change the winner.
+    for sentence in QUIZ:
+        quiz_ids = torch.tensor(tokenizer.encode(sentence).ids)
+        with torch.no_grad():
+            quiz_logits = model(input_ids=quiz_ids[None]).prediction_logits[0]
+        best = torch.topk(quiz_logits[quiz_ids.tolist().index(tokenizer.token_to_id("[MASK]"))], 2)
+        margin = float(best.values[0] - best.values[1])
+        assert margin > 1.0, (sentence, margin)
+        print(f"quiz: {sentence!r} -> {tokenizer.id_to_token(int(best.indices[0]))!r} (margin {margin:.2f})")
 
 
 if __name__ == "__main__":

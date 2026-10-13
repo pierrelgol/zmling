@@ -1,6 +1,6 @@
 --- exercises/02_ghost_tensors/012_do_not_touch.zig
 +++ answers/02_ghost_tensors/012_do_not_touch.zig
-@@ -62,7 +62,7 @@
+@@ -67,7 +67,7 @@
  
  /// cold + colder - warm
  fn haunt(cold: zml.Tensor, colder: zml.Tensor, warm: zml.Tensor) zml.Tensor {
@@ -9,7 +9,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -80,10 +80,6 @@
+@@ -85,10 +85,6 @@
      const colder: zml.Tensor = .init(.{3}, .f32);
      const warm: zml.Tensor = .init(.{3}, .f32);
  
@@ -20,7 +20,7 @@
      var exe = try platform.compileFn(gpa, io, haunt, .{ cold, colder, warm }, .{});
      defer exe.deinit();
  
-@@ -96,7 +92,7 @@
+@@ -101,7 +97,7 @@
  
      // One Buffer per placeholder, in the same order as in the
      // `compileFn` call above.

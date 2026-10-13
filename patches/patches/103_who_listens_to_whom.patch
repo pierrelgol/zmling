@@ -1,6 +1,6 @@
 --- exercises/15_pay_attention/103_who_listens_to_whom.zig
 +++ answers/15_pay_attention/103_who_listens_to_whom.zig
-@@ -92,12 +92,14 @@
+@@ -107,12 +107,14 @@
  /// How much attention each listener gives to each speaker: {.q, .k}.
  /// Every listener has exactly 100% to give.
  fn attentionWeights(q: zml.Tensor, k: zml.Tensor) zml.Tensor {
@@ -17,7 +17,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -115,10 +117,13 @@
+@@ -130,10 +132,13 @@
  
      const q: zml.Tensor = .init(.{ .q = 4, .hd = 2 }, .f32);
      const k: zml.Tensor = .init(.{ .k = 4, .hd = 2 }, .f32);
@@ -34,7 +34,7 @@
  
      //                                        (grass, drama)
      var q_buffer: zml.Buffer = try .fromBytes(io, platform, q.shape(), std.mem.sliceAsBytes(&[4][2]f32{
-@@ -145,8 +150,11 @@
+@@ -160,8 +165,11 @@
      }));
      defer v_buffer.deinit();
  

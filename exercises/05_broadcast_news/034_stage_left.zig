@@ -73,8 +73,9 @@
 // where `sponsor` {3} is a flat weekly amount per show (the
 // Morning Zoo is "brought to you by Big Al's Mattress Barn").
 // Doug, who doesn't trust shortcuts, asked that the sponsor be
-// done with the primitive. Somebody tried, and you are about to
-// receive the long panic for it. Calmly.
+// done with the primitive. Somebody tried, and the long panic
+// is waiting for you. (Not right away: Zig wants every `???`
+// filled in before it lets ZML say a word.) Calmly.
 //
 // That's not all Kevin left undone:
 //

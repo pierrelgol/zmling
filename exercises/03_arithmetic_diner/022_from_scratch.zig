@@ -68,20 +68,28 @@
 //    And there is a house minimum: nobody leaves having paid less
 //    than 3 dollars.
 //
-// The dishwasher had the right idea and made three mistakes.
-// You've met two of them before; the third one doesn't crash, it
-// just overcharges the wrong people.
+//    The first table ordered for 2, 4.5 and 1 dollars. The walk
+//    adds 0, 0.5 and 1: that is 2, 5 and 2. With the house
+//    minimum: 3, 5 and 3.
+//
+// The dishwasher had the right idea. He left `tickets` blank
+// (mind where a count STOPS), and `walkingFee` has two
+// problems. One is a panic you met in the previous exercise, and
+// the "Careful" a few lines up says where it comes from. The
+// other one doesn't crash, it just overcharges the wrong people:
+// compare with the napkin above.
 //
 // He also never got around to cooking the tickets: part 1 of
 // main() prints a result nobody computed. A recipe without
-// input, compiled and run. The sample above is most of it.
+// input, compiled and run. The sample above is most of it, and
+// the print wants the result as a Buffer called `tickets_result`.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 /// Ticket numbers 101, 102, 103, 104, 105, as .i32.
 fn tickets() zml.Tensor {
-    return zml.Tensor.arange(.{ .start = ???, .end = ??? }, .i32);
+    return ???;
 }
 
 /// bills + 0.5 * seat number, and at least 3.
@@ -104,7 +112,7 @@ pub fn main(init: std.process.Init) !void {
 
     // 1. Compile `tickets` and run it, cleaning up as you go. No
     //    input: an empty tuple of placeholders, and later an
-    //    empty tuple of Buffers.
+    //    empty tuple of Buffers. The result is `tickets_result`.
 
     try stdout.print("Tickets: {any}\n", .{try tickets_result.getValue([5]i32, io)});
 

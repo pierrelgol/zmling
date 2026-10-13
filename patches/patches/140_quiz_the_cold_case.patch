@@ -1,0 +1,121 @@
+--- exercises/20_the_autopsy/140_quiz_the_cold_case.zig
++++ answers/20_the_autopsy/140_quiz_the_cold_case.zig
+@@ -147,8 +147,11 @@
+         const q = self.q_proj.forward(x).splitAxis(.d, split).rename(.{ .s = .q });
+         const k = self.k_proj.forward(x).splitAxis(.d, split).rename(.{ .s = .k });
+         const v = self.v_proj.forward(x).splitAxis(.d, split).rename(.{ .s = .k });
+-        // GPT-Neo does not divide the scores by sqrt(head_dim).
+-        const heard = zml.nn.sdpa(q, k, v, .{ .scale = .scalar(1, .f32) });
++        const heard = zml.nn.sdpa(q, k, v, .{
++            .attn_mask = zml.nn.causalAttnMask(.{ .q = x.dim(.s), .k = x.dim(.s) }, .f32, self.window),
++            // GPT-Neo does not divide the scores by sqrt(head_dim).
++            .scale = .scalar(1, .f32),
++        });
+         return self.out_proj.forward(heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s }));
+     }
+ };
+@@ -164,7 +167,7 @@
+ 
+     /// x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: Mlp, x: zml.Tensor) zml.Tensor {
+-        return self.c_proj.forward(self.c_fc.forward(x).relu());
++        return self.c_proj.forward(self.c_fc.forward(x).gelu());
+     }
+ };
+ 
+@@ -186,8 +189,9 @@
+ 
+     /// x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: Block, x: zml.Tensor) zml.Tensor {
+-        const y = self.ln_1.forward(x.add(self.attn.forward(x)));
+-        return self.ln_2.forward(y.add(self.mlp.forward(y)));
++        // Pre-norm: normalize, THEN the sublayer, then add.
++        const y = x.add(self.attn.forward(self.ln_1.forward(x)));
++        return y.add(self.mlp.forward(self.ln_2.forward(y)));
+     }
+ };
+ 
+@@ -198,7 +202,7 @@
+ 
+     /// tokens: {.s} i32 -> {.s, .d}
+     pub fn forward(self: Embeddings, tokens: zml.Tensor) zml.Tensor {
+-        const positions = self.wpe.slice(.pos, .{ .start = 1, .end = tokens.dim(.s) + 1 }).rename(.{ .pos = .s });
++        const positions = self.wpe.slice(.pos, .{ .end = tokens.dim(.s) }).rename(.{ .pos = .s });
+         return self.wte.forward(tokens).add(positions);
+     }
+ };
+@@ -292,7 +296,10 @@
+         in: zml.Buffer,
+         tags: anytype,
+     ) !zml.Buffer {
+-        return ???;
++        const x = zml.Tensor.fromShape(in.shape()).withTags(tags);
++        var exe = try m.platform.compile(m.gpa, m.io, layer, .forward, .{x}, .{});
++        defer exe.deinit();
++        return exe.eval(m.gpa, m.io, .{ weights, in });
+     }
+ 
+     /// Is `got` the tensor `key` of the healthy body? Prints the
+@@ -315,7 +322,20 @@
+         weights: zml.Bufferized(@TypeOf(layer)),
+         opts: zml.testing.CompareOpts,
+     ) !bool {
+-        return ???;
++        var name_buffer: [128]u8 = undefined;
++        const name = try std.fmt.bufPrint(&name_buffer, fmt, args);
++        var key_buffer: [128]u8 = undefined;
++
++        var in = try m.reference(try std.fmt.bufPrint(&key_buffer, "{s}.in", .{name}));
++        defer in.deinit();
++        var want = try m.reference(try std.fmt.bufPrint(&key_buffer, "{s}.out", .{name}));
++        defer want.deinit();
++        var got = try m.runAlone(layer, weights, in, .{ .s, .d });
++        defer got.deinit();
++
++        const ok = if (zml.testing.expectClose(m.io, want, got, opts)) |_| true else |_| false;
++        try m.verdict(name, ok);
++        return ok;
+     }
+ 
+     /// The complete examination of block `i`, ten verdicts:
+@@ -326,7 +346,16 @@
+     ///   transformer.h.i.mlp
+     ///   transformer.h.i.mlp.c_fc, c_proj
+     fn openBlock(m: *Morgue, i: usize, block: Block, weights: zml.Bufferized(Block)) !void {
+-        return ???;
++        _ = try m.examine("transformer.h.{d}.ln_1", .{i}, block.ln_1, weights.ln_1, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention", .{i}, block.attn, weights.attn, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.q_proj", .{i}, block.attn.q_proj, weights.attn.q_proj, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.k_proj", .{i}, block.attn.k_proj, weights.attn.k_proj, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.v_proj", .{i}, block.attn.v_proj, weights.attn.v_proj, .{});
++        _ = try m.examine("transformer.h.{d}.attn.attention.out_proj", .{i}, block.attn.out_proj, weights.attn.out_proj, .{});
++        _ = try m.examine("transformer.h.{d}.ln_2", .{i}, block.ln_2, weights.ln_2, .{});
++        _ = try m.examine("transformer.h.{d}.mlp", .{i}, block.mlp, weights.mlp, .{});
++        _ = try m.examine("transformer.h.{d}.mlp.c_fc", .{i}, block.mlp.c_fc, weights.mlp.c_fc, .{});
++        _ = try m.examine("transformer.h.{d}.mlp.c_proj", .{i}, block.mlp.c_proj, weights.mlp.c_proj, .{});
+     }
+ 
+     /// The port as its users meet it: are its scores for the
+@@ -418,9 +447,19 @@
+ 
+     var morgue: Morgue = .{ .gpa = gpa, .io = io, .platform = platform, .acts = &acts, .stdout = stdout };
+ 
+-    // The complete examination, in isolation. See the lesson for
+-    // the order of the verdicts.
+-    ???
++    // The embeddings have no module of their own: by hand.
++    {
++        var ids = try morgue.reference("input_ids");
++        defer ids.deinit();
++        var got = try morgue.runAlone(model.embeddings, weights.embeddings, ids, .{.s});
++        defer got.deinit();
++        _ = try morgue.compare("transformer.drop.in", got, .{});
++    }
++    for (model.h, weights.h, 0..) |block, block_weights, i| {
++        _ = try morgue.examine("transformer.h.{d}", .{i}, block, block_weights, .{});
++    }
++    _ = try morgue.examine("transformer.ln_f", .{}, model.ln_f, weights.ln_f, .{});
++    try morgue.openBlock(0, model.h[0], weights.h[0]);
+ 
+     try morgue.wholeBody(model, weights);
+     try stdout.flush();

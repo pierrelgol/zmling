@@ -1,6 +1,6 @@
 --- exercises/01_shape_shifters/002_piano_dims.zig
 +++ answers/01_shape_shifters/002_piano_dims.zig
-@@ -53,15 +53,15 @@
+@@ -63,15 +63,15 @@
      const piano = zml.Shape.init(.{ 3, 88, 2 }, .i16);
  
      // The number of keys, please. Not the number of octave-blocks.

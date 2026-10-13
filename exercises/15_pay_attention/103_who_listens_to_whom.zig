@@ -43,17 +43,32 @@
 // batching axis (exercise 63) and compared each llama with
 // herself only.
 //
+// By hand, for Tina, whose query is (1, 0): against the four
+// keys (0,2), (2,0), (1,1) and (0,0) she scores 0, 2, 1 and 0.
+// Kuzco's grass is what she is after, and it shows.
+//
 // These scores get divided by sqrt(hd). The longer the vectors,
 // the larger their dot products tend to be, and large scores
 // make the next step far too decisive. Hence "scaled dot
 // product attention", the name of this whole recipe. `hd` is
-// not data, it is a size: plain Zig arithmetic on `q.dim(.hd)`,
-// then a `scale`.
+// not data, it is a size: plain Zig arithmetic on `q.dim(.hd)`
+// (an i64, so `@floatFromInt` it before the `@sqrt`), then a
+// `scale` (exercise 18) by the f32 that comes out.
 //
 // STEP 2: WEIGHTS. A listener has only so much attention: 100%.
 // Turn each ROW of scores into shares that sum to 1. Turning
 // scores into shares is the `softmax` of chapter 6 (exercise
-// 44). Along which axis? Each LISTENER has 100% to hand out.
+// 44). It takes one argument, an axis: the one you WALK ALONG
+// while the shares add up to 1. On a small table `{.row, .col}`,
+// `softmax(.col)` walks from column to column, and so it is
+// each ROW that ends up summing to 1:
+//
+//     scores          softmax(.col)
+//      2  0  1        0.665  0.090  0.245     = 1
+//      0  0  0        0.333  0.333  0.333     = 1
+//
+// So, which axis here? Each LISTENER has 100% to hand out. To
+// meet everyone she could give it to, you walk along...
 //
 //     scores: {.q, .k}    ->    weights: {.q, .k}
 //

@@ -1,0 +1,64 @@
+--- exercises/21_the_graduation/146_by_heart.zig
++++ answers/21_the_graduation/146_by_heart.zig
+@@ -202,7 +202,10 @@
+     /// A mask {.q, .k}: 0 where the token at `positions[q]` may look at
+     /// row k of the cache (rows 0 to its own position), -inf elsewhere.
+     fn visible(positions: zml.Tensor, rows: i64) zml.Tensor {
+-        return ???;
++        const shape: zml.Shape = .init(.{ .q = positions.dim(.s), .k = rows }, .i32);
++        const row = zml.Tensor.arange(.{ .end = rows }, .i32).withTags(.{.k}).broad(shape);
++        const me = positions.rename(.{ .s = .q }).broad(shape);
++        return row.cmp(.LE, me).select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
+     }
+ 
+     /// h: {.s, .d}, the tokens at positions pos, pos + 1...
+@@ -213,10 +216,14 @@
+         const k = self.wk.forward(h, .f32).splitAxis(.dout, .{ .h = self.kv_heads, .hd = .auto });
+         const v = self.wv.forward(h, .f32).splitAxis(.dout, .{ .h = self.kv_heads, .hd = .auto });
+ 
+-        const positions = ???;
++        const positions = zml.Tensor.arange(.{ .end = h.dim(.s) }, .i32).withTags(.{.s}).add(pos);
+         const layout: zml.nn.RopeOpts = .{ .layout = .interleaved };
+ 
+-        const filed: Cache = ???;
++        const at = .{ .layer = zml.Tensor.scalar(layer, .i32), .k = pos };
++        const filed: Cache = .{
++            .k = cache.k.dynamicUpdateSlice(at, zml.nn.rope(k, positions, layout).rename(.{ .s = .k })),
++            .v = cache.v.dynamicUpdateSlice(at, v.rename(.{ .s = .k })),
++        };
+ 
+         const heard = zml.nn.sdpa(
+             zml.nn.rope(q, positions, layout).rename(.{ .s = .q }),
+@@ -398,15 +405,28 @@
+     // One function, two Exes.
+     const pos: zml.Tensor = .init(.{}, .i32);
+ 
+-    // `prefill`, for the prompt, and `decode`, for one token. Each
+-    // with its runner.
+-    ???;
++    var prefill = try platform.compile(gpa, io, model, .forward, .{ zml.Tensor.init(.{ .s = prompt_len }, .u32), pos, cache }, .{});
++    defer prefill.deinit();
++    var prefill_runner = try prefill.runner(gpa);
++    defer prefill_runner.deinit(gpa);
++
++    var decode = try platform.compile(gpa, io, model, .forward, .{ zml.Tensor.init(.{ .s = 1 }, .u32), pos, cache }, .{});
++    defer decode.deinit();
++    var decode_runner = try decode.runner(gpa);
++    defer decode_runner.deinit(gpa);
+ 
+     // The prompt in one go, then one token at a time: the one that
+     // just came out. Count in `positions_run` every position that
+     // you feed to the model.
+     var positions_run: usize = 0;
+-    ???;
++    story[prompt_len] = try feed(io, platform, &prefill_runner, weights, &cache_buffers, story[0..prompt_len], 0);
++    positions_run += prompt_len;
++
++    var len: usize = prompt_len + 1;
++    while (len < story_len) : (len += 1) {
++        story[len] = try feed(io, platform, &decode_runner, weights, &cache_buffers, story[len - 1 .. len], len - 1);
++        positions_run += 1;
++    }
+ 
+     var text = try decoder.decodeAlloc(gpa, &story);
+     defer text.deinit(gpa);

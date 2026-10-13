@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/056_no_crust_please.zig
 +++ answers/08_slice_of_life/056_no_crust_please.zig
-@@ -75,17 +75,20 @@
+@@ -77,17 +77,20 @@
  
  /// Everything but the border: {rows=2,cols=4}.
  fn noCrust(pan: zml.Tensor) zml.Tensor {
@@ -24,7 +24,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -110,7 +113,7 @@
+@@ -112,7 +115,7 @@
  
      inline for (.{ noCrust, leftEdge, corners }, .{ "noCrust", "leftEdge", "corners" }) |order, name| {
          // Compile `order` for the pan.

@@ -18,6 +18,12 @@
 // billion weights weighs 32 GB in .f32, 16 GB in .f16 or .bf16,
 // and your graphics card has opinions about that.
 //
+// (.f16 and .bf16 weigh the same and spend their 16 bits
+// differently. .f16 keeps more digits. .bf16 keeps fewer, two or
+// three significant ones, but can hold numbers as huge and as
+// tiny as an .f32 can. It is a Google Brain invention and not an
+// IEEE format. Models are trained in it all the time.)
+//
 // A DataType can answer questions:
 //
 //     const dt: zml.DataType = .i32;
@@ -37,7 +43,12 @@
 //
 // Today's job: a crate of 1000 marbles. The customer swears the
 // marbles are IEEE floating point numbers, and the crate must
-// weigh exactly 2000 bytes or the truck tips over.
+// weigh exactly 2000 bytes or the truck tips over. (1000 marbles,
+// 2000 bytes: you can work out how heavy one marble is. Two
+// floats in the table weigh that much. The customer said IEEE.)
+//
+// Three things to do: the nephew's marbles are too heavy, and he
+// left two blanks.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -51,9 +62,9 @@ pub fn main(init: std.process.Init) !void {
     const marble: zml.DataType = .f32;
     const crate = zml.Shape.init(.{1000}, marble);
 
-    // The receipt has to state how heavy ONE marble is. There's a
-    // method for that; multiplying by hand is how the last truck
-    // tipped over.
+    // The receipt has to state how heavy ONE marble is, in bytes.
+    // There's a method for that (it returns a u16); doing sums by
+    // hand is how the last truck tipped over.
     const one_marble: u16 = marble.???();
 
     try stdout.print("{d} marbles of {s} ({s}), {d} bytes each: {d} bytes.\n", .{

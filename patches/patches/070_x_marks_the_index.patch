@@ -1,6 +1,6 @@
 --- exercises/10_treasure_maps/070_x_marks_the_index.zig
 +++ answers/10_treasure_maps/070_x_marks_the_index.zig
-@@ -72,12 +72,12 @@
+@@ -79,12 +79,12 @@
  
  /// The clues of each island on the route, in the order of the route.
  fn readClues(map: zml.Tensor, route: zml.Tensor) zml.Tensor {
@@ -15,7 +15,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -92,9 +92,12 @@
+@@ -99,10 +99,12 @@
      defer platform.deinit(gpa, io);
  
      const map: zml.Tensor = .init(.{ .island = 5, .clue = 3 }, .i32);
@@ -23,6 +23,7 @@
  
 -    // The placeholder `route` goes here, and then an Exe for each
 -    // of the two functions.
+-    ???;
 +    var exe = try platform.compileFn(gpa, io, readClues, .{ map, route }, .{});
 +    defer exe.deinit();
 +    var effort_exe = try platform.compileFn(gpa, io, totalEffort, .{ map, route }, .{});
@@ -30,7 +31,7 @@
  
      var map_buffer: zml.Buffer = try .fromBytes(io, platform, map.shape(), std.mem.sliceAsBytes(&[5][3]i32{
          .{ 1, 2, 3 }, // Skull Island
-@@ -107,10 +110,13 @@
+@@ -115,11 +117,13 @@
  
      // The Captain said: "The fifth island, then the first, the
      // third, and the second."
@@ -39,6 +40,7 @@
      defer route_buffer.deinit();
  
 -    // Run both: `result` for the clues, `effort` for the bosun.
+-    ???;
 +    var result: zml.Buffer = try exe.eval(gpa, io, .{ map_buffer, route_buffer });
 +    defer result.deinit();
 +    var effort: zml.Buffer = try effort_exe.eval(gpa, io, .{ map_buffer, route_buffer });

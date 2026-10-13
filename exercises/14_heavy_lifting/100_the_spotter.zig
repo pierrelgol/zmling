@@ -75,9 +75,11 @@
 //     registry and the key cabinet: exercises 098 and 099, from
 //     memory.
 //
-//  2. THE LIFT. Write `Rack.load`, the two moves above. Then
-//     call it, and free what it gives you when you are done:
-//     two Buffers, both yours.
+//  2. THE LIFT. Write `Rack.load`, the two moves above. Mind the
+//     signature: `self` and `store` arrive as POINTERS already,
+//     so where the lesson wrote `&model` and `&store`, you pass
+//     them along as they are. Then call it, and free what it
+//     gives you when you are done: two Buffers, both yours.
 //
 //  3. THE POINT. A Buffer that came from a file is a Buffer like
 //     any other, and the placeholder that came from the store is

@@ -61,7 +61,9 @@
 //     pointer in ...
 //
 // It works fine on each `Layer`, though. So: loop over the
-// layers yourself.
+// layers yourself. (Deleting the cleanup would shut the compiler
+// up just as well, and you know from the stakeout that nobody
+// would notice six leaked Buffers. Scally would know.)
 //
 // The case: a three-layer chain of command. Each layer computes
 //
@@ -70,7 +72,15 @@
 // and renames its output axis so that the next layer can take
 // it: `weight.dot(x, .d)` leaves an axis called .d_out, and the
 // next layer wants a .d. (`t.withTags(.{.d})` relabels the axes
-// of t, chapter 04.)
+// of t, chapter 04. And `t.relu()` is from the diner, exercise
+// 020: negative numbers become 0.)
+//
+// With the numbers of this file, the report { 3, 1 } goes up the
+// chain as
+//
+//     { 4, 2 }   ->   { 1, 0 }   ->   { 2.5, 4.5 }
+//
+// and the 0 was a -1 before middle management's relu got to it.
 //
 // The file is thin. From the bottom of the chain to the top:
 //
@@ -86,9 +96,13 @@
 //
 // 4. The compile call.
 //
-// 5. Each layer's two Buffers.
+// 5. Each layer's two Buffers. In that loop `w` and `b` are
+//    already POINTERS to arrays, which is what
+//    `std.mem.sliceAsBytes` wants: no `&` this time.
 //
-// 6. And whoever wrote the cleanup hadn't read this far.
+// 6. And whoever wrote the cleanup hadn't read this far. (Once
+//    nothing takes `&weights` any more, Zig will point out that
+//    `weights` never changes, and ask for a `const`. Fair.)
 //
 const std = @import("std");
 const zml = @import("zml");

@@ -1,6 +1,6 @@
 --- exercises/05_broadcast_news/037_technical_difficulties.zig
 +++ answers/05_broadcast_news/037_technical_difficulties.zig
-@@ -80,14 +80,14 @@
+@@ -90,14 +90,14 @@
  
  /// The national feed, corrected by somebody who has been outside.
  fn forecast(feed: zml.Tensor, correction: zml.Tensor) zml.Tensor {
@@ -17,7 +17,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -108,6 +108,8 @@
+@@ -118,6 +118,8 @@
      defer exe.deinit();
  
      // The witness: `forecastByRule3`, compiled into `witness_exe`.
@@ -26,7 +26,7 @@
  
      const cities = [_][]const u8{ "Springfield", "Shelbyville", "Ogdenville" };
  
-@@ -125,6 +127,8 @@
+@@ -135,6 +137,8 @@
      defer result.deinit();
  
      // Same Buffers, other Exe: the result is called `witness`.

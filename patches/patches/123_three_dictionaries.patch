@@ -1,0 +1,43 @@
+--- exercises/18_lost_in_translation/123_three_dictionaries.zig
++++ answers/18_lost_in_translation/123_three_dictionaries.zig
+@@ -129,12 +129,11 @@
+     pub fn init(view: zml.io.TensorStore.View, config: Config) Embeddings {
+         return .{
+             .word = .{ .weight = view.withPrefix("word_embeddings").createReplicatedTensor("weight", .{ .voc, .d }) },
+-            // Tag them {.pos, .d} and {.typ, .d}.
+-            .position = ???,
+-            .token_type = ???,
++            .position = view.withPrefix("position_embeddings").createReplicatedTensor("weight", .{ .pos, .d }),
++            .token_type = view.withPrefix("token_type_embeddings").createReplicatedTensor("weight", .{ .typ, .d }),
+             .norm = .{
+-                .weight = view.withPrefix("norm").createReplicatedTensor("weight", .{.d}),
+-                .bias = view.withPrefix("norm").createReplicatedTensor("bias", .{.d}),
++                .weight = view.withPrefix("LayerNorm").createReplicatedTensor("weight", .{.d}),
++                .bias = view.withPrefix("LayerNorm").createReplicatedTensor("bias", .{.d}),
+                 .eps = config.layer_norm_eps,
+             },
+         };
+@@ -145,6 +144,8 @@
+         var x = self.word.forward(tokens);
+         // Positions 0, 1, 2...: the first rows of the table.
+         x = x.add(self.position.slice(.pos, .{ .end = tokens.dim(.s) }).rename(.{ .pos = .s }));
++        // One sentence: every token is of type 0.
++        x = x.add(self.token_type.slice(.typ, .{ .end = 1 }).squeeze(.typ).broad(x.shape()));
+         return self.norm.forward(x);
+     }
+ };
+@@ -233,8 +234,12 @@
+     try loader.load(io, Embeddings, &model, &weights, &store, .{});
+     try loader.await(io);
+ 
+-    // `got`: what `model` makes of `ids`.
+-    ???;
++    const tokens: zml.Tensor = .init(.{ .s = ids.shape().dim(0) }, .i32);
++    var exe = try platform.compile(gpa, io, model, .forward, .{tokens}, .{});
++    defer exe.deinit();
++
++    var got: zml.Buffer = try exe.eval(gpa, io, .{ weights, ids });
++    defer got.deinit();
+ 
+     const same = if (zml.testing.expectClose(io, want, got, .{})) |_| true else |_| false;
+     try stdout.print("embeddings: {f}\n", .{got.shape()});

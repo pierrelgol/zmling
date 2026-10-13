@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/020_how_would_you_like_it.zig
 +++ answers/03_arithmetic_diner/020_how_would_you_like_it.zig
-@@ -85,7 +85,7 @@
+@@ -88,7 +88,7 @@
  }
  
  fn leaky(x: zml.Tensor) zml.Tensor {
@@ -9,7 +9,7 @@
  }
  
  fn sigmoid(x: zml.Tensor) zml.Tensor {
-@@ -106,17 +106,17 @@
+@@ -109,17 +109,17 @@
  
  /// Leaky relu with a slope of 0.1, without calling `leakyReLU`.
  fn leakyByHand(x: zml.Tensor) zml.Tensor {
@@ -30,10 +30,10 @@
  }
  
  /// Compiles `recipe` for five f32, runs it on the steaks.
-@@ -129,6 +129,8 @@
+@@ -132,6 +132,8 @@
      const x: zml.Tensor = .init(.{ .steaks = 5 }, .f32);
  
-     // Compile `recipe` for `x`.
+     // Compile `recipe` for `x`, as `exe`, with its cleanup.
 +    var exe = try platform.compileFn(gpa, io, recipe, .{x}, .{});
 +    defer exe.deinit();
  

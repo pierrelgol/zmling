@@ -1,6 +1,6 @@
 --- exercises/13_layer_cake/092_no_such_struct.zig
 +++ answers/13_layer_cake/092_no_such_struct.zig
-@@ -72,17 +72,18 @@
+@@ -80,17 +80,18 @@
  const zml = @import("zml");
  
  const RmsNorm = struct {
@@ -23,7 +23,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -99,8 +100,11 @@
+@@ -107,8 +108,11 @@
      const level: RmsNorm = .{ .weight = .init(.{ .d = 2 }, .f32), .eps = 1e-6 };
      const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 2 }, .f32);
  
@@ -37,7 +37,7 @@
  
      // The learned weight: double the first number, keep the second.
      var weight_buffer: zml.Buffer = try .fromBytes(io, platform, level.weight.shape(), std.mem.sliceAsBytes(&[2]f32{ 2, 1 }));
-@@ -114,14 +118,13 @@
+@@ -122,14 +126,13 @@
      var cakes_buffer: zml.Buffer = try .fromBytes(io, platform, cakes.shape(), std.mem.sliceAsBytes(&recipes));
      defer cakes_buffer.deinit();
  

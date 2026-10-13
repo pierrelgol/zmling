@@ -40,7 +40,8 @@
 // THE HEADS. `.h` is mandatory. A "head" is one independent
 // copy of the attention mechanism, and real models run many
 // side by side: that's the next exercise. Today the herd has a
-// single head, so the tensors simply get an `.h` axis of size 1.
+// single head, so the tensors simply get an `.h` axis of size
+// 1, in front, where the doc comment puts it.
 //
 // THE RENAMES. So far the listeners arrived tagged `.q` and
 // the speakers `.k`, as if they were two different herds. In a

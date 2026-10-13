@@ -1,6 +1,6 @@
 --- exercises/07_origami_club/051_the_copy_machine.zig
 +++ answers/07_origami_club/051_the_copy_machine.zig
-@@ -86,10 +86,10 @@
+@@ -94,10 +94,10 @@
  
  fn garland(motif: zml.Tensor) zml.Tensor {
      // 1. Every bead twice in a row.
@@ -13,7 +13,7 @@
  
      // 3. The whole thing twice.
      return mirrored.repeat1d(.beads, 2);
-@@ -97,7 +97,7 @@
+@@ -105,7 +105,7 @@
  
  /// Every square of the stamp becomes a 2x2 block: {rows=4,cols=4}.
  fn poster(stamp: zml.Tensor) zml.Tensor {
@@ -22,10 +22,11 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -138,6 +138,17 @@
+@@ -146,7 +146,17 @@
      // Compile `poster` for the stamp, put `ink` in a Buffer, run,
      // and copy the result to a zml.Slice called `squares`.
      // Release everything you create.
+-    ???;
 +    var poster_exe = try platform.compileFn(gpa, io, poster, .{stamp}, .{});
 +    defer poster_exe.deinit();
 +

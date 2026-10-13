@@ -1,0 +1,33 @@
+--- exercises/21_the_graduation/144_sharing_notes.zig
++++ answers/21_the_graduation/144_sharing_notes.zig
+@@ -132,7 +132,20 @@
+ 
+     /// h: {.s, .d}, what attention_norm gave -> {.s, .d}
+     pub fn forward(self: Attention, h: zml.Tensor) zml.Tensor {
+-        return ???;
++        const q = self.wq.forward(h, .f32).splitAxis(.dout, .{ .h = self.heads, .hd = .auto });
++        const k = self.wk.forward(h, .f32).splitAxis(.dout, .{ .h = self.kv_heads, .hd = .auto });
++        const v = self.wv.forward(h, .f32).splitAxis(.dout, .{ .h = self.kv_heads, .hd = .auto });
++
++        const layout: zml.nn.RopeOpts = .{ .layout = .interleaved };
++        const heard = zml.nn.sdpa(
++            zml.nn.rope(q, null, layout).rename(.{ .s = .q }),
++            zml.nn.rope(k, null, layout).rename(.{ .s = .k }),
++            v.rename(.{ .s = .k }),
++            .{ .attn_mask = zml.nn.causalAttnMask(.{ .q = h.dim(.s), .k = h.dim(.s) }, .f32, null) },
++        );
++
++        const merged = heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
++        return self.wo.forward(merged, .f32).rename(.{ .dout = .d });
+     }
+ };
+ 
+@@ -184,7 +197,7 @@
+ 
+     // The heads that ask, and the heads that answer.
+     const heads = 8;
+-    const kv_heads = 8;
++    const kv_heads = 4;
+ 
+     const view = store.view().withPrefix("_orig_mod").withPrefix("layers").withLayer(0).withPrefix("attention");
+     const attention: Attention = .init(view, heads, kv_heads);

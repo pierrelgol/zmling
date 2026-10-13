@@ -53,9 +53,12 @@
 // Four things to do before Scally signs anything.
 //
 // 1. The envelope got wet, and the end of `analyze` is gone.
-//    The comments in `Report` say what each field holds. The
-//    reductions are from chapter 06, and an axis that has been
-//    reduced away should not hang around with size 1.
+//    The comments in `Report` say what each field holds. Only
+//    the photo went through the sensitivity and the night
+//    vision: the tape is used as it came, and `enhanced` is the
+//    photo as it stands when the ink starts to run, all of it.
+//    The reductions are from chapter 06, and an axis that has
+//    been reduced away should not hang around with size 1.
 //
 // 2. Give `analyze` its placeholders, and compile it with night
 //    vision ON. What the function needs:

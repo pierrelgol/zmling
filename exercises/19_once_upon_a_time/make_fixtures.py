@@ -25,6 +25,10 @@ REPO = "roneneldan/TinyStories-1M"
 REVISION = "77f1b168e219585646439073245fe87e56b3023e"
 PROMPT = "Once upon a time, there was a little dragon"
 NEW_TOKENS = 40
+LONG_TOKENS = 300
+# The quiz (exercise 134): its reference story is printed, not saved.
+QUIZ_PROMPT = "The old owl wanted to read a story to"
+QUIZ_NEW_TOKENS = 24
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -78,18 +82,38 @@ def main():
     keep = {k: v for k, v in acts.items() if v.shape[-1] != 50257}
     keep["input_ids"] = ids.to(torch.int32)
     keep["last_logits"] = logits[-1]
-    save_file(keep, os.path.join(HERE, "activations.safetensors"))
+    top = torch.topk(logits[-1], 6)
 
     # Greedy generation, the slow way: the whole sequence again for each token.
-    story = ids.tolist()
+    def greedy(start, new_tokens):
+        out = list(start)
+        with torch.no_grad():
+            for _ in range(new_tokens):
+                out.append(int(model(input_ids=torch.tensor([out])).logits[0, -1].argmax()))
+        return out
+
+    story = greedy(ids.tolist(), NEW_TOKENS)
+
+    # A story longer than `window_size` (256), for exercise 130: under 256
+    # tokens a "local" layer and a "global" one compute the same thing, and
+    # nothing in the keys above can tell whether a port has the window.
+    # Layer 1 is the first local one.
+    long_story = greedy(story, LONG_TOKENS - len(story))
     with torch.no_grad():
-        for _ in range(NEW_TOKENS):
-            story.append(int(model(input_ids=torch.tensor([story])).logits[0, -1].argmax()))
+        model(input_ids=torch.tensor([long_story]))
+    keep["long.transformer.h.1.attn.in"] = acts["transformer.h.1.attn.in"].clone()
+    keep["long.transformer.h.1.attn.out"] = acts["transformer.h.1.attn.out"].clone()
+    save_file(keep, os.path.join(HERE, "activations.safetensors"))
 
     print("prompt ids:", ids.tolist())
     print("next token:", int(logits[-1].argmax()), repr(tokenizer.decode([int(logits[-1].argmax())])))
     print("story ids:", story)
     print("story:", repr(tokenizer.decode(story)))
+    print("top next tokens:", [(int(i), tokenizer.decode([int(i)]), round(float(v), 3)) for v, i in zip(top.values, top.indices)])
+    print("long story:", repr(tokenizer.decode(long_story)))
+    quiz = greedy(tokenizer.encode(QUIZ_PROMPT).ids, QUIZ_NEW_TOKENS)
+    print("quiz ids:", quiz)
+    print("quiz story:", repr(tokenizer.decode(quiz)))
     for k, v in sorted(keep.items()):
         print(f"  {k:50s} {tuple(v.shape)}")
 

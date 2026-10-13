@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/018_keep_the_change.zig
 +++ answers/03_arithmetic_diner/018_keep_the_change.zig
-@@ -72,12 +72,12 @@
+@@ -78,12 +78,12 @@
  
  /// Flo's pancake formula: ((d^2 * 0.25) - 1) / 2 + 0.5
  fn pancakePrice(diameters: zml.Tensor) zml.Tensor {
@@ -15,10 +15,10 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -109,6 +109,8 @@
-     const prices: zml.Tensor = .init(.{ .pancakes = 4 }, .f32);
+@@ -116,6 +116,8 @@
  
-     // Compile `change` for `prices`, and clean up after yourself.
+     // Compile `change` for `prices`, as `change_exe`, and clean up
+     // after yourself.
 +    var change_exe = try platform.compileFn(gpa, io, change, .{prices}, .{});
 +    defer change_exe.deinit();
  

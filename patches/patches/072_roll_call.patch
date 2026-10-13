@@ -1,6 +1,6 @@
 --- exercises/10_treasure_maps/072_roll_call.zig
 +++ answers/10_treasure_maps/072_roll_call.zig
-@@ -73,18 +73,18 @@
+@@ -80,18 +80,18 @@
  
  /// The loot, richest pirate first.
  fn richestFirst(loot: zml.Tensor) zml.Tensor {
@@ -22,13 +22,14 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -105,9 +105,24 @@
+@@ -112,10 +112,24 @@
      const loot_data = [_]i32{ 30, 80, 5, 80, 12 };
      const age_data = [_]i32{ 41, 19, 63, 27, 35 };
  
 -    // Over board: three Exes, a Buffer for each of the two lists
 -    // above, and three results called `richest`, `ages` and
 -    // `average`.
+-    ???;
 +    var richest_exe = try platform.compileFn(gpa, io, richestFirst, .{loot}, .{});
 +    defer richest_exe.deinit();
 +    var ages_exe = try platform.compileFn(gpa, io, agesInLine, .{ loot, age }, .{});

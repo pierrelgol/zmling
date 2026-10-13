@@ -1,6 +1,6 @@
 --- exercises/05_broadcast_news/036_the_fine_print.zig
 +++ answers/05_broadcast_news/036_the_fine_print.zig
-@@ -97,12 +97,12 @@
+@@ -102,12 +102,12 @@
      // {anchor=3} -> {anchor=3,night=1}
      const column = budget.appendAxes(.{.night});
  
@@ -15,7 +15,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -124,6 +124,8 @@
+@@ -129,6 +129,8 @@
  
      // The second table: `overspend`, compiled for the same two
      // placeholders.
@@ -24,7 +24,7 @@
  
      const anchors = [_][]const u8{ "Brock", "Linda", "Gail" };
  
-@@ -143,6 +145,8 @@
+@@ -148,6 +150,8 @@
      defer result.deinit();
  
      // Run the second Exe, and keep its result in `over_result`.

@@ -35,6 +35,24 @@
 //                occasion of each order: its index, and how sure
 //                the till is of it. Two results, both `{.order}`.
 //
+// The same cake, seen from the side: the shape that leaves each
+// step, for the three orders of today. The tags are the ones
+// each layer hands back, BEFORE any renaming you may do.
+//
+//     orders        {order=3, s=4}        item ids, i32
+//     1. menu       {order=3, s=4, d=3}   a flavor row per item
+//     2. average    {order=3, d=3}        one taste per order
+//     3. hidden     {order=3, dout=3}     three raw hunches
+//     4. oven       {order=3, dout=3}     negative ones are gone
+//     5. level      {order=3, dout=3}     mean 0, spread 1
+//     6. verdict    {order=3, dout=3}     a score per occasion
+//     7.            {order=3}, twice      index, and confidence
+//
+// (Yes: step 6 is a Linear that is handed a `.dout`. See the
+// first reminder below. Somewhere between 3 and 6, a tag has to
+// change.) When ZML panics, it prints the shapes it was given:
+// hold them against this table and you know which step is off.
+//
 // The weights and the orders are written down for you, as plain
 // arrays. The printing at the bottom is written too, and tells
 // you which names it expects. Everything in between is yours:
@@ -46,6 +64,11 @@
 //    read off the arrays; the placeholder of the orders; the
 //    Exe; every weight uploaded once and freed at the end; the
 //    run.
+//
+// A way to go about it that has saved many apprentices: write
+// the struct and `forward` first, then `main` in the order of
+// its TODOs. Each of them is something you did in exercises 093
+// to 095: steal from yourself without shame.
 //
 // You know everything you need. A few reminders, in no
 // particular order, because Chef Babette is watching and it
@@ -59,8 +82,10 @@
 //  - of all the things in a model, only Tensors get a Buffer.
 //    And one field of Linear wants a `null` it doesn't deserve;
 //  - an Exe with two outputs does not `eval` (exercise 083);
-//  - `zml.Buffer.deinitAll(T, &buffers)` frees a whole flat
-//    struct of Buffers at once (exercise 085).
+//  - `zml.Buffer.deinitAll(T, &buffers)` frees a whole struct
+//    of Buffers at once (exercise 085), structs inside structs
+//    and optional Buffers included. `T` is the type with the
+//    Tensors, not its Bufferized twin.
 //
 // If the tea time order gets a wedding box, a layer is missing
 // from your `forward`. All of them matter. That's the point of

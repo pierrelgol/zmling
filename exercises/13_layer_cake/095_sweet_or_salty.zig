@@ -33,13 +33,22 @@
 //     h0 = relu(s + t)          "how many flavors?"
 //     h1 = relu(s + t - 1)      "is it more than one?"
 //
-//     reject = 0.5
-//     serve  = h0 - 2·h1
+//     reject = 0.5 + 2·h1       a shrug, or an outrage
+//     serve  = 2·h0 - 4·h1
 //
-// Check the four cases: `serve` is 0, 1, 1, 0. It beats the
-// constant 0.5 of `reject` exactly when there is one flavor.
-// The relu is doing all the work: h1 stays at zero until the
-// second flavor shows up, which a straight line could never do.
+// Check the four cases, they fit on the napkin:
+//
+//                       s  t    h0  h1    reject  serve
+//     plain             0  0     0   0      0.5     0
+//     strawberry        1  0     1   0      0.5     2
+//     olive             0  1     1   0      0.5     2
+//     salted caramel    1  1     2   1      2.5     0
+//
+// `serve` wins exactly when there is one flavor. The relu is
+// doing all the work: h1 stays at zero until the second flavor
+// shows up, which a straight line could never do. (Without the
+// relu, plain gives h1 = -1: a NEGATIVE amount of "more than
+// one flavor", and the arithmetic happily serves it.)
 //
 // Two practical matters when stacking Linears:
 //
@@ -57,10 +66,18 @@
 //     (the "logits"). Scores are not an answer yet. Every
 //     classifier you will ever meet finishes with the same two
 //     moves, and you have known both since the reduction
-//     kitchen:
+//     kitchen. "The classes" are the axis the last Linear
+//     produced, so you know its tag:
 //
 //      - `softmax` over the classes (exercise 044) turns the
-//        scores into probabilities that add up to 1;
+//        scores into probabilities that add up to 1. With two
+//        classes only the GAP between the scores matters:
+//
+//            gap 0.5 -> 62.2%    gap 1.5 -> 81.8%
+//            gap 2.5 -> 92.4%    gap 5   -> 99.3%
+//
+//        A network that is "sure" is a network whose scores
+//        are far apart. Nothing more mystical than that;
 //      - `argMax` over the classes (exercise 042) returns
 //        `.values` and `.indices`: the highest probability, and
 //        WHERE it is. The index is the class, an i32. The value
@@ -75,10 +92,13 @@
 //
 // The Taster below was assembled in a hurry:
 //
-//  - its `forward` goes straight from one Linear into the next,
-//    and it has no oven at all. You will meet the panic first.
-//    Fix it, and you get to see what a two-tier cake without an
-//    oven is worth. (Exercise 090 warned you.)
+//  - its `forward` goes straight from one Linear into the next:
+//    no rename, and no oven either. You will meet the panic
+//    first. Fix it, and you get to see what a two-tier cake
+//    without an oven is worth (exercise 090 warned you): look
+//    at who gets served. Then bake it. No need for an `oven`
+//    field this time, the formula says which one: call the
+//    Tensor method;
 //  - the end of `forward`, the two moves above, is not written;
 //  - neither are the placeholders of the two Linears (each has
 //    a weight AND a bias; the sizes are in the arrays below, and
@@ -86,8 +106,11 @@
 //    Buffers of the Taster, and the run.
 //
 // The printing at the bottom tells you which names it expects.
-// Chef Babette, it turns out, is exactly as sure of everything.
-// She has been since 1987.
+// And it prints how sure the Taster is. Chef Babette, it turns
+// out, rejects plain with a shrug and salted caramel with her
+// whole heart; and she could not tell you which of strawberry
+// and olive she likes better. (Look at h0 and h1: neither could
+// the network. It only ever COUNTS the flavors.)
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -136,8 +159,8 @@ pub fn main(init: std.process.Init) !void {
     var b1: zml.Buffer = try .fromBytes(io, platform, taster.hidden.bias.?.shape(), std.mem.sliceAsBytes(&[2]f32{ 0, -1 }));
     defer b1.deinit();
 
-    // class 0, reject = 0.5; class 1, serve = h0 - 2·h1
-    var w2: zml.Buffer = try .fromBytes(io, platform, taster.verdict.weight.shape(), std.mem.sliceAsBytes(&[2][2]f32{ .{ 0, 0 }, .{ 1, -2 } }));
+    // class 0, reject = 0.5 + 2·h1; class 1, serve = 2·h0 - 4·h1
+    var w2: zml.Buffer = try .fromBytes(io, platform, taster.verdict.weight.shape(), std.mem.sliceAsBytes(&[2][2]f32{ .{ 0, 2 }, .{ 2, -4 } }));
     defer w2.deinit();
     var b2: zml.Buffer = try .fromBytes(io, platform, taster.verdict.bias.?.shape(), std.mem.sliceAsBytes(&[2]f32{ 0.5, 0 }));
     defer b2.deinit();

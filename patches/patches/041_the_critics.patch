@@ -1,6 +1,6 @@
 --- exercises/06_reduction_kitchen/041_the_critics.zig
 +++ answers/06_reduction_kitchen/041_the_critics.zig
-@@ -95,20 +95,22 @@
+@@ -96,20 +96,22 @@
      const total = scores.sum(.critic);
  
      // The best and the worst score of each dish.

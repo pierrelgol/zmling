@@ -1,0 +1,51 @@
+--- exercises/20_the_autopsy/136_where_it_starts.zig
++++ answers/20_the_autopsy/136_where_it_starts.zig
+@@ -197,7 +197,7 @@
+         return .{
+             .ln_1 = layerNorm(view.withPrefix("ln_1"), config.layer_norm_epsilon),
+             .attn = .init(view.withPrefix("attn").withPrefix("attention"), config, kind),
+-            .ln_2 = layerNorm(view.withPrefix("ln_1"), config.layer_norm_epsilon),
++            .ln_2 = layerNorm(view.withPrefix("ln_2"), config.layer_norm_epsilon),
+             .mlp = .init(view.withPrefix("mlp")),
+         };
+     }
+@@ -458,9 +458,23 @@
+ 
+     try morgue.note("The chained walk, each stage fed by the port:\n", .{});
+     var first_bad: ?usize = null;
+-    // The embeddings, the eight blocks, `ln_f`: ten stages, ten
+-    // verdicts, and the index of the first bad one in `first_bad`.
+-    ???
++    var ids = try morgue.reference("input_ids");
++    defer ids.deinit();
++    var stream = try morgue.runAlone(model.embeddings, weights.embeddings, ids, .{.s});
++    defer stream.deinit();
++    if (!try morgue.compare(stream_keys[0], stream, .{})) first_bad = 0;
++    for (model.h, weights.h, 1..) |block, block_weights, stage| {
++        const next = try morgue.runAlone(block, block_weights, stream, .{ .s, .d });
++        stream.deinit();
++        stream = next;
++        if (!try morgue.compare(stream_keys[stage], stream, .{})) first_bad = first_bad orelse stage;
++    }
++    {
++        const next = try morgue.runAlone(model.ln_f, weights.ln_f, stream, .{ .s, .d });
++        stream.deinit();
++        stream = next;
++        if (!try morgue.compare(stream_keys[9], stream, .{})) first_bad = first_bad orelse 9;
++    }
+     try morgue.note("The trouble starts at: {s}\n", .{if (first_bad) |stage| stream_keys[stage] else "nowhere"});
+ 
+     try morgue.note("The isolated walk, each layer fed by PyTorch:\n", .{});
+@@ -470,8 +484,10 @@
+     _ = try morgue.examine("transformer.ln_f", .{}, model.ln_f, weights.ln_f, .{});
+ 
+     try morgue.note("Inside block 0:\n", .{});
+-    // Four examinations.
+-    ???
++    _ = try morgue.examine("transformer.h.{d}.ln_1", .{0}, model.h[0].ln_1, weights.h[0].ln_1, .{});
++    _ = try morgue.examine("transformer.h.{d}.attn.attention", .{0}, model.h[0].attn, weights.h[0].attn, .{});
++    _ = try morgue.examine("transformer.h.{d}.ln_2", .{0}, model.h[0].ln_2, weights.h[0].ln_2, .{});
++    _ = try morgue.examine("transformer.h.{d}.mlp", .{0}, model.h[0].mlp, weights.h[0].mlp, .{});
+ 
+     try morgue.wholeBody(model, weights);
+     try stdout.flush();

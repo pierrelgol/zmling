@@ -32,7 +32,8 @@
 //
 // ZML doesn't care what Zig type your data has, it wants bytes;
 // the Shape says how to interpret them. If the number of bytes
-// doesn't match `shape.byteSize()`, it panics.
+// doesn't match `shape.byteSize()`, it panics. (Three f32 are
+// 3 x 4 = 12 bytes: exercise 001's formula, back from the dead.)
 //
 // Run:
 //
@@ -56,7 +57,10 @@
 // Time to light actual candles. Two blanks are yours: the body
 // itself, and what walks into the séance. The compiler wants
 // those first. After that you'll find that Madame Zelda's
-// apprentice (you) miscounted the candles somewhere.
+// apprentice (you) miscounted the candles somewhere. ZML will
+// panic about it. The message describes the Buffer at length
+// first; the part that matters comes after, with two numbers of
+// bytes that ought to be equal.
 //
 const std = @import("std");
 const zml = @import("zml");

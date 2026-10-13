@@ -1,0 +1,74 @@
+--- exercises/17_customs_office/116_fill_in_the_form.zig
++++ answers/17_customs_office/116_fill_in_the_form.zig
+@@ -111,19 +111,22 @@
+ /// found under `view`.
+ fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
+     return .init(
+-        view.createReplicatedTensor("weights", .{ .d, .dout }),
++        view.createReplicatedTensor("weight", .{ .dout, .d }),
+         view.createReplicatedTensor("bias", .{.dout}),
+         .d,
+     );
+ }
+ 
+ const Net = struct {
+-    // One field per layer of the Python class.
+-    ???,
++    fc1: zml.nn.Linear,
++    fc2: zml.nn.Linear,
+ 
+     /// `view` must stand at the root of the checkpoint.
+     pub fn init(view: zml.io.TensorStore.View) Net {
+-        return ???;
++        return .{
++            .fc1 = linear(view.withPrefix("fc1")),
++            .fc2 = linear(view.withPrefix("fc2")),
++        };
+     }
+ 
+     /// pixels: {.d = 784} f32 -> scores: {.dout = 10} f32
+@@ -140,7 +143,15 @@
+         platform: *const zml.Platform,
+         store: *const zml.io.TensorStore,
+     ) !zml.Bufferized(Net) {
+-        return ???;
++        var buffers = try zml.mem.bufferize(gpa, Net, self);
++
++        var loader: zml.io.Loader = try .init(gpa, platform, .default);
++        defer loader.deinit();
++
++        try loader.load(io, Net, self, &buffers, store, .{});
++        try loader.await(io);
++
++        return buffers;
+     }
+ 
+     /// Frees what `load` returned.
+@@ -173,7 +184,7 @@
+     defer store.deinit();
+ 
+     // The form, filled in.
+-    const net: Net = ???;
++    const net: Net = .init(store.view());
+ 
+     // What the file gave, and what you called it.
+     try stdout.print("fc1.weight {f}\n", .{net.fc1.weight.shape()});
+@@ -184,7 +195,8 @@
+     // One image, already flat: 784 pixels.
+     const pixels: zml.Tensor = .init(.{ .d = 784 }, .f32);
+ 
+-    // TODO: `exe`.
++    var exe = try platform.compile(gpa, io, net, .forward, .{pixels}, .{});
++    defer exe.deinit();
+ 
+     var net_buffers = try net.load(gpa, io, platform, &store);
+     defer Net.unload(&net_buffers);
+@@ -194,7 +206,7 @@
+     var blank_buffer: zml.Buffer = try .fromBytes(io, platform, pixels.shape(), std.mem.sliceAsBytes(&blank));
+     defer blank_buffer.deinit();
+ 
+-    var result: zml.Buffer = ???;
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ net_buffers, blank_buffer });
+     defer result.deinit();
+ 
+     // The digit with the highest score wins.

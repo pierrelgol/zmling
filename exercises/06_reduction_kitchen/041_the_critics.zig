@@ -24,7 +24,8 @@
 //
 //     return self.sum(axis_).divByConst(self.dim(axis_));
 //
-// The sum, divided by the count. Two things follow from reading
+// The sum, divided by the count (`divByConst` is the constant
+// form of `div`, from exercise 018). Two things follow from reading
 // those few words:
 //
 //   - The count is `self.dim(axis_)`, a plain Zig number known

@@ -1,0 +1,56 @@
+--- exercises/19_once_upon_a_time/131_bath_first.zig
++++ answers/19_once_upon_a_time/131_bath_first.zig
+@@ -149,7 +149,11 @@
+ 
+ /// A LayerNorm from the "weight" and the "bias" found under `view`.
+ fn layerNorm(view: zml.io.TensorStore.View, eps: f32) zml.nn.LayerNorm {
+-    return ???;
++    return .{
++        .weight = view.createReplicatedTensor("weight", .{.d}),
++        .bias = view.createReplicatedTensor("bias", .{.d}),
++        .eps = eps,
++    };
+ }
+ 
+ /// Yours, from exercise 130.
+@@ -198,7 +202,7 @@
+ 
+ /// The activation function of the MLP: `gelu_new`.
+ fn activation(x: zml.Tensor) zml.Tensor {
+-    return x.scale(0.5).mul(x.scale(1.0 / @sqrt(2.0)).erf().addConstant(1));
++    return x.gelu();
+ }
+ 
+ const Mlp = struct {
+@@ -215,7 +219,8 @@
+ 
+     /// x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: Mlp, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        const wide = activation(self.c_fc.forward(x, .f32)).rename(.{ .dout = .d });
++        return self.c_proj.forward(wide, .f32).rename(.{ .dout = .d });
+     }
+ };
+ 
+@@ -227,13 +232,18 @@
+ 
+     /// `view` must stand on a block: "transformer.h.N.".
+     pub fn init(view: zml.io.TensorStore.View, config: Config, kind: []const u8) Block {
+-        return ???;
++        return .{
++            .ln_1 = layerNorm(view.withPrefix("ln_1"), config.layer_norm_epsilon),
++            .attn = .init(view, config, kind),
++            .ln_2 = layerNorm(view.withPrefix("ln_2"), config.layer_norm_epsilon),
++            .mlp = .init(view),
++        };
+     }
+ 
+     /// x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: Block, x: zml.Tensor) zml.Tensor {
+-        const y = self.ln_1.forward(x.add(self.attn.forward(x)));
+-        return self.ln_2.forward(y.add(self.mlp.forward(y)));
++        const y = x.add(self.attn.forward(self.ln_1.forward(x)));
++        return y.add(self.mlp.forward(self.ln_2.forward(y)));
+     }
+ };
+ 

@@ -18,23 +18,25 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -92,8 +92,8 @@
+@@ -92,9 +92,8 @@
  
      var exe = try platform.compileFn(gpa, io, worthDigging, .{ doubloons, curses }, .{});
      defer exe.deinit();
 -
 -    // The Captain's number needs an Exe as well.
+-    ???;
 +    var holes_exe = try platform.compileFn(gpa, io, holesToDig, .{ doubloons, curses }, .{});
 +    defer holes_exe.deinit();
  
      var doubloons_buffer: zml.Buffer = try .fromBytes(io, platform, doubloons.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
      defer doubloons_buffer.deinit();
-@@ -103,8 +103,8 @@
+@@ -104,9 +103,8 @@
  
      var result: zml.Buffer = try exe.eval(gpa, io, .{ doubloons_buffer, curses_buffer });
      defer result.deinit();
 -
 -    // Run it into a Buffer called `holes`.
+-    ???;
 +    var holes: zml.Buffer = try holes_exe.eval(gpa, io, .{ doubloons_buffer, curses_buffer });
 +    defer holes.deinit();
  

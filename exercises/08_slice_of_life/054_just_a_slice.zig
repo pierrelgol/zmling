@@ -57,7 +57,9 @@
 //
 // `step` must be positive. (To walk backwards, `reverse` from
 // the last chapter.) The new size of the axis is
-// (end - start) / step, rounded up.
+// (end - start) / step, rounded up: for `.{ .start = 1,
+// .step = 2 }` on our pizza, (8 - 1) / 2 = 3.5, so 4 slices.
+// Nobody gets half a slice at Tensorino's.
 //
 // Bounds are checked while tracing, since shapes are known
 // then. Ask for more pizza than there is and you get, at

@@ -69,6 +69,13 @@
 //  - the Bufferized of a Linear has `weight`, `bias` (optional,
 //    like in the model), and a `quantization` to ignore.
 //
+// And one piece of plain Zig that the gym makes you need. An
+// optional Buffer, `?zml.Buffer`, is not a Buffer: you cannot
+// call `deinit` on a "maybe". Unwrap it, and capture a POINTER
+// to what is inside (deinit wants the real one, not a copy):
+//
+//     if (maybe_buffer) |*buffer| buffer.deinit();
+//
 // Coach Magnus is ready to judge. The apprentice who wired him
 // up never got around to the Coach himself:
 //

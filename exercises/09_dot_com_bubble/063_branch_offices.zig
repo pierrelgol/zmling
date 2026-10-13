@@ -27,7 +27,9 @@
 //
 //     orders.dot(prices, .products)  ->  {office=2,days=3}
 //
-// London's orders meet London's prices and nobody else's. The
+// London's orders meet London's prices and nobody else's. On
+// its third day London sold 3 Pet Rocks and 1 Deluxe Rock, at
+// London's prices of 4 and 15: 3*4 + 1*15 = 27 dollars. The
 // classic "batched matrix multiplication" is the same thing with
 // one more free axis on each side:
 //
@@ -48,13 +50,19 @@
 // Sort the axes into bins: .products is contracted, and .office
 // is on both sides, so it's batching. You get {office=2}: each
 // office with ITSELF. No panic, no warning, and not a matrix.
-// To get all the pairs, the two sides must disagree on the name:
+// To get all the pairs, the two sides must DISAGREE on the name.
+// So one of them gets a new one before the `dot`: you met
+// `x.rename(.{ .old = .new })` at the airport (exercise 27).
+// Call the offices of the second copy .partner, and sort the
+// axes into bins again: .office is free on the left, .partner
+// is free on the right,
 //
-//     prices.dot(prices.rename(.{ .office = .partner }), .products)
+//     {office=2,products=4} . {partner=2,products=4}
 //                                    ->  {office=2,partner=2}
 //
-// `rename` costs nothing at run time. It only changes what the
-// axis is called while the graph is being built.
+// four numbers, London-with-San-Francisco included. `rename`
+// costs nothing at run time. It only changes what the axis is
+// called while the graph is being built.
 //
 // Three functions today. `localRevenue` is the batched product
 // above, and nobody has written it. `synergyMatrix` is Chad's
@@ -64,8 +72,10 @@
 // The third one is for the accountants, who don't care about
 // days: `officeTotals` is the local revenue added up over the
 // days, {office=2} and nothing else (a reduction leaves a
-// souvenir behind: chapter 6). It also needs an Exe and a
-// result in `main`, where the print is waiting for them.
+// souvenir behind: chapter 6). It may call `localRevenue`. It
+// also needs an Exe in `main` (name it as you like) and a
+// result, which the print expects to be a Buffer called
+// `totals`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -105,6 +115,7 @@ pub fn main(init: std.process.Init) !void {
     defer synergy_exe.deinit();
 
     // The accountants are waiting: `officeTotals` needs an Exe too.
+    ???;
 
     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[2][3][4]f32{
         // San Francisco
@@ -125,6 +136,7 @@ pub fn main(init: std.process.Init) !void {
     defer synergy.deinit();
 
     // Run it. The second print reads a Buffer called `totals`.
+    ???;
 
     try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([2][3]f32, io) });
     try stdout.print("totals {f}: {any}\n", .{ totals.shape(), try totals.getValue([2]f32, io) });

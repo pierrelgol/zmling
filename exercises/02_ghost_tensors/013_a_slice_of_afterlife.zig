@@ -54,7 +54,9 @@
 // séance itself (exercise 010 showed you how, and from now on
 // you'll be asked for it more and more often), and the trip back
 // to host memory at the very end. Then run it, admire the
-// result, and fix the paperwork.
+// result, and fix the paperwork: the loop that writes the ages
+// down. (Zig will have a word with you about the cast in there
+// once the element type is right. Listen to it.)
 //
 const std = @import("std");
 const zml = @import("zml");

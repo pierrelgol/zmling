@@ -63,8 +63,9 @@
 // and the prints. Everything between them is yours. Two
 // placeholders (one of them a scalar i32), two Exes
 // (`theUsual` and `bill`), the tray's Buffer, and, every
-// Thursday, a Buffer for `which`, two runs and two read-backs.
-// The prints tell you the names and the types they expect.
+// Thursday, a Buffer for `which` (`zml.Buffer.scalar`, as in
+// the last exercise), two runs and two read-backs. The prints
+// tell you the names and the types they expect.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -107,12 +108,14 @@ pub fn main(init: std.process.Init) !void {
 
     // Before the loop: the placeholders, the two Exes (call the
     // one for `theUsual` `usual_exe`), and the tray's Buffer.
+    ???;
 
     try stdout.print("The usual is a {f}.\n", .{usual_exe.output_shapes[0]});
 
     for ([_]i32{ 0, 1, 2 }) |thursday| {
         // Every Thursday: `bag` is a [2][5]i32 (the usual), and
         // `total` is a [2]i32 (the bill).
+        ???;
 
         try stdout.print("pizza {d}: his box {any}, her sample {any}, bill {any}\n", .{ thursday, bag[0], bag[1], total });
     }

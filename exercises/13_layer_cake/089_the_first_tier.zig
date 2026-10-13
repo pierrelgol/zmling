@@ -94,15 +94,34 @@
 // sweetness and richness, and she computes both from three
 // measurements: cups of flour, sugar and butter. Three numbers
 // in, two numbers out: a Linear with `.d = 3` and `.dout = 2`.
-// The recipe card (the weights) is already on the wall.
+// The recipe card (the weights) is already on the wall:
+//
+//                  flour  sugar  butter     bias
+//     sweetness      0      2     0.5        1
+//     richness      0.5     0      3        -1
+//
+// One row of the weight per OUTPUT, one column per INPUT: that is
+// what `{.dout = 2, .d = 3}` looks like when you write it down.
+// Bake one by hand before the machine does. The sponge is 2 cups
+// of flour, 1 of sugar, half a cup of butter:
+//
+//     sweetness = 0·2   + 2·1 + 0.5·0.5 + 1  =  3.25
+//     richness  = 0.5·2 + 0·1 + 3·0.5   - 1  =  1.5
+//
+// Each output is one row of the weight, multiplied term by term
+// with the input, summed up, plus its bias. That sum over the
+// shared `.d` axis is all that "contracting" ever meant.
 //
 // "Before you take anything off MY shelf," says Chef Babette,
 // "you show me you can make it yourself." So the tier gets baked
 // twice:
 //
 //  1. BY HAND. Write `byHand`: the dot and the bias, as in the
-//     `layer` helper of exercise 067. Three tensors go in, in the
-//     order of the signature. It is compiled with `compileFn`.
+//     `layer` helper you wrote in exercise 067 (the bias has
+//     fewer axes than the result, so it gets broadcast first,
+//     exactly as in the `forward` quoted above). Three tensors go
+//     in, in the order of the signature. It is compiled with
+//     `compileFn`, like any plain function.
 //
 //  2. FROM THE PANTRY. The same placeholders, wrapped in a
 //     `zml.nn.Linear`, compiled with `platform.compile`, and run
@@ -116,9 +135,10 @@
 //
 // The previous apprentice left this half done. (He also left in
 // a hurry.) What is missing, top to bottom: the body of
-// `byHand`, the tag of the layer, the labels on the cakes, the
-// Exe of the pantry tier, something in its Buffers, and the run
-// of the hand-made one.
+// `byHand`, the tag of the layer, the labels on the cakes (a
+// `.cake` axis, and the axis the tier consumes), the Exe of the
+// pantry tier, something in its Buffers, and the run of the
+// hand-made one.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -147,6 +167,7 @@ pub fn main(init: std.process.Init) !void {
     const tier: zml.nn.Linear = .init(weight, bias, ???);
 
     // Three cakes, three measurements each: flour, sugar, butter.
+    // A tier only accepts labeled goods: see point 1 of the lesson.
     const cakes: zml.Tensor = .init(.{ 3, 3 }, .f32);
 
     var hand_exe = try platform.compileFn(gpa, io, byHand, .{ cakes, weight, bias }, .{});

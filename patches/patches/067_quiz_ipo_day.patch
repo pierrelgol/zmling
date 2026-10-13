@@ -28,12 +28,13 @@
  
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -104,8 +119,36 @@
+@@ -104,9 +119,36 @@
      // The bank underwrites the IPO. BUY starts 10 points ahead.
      const b2_data = [_]f32{ 10, 0 };
  
 -    // Part 3 goes here. It ends with three Buffers: `scores`,
 -    // `picks` and `sure`.
+-    ???;
 +    const x: zml.Tensor = .init(.{ .startup = 3, .features = 2 }, .f32);
 +    const w1: zml.Tensor = .init(.{ .hidden = 3, .features = 2 }, .f32);
 +    const b1: zml.Tensor = .init(.{ .hidden = 3 }, .f32);

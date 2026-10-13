@@ -1,6 +1,6 @@
 --- exercises/14_heavy_lifting/102_quiz_the_smoothie_bar.zig
 +++ answers/14_heavy_lifting/102_quiz_the_smoothie_bar.zig
-@@ -80,9 +80,102 @@
+@@ -99,9 +99,102 @@
  
  const weights_path = "zmling/14_heavy_lifting/gym.safetensors";
  
@@ -105,7 +105,7 @@
  
  const members = [_][]const u8{ "Olga", "Chad", "You" };
  
-@@ -117,14 +210,37 @@
+@@ -136,14 +229,37 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  

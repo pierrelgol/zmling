@@ -75,8 +75,12 @@
 //     with the Sunday recipe. The weekday Buffers were filled in
 //     by somebody who copied the model field by field. Believe
 //     the compiler, delete what it tells you doesn't exist, and
-//     add what it tells you is missing. Then write the Sunday
-//     ones, and the run inside the loop.
+//     add what it tells you is missing. (It will talk about a
+//     struct called `meta.MapRestrict(tensor.Tensor,
+//     buffer.Buffer).map__struct_29`, or some such number. That
+//     mouthful is the machine-made name of a Bufferized struct.
+//     Read the FIELD it names, ignore the rest.) Then write the
+//     Sunday ones, and the run inside the loop.
 //
 //  3. Monsieur Perte wants the Sunday cake again, from a gentler
 //     oven: a leaky relu with a slope of 0.5. Everything else

@@ -1,6 +1,6 @@
 --- exercises/15_pay_attention/104_no_spoilers.zig
 +++ answers/15_pay_attention/104_no_spoilers.zig
-@@ -108,19 +108,26 @@
+@@ -124,19 +124,26 @@
  /// Nobody hears the llamas behind her, nor those more than `window`
  /// places in front (when there is a window).
  fn causalMask(window: ?u32) zml.Tensor {
@@ -30,7 +30,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -147,10 +154,19 @@
+@@ -163,10 +170,19 @@
  
      // `window` is a plain Zig value: it is baked into each Exe.
      for ([_]?u32{ null, 2 }) |window| {

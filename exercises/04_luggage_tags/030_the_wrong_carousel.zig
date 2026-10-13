@@ -40,6 +40,15 @@
 //
 //     surcharges.transpose(.{ .flights, .bags })
 //
+//     {bags=3,flights=2}           {flights=2,bags=3}
+//       1 2                          1 3 5
+//       3 4              ->          2 4 6
+//       5 6
+//
+// The surcharge of bag 2 on flight 0 is 5 in both tables. It was
+// at row 2, column 0. It is now at row 0, column 2: right where
+// `add` will look for it.
+//
 // `transpose` takes the axes in the order you want them, like
 // its Shape namesake in exercise 007, except that on a Tensor
 // the numbers really move, at run time; it gets a proper
@@ -121,7 +130,8 @@ pub fn main(init: std.process.Init) !void {
     const square_weights: zml.Tensor = ???;
     const square_surcharges: zml.Tensor = ???;
 
-    // The same recipe, compiled for Tuesday's shapes.
+    // The same recipe, compiled for Tuesday's shapes, with its
+    // cleanup.
 
     var square_weights_buffer: zml.Buffer = try .fromBytes(io, platform, square_weights.shape(), std.mem.sliceAsBytes(&[3][3]f32{
         .{ 10, 20, 30 },

@@ -47,6 +47,10 @@
 // you'll meet in a later chapter, has the same two lines in its
 // `forward`, plus a few dtype conversions.
 //
+// By hand, for PetRocks.com and the weights of `main`:
+// 0.1*12 employees + 5*1 foosball table + 20*7 synergies is
+// 146.2, plus a bias of 10: 156.2 million dollars. For rocks.
+//
 // Chad typed the formula straight from the whiteboard, and it
 // panics.
 //
@@ -54,13 +58,15 @@
 // long until the money runs out? `runway` is the valuation
 // divided by the monthly burn, one number per startup. Both
 // numbers are in the output of the layer, side by side along
-// .d_out, and you know how to take one of them and lose the
-// axis (the pizzeria, exercise 55).
+// .d_out (the valuation at index 0, the burn at index 1), and
+// you know how to take one of them out of its box, axis gone
+// (the pizzeria, exercise 55). `runway` may call `valuation`.
 //
 // As for `main`: Brenda left the data and the prints, and went
 // to lunch. There are no placeholders (the three shapes are in
-// the table above; the Buffers are waiting for them), no Exes
-// and no results. The prints call the results `result` and
+// the table above, all of them .f32; the Buffers are waiting
+// for them), no Exes and no results. Name the Exes as you
+// like. The prints call the two result Buffers `result` and
 // `months`.
 //
 const std = @import("std");
@@ -89,6 +95,7 @@ pub fn main(init: std.process.Init) !void {
 
     // Three placeholders, `x`, `w` and `bias`, and one Exe for each
     // of the two functions.
+    ???;
 
     // Employees, foosball tables, mentions of "synergy".
     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[2][3]f32{
@@ -106,6 +113,7 @@ pub fn main(init: std.process.Init) !void {
     defer bias_buffer.deinit();
 
     // Run both: `result` for the valuation, `months` for the runway.
+    ???;
 
     try stdout.print("output {f}, runway {f}\n", .{ result.shape(), months.shape() });
     for (try result.getValue([2][2]f32, io), try months.getValue([2]f32, io), [_][]const u8{ "PetRocks.com", "Boring Inc." }) |y, left, name| {

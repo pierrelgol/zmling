@@ -1,6 +1,6 @@
 --- exercises/12_the_exe_files/086_it_goes_all_the_way_up.zig
 +++ answers/12_the_exe_files/086_it_goes_all_the_way_up.zig
-@@ -94,16 +94,21 @@
+@@ -108,16 +108,21 @@
  const zml = @import("zml");
  
  const Layer = struct {
@@ -26,7 +26,7 @@
      }
  };
  
-@@ -124,11 +129,14 @@
+@@ -138,11 +143,14 @@
      // Every layer needs its OWN placeholders: a placeholder may
      // only be used for one input.
      var layers: [3]Layer = undefined;
@@ -43,7 +43,7 @@
      defer exe.deinit();
  
      try stdout.print("{d} layers, {d} inputs.\n", .{ network.layers.len, exe.input_shapes.len });
-@@ -147,12 +155,14 @@
+@@ -161,12 +169,14 @@
  
      var layer_buffers: [3]zml.Bufferized(Layer) = undefined;
      for (&layer_buffers, &weight_data, &bias_data) |*layer_buffer, *w, *b| {

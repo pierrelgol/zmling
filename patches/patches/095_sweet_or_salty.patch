@@ -1,6 +1,6 @@
 --- exercises/13_layer_cake/095_sweet_or_salty.zig
 +++ answers/13_layer_cake/095_sweet_or_salty.zig
-@@ -105,10 +105,13 @@
+@@ -128,10 +128,13 @@
  
      /// fillings: {.cake, .d} -> for each cake, a class and a confidence.
      pub fn forward(self: Taster, fillings: zml.Tensor) Verdict {
@@ -17,7 +17,7 @@
      }
  };
  
-@@ -123,12 +126,14 @@
+@@ -146,12 +149,14 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -36,7 +36,7 @@
  
      // h0 = s + t, h1 = s + t - 1 (the relu is in `forward`)
      var w1: zml.Buffer = try .fromBytes(io, platform, taster.hidden.weight.shape(), std.mem.sliceAsBytes(&[2][2]f32{ .{ 1, 1 }, .{ 1, 1 } }));
-@@ -142,7 +147,10 @@
+@@ -165,7 +170,10 @@
      var b2: zml.Buffer = try .fromBytes(io, platform, taster.verdict.bias.?.shape(), std.mem.sliceAsBytes(&[2]f32{ 0.5, 0 }));
      defer b2.deinit();
  
@@ -48,7 +48,7 @@
  
      const names = [_][]const u8{ "plain", "strawberry", "olive", "salted caramel" };
      //                          sweet, salty
-@@ -150,9 +158,13 @@
+@@ -173,9 +181,13 @@
      var fillings_buffer: zml.Buffer = try .fromBytes(io, platform, fillings.shape(), std.mem.sliceAsBytes(&flavors));
      defer fillings_buffer.deinit();
  

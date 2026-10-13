@@ -69,6 +69,15 @@
 //     `fresh`". Tags are used to line the update up with the
 //     tray. Nothing is modified in place; tensors are values.
 //
+//     tray              which = 1         result
+//     10 11 12 13       fresh =           10 11 12 13
+//     20 21 22 23       99 99 99 99       99 99 99 99
+//     30 31 32 33                         30 31 32 33
+//
+// You only have to READ this one today. Nonna wrote `swap`, it
+// is correct (it's Nonna), and it is on the menu so that you
+// have a second tray to try the last order on.
+//
 // Four orders:
 //
 //   - `window`: 3 consecutive slices of the pizza, starting at
@@ -86,13 +95,21 @@
 //     three things from the Reduction Kitchen: the total of
 //     each pizza (039), the POSITION of the biggest total
 //     (`argMax(...).indices`, 042), and `squeeze`, twice,
-//     until that position is a scalar (040). A scalar integer
-//     tensor is all a dynamic slice asks for. An index that
-//     the model computes from the data and uses a moment
-//     later: this is what dynamic slices are really for.
+//     until that position is a scalar (040). Follow the
+//     shapes, they are the whole recipe:
+//
+//         the tray                      {pizzas=3,slices=4}
+//         the total of each pizza       {pizzas=3,slices=1}
+//         where the biggest total is    {pizzas=1,slices=1}
+//         the same, out of its boxes    {}
+//
+//     A scalar integer tensor is all a dynamic slice asks for.
+//     An index that the model computes from the data and uses
+//     a moment later: this is what dynamic slices are really
+//     for.
 //
 // `main` has two holes as well. The surprise itself is
-// missing: a placeholder for a scalar i32 (exercise 016 all
+// missing: a placeholder for a scalar i32 (exercise 014 all
 // over again). And `fullest` is compiled but never run: once
 // on the tray, once on the tray that `swap` just returned. A
 // result Buffer is a Buffer like any other, and nothing stops
@@ -133,6 +150,7 @@ pub fn main(init: std.process.Init) !void {
     const tray: zml.Tensor = .init(.{ .pizzas = 3, .slices = 4 }, .i32);
     const fresh: zml.Tensor = .init(.{ .slices = 4 }, .i32);
     // The surprise goes here: a placeholder called `index`.
+    ???;
 
     var pizza_buffer: zml.Buffer = try .fromBytes(io, platform, pizza.shape(), std.mem.sliceAsBytes(&[_]i32{ 0, 1, 2, 3, 4, 5, 6, 7 }));
     defer pizza_buffer.deinit();
@@ -191,6 +209,7 @@ pub fn main(init: std.process.Init) !void {
 
         // Run `fullest_exe` twice: `before` is its result on the
         // tray, `after` its result on the swapped tray.
+        ???;
 
         try stdout.print("fullest before the swap: {any}\n", .{try before.getValue([4]i32, io)});
         try stdout.print("fullest after the swap: {any}\n", .{try after.getValue([4]i32, io)});

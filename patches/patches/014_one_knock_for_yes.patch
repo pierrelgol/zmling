@@ -1,6 +1,6 @@
 --- exercises/02_ghost_tensors/014_one_knock_for_yes.zig
 +++ answers/02_ghost_tensors/014_one_knock_for_yes.zig
-@@ -80,7 +80,7 @@
+@@ -81,7 +81,7 @@
  
      const knocks: zml.Tensor = .init(.{ .knocks = 3 }, .f32);
      // The volume is ONE number. No box around it.
@@ -9,7 +9,7 @@
  
      var exe = try platform.compileFn(gpa, io, amplify, .{ knocks, volume }, .{});
      defer exe.deinit();
-@@ -91,7 +91,7 @@
+@@ -92,7 +92,7 @@
      // Same Exe, three different volumes, no recompilation.
      for ([_]f32{ 0.5, 1, 10 }) |v| {
          // This round's volume, `v`, as a body.
@@ -18,7 +18,7 @@
          defer volume_buffer.deinit();
  
          var result: zml.Buffer = try exe.eval(gpa, io, .{ knocks_buffer, volume_buffer });
-@@ -104,19 +104,19 @@
+@@ -105,19 +105,19 @@
      const whisper: zml.Tensor = .init(.{}, .f32);
  
      // ...compiled with the `echo` ritual...

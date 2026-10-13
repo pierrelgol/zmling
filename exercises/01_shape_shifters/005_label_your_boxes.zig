@@ -36,6 +36,10 @@
 // is an ordinary runtime value. ZML can't know at Zig's compile
 // time which tags it will carry.)
 //
+// (The message will also say "Tensor" where you'd expect "Shape".
+// Tensors are the ghosts of the next chapter, and they look up
+// their axes with this very code. Same message, same meaning.)
+//
 // One thing first. There are two blanks below, and the compiler
 // insists on those before anything runs: a question for the
 // fridge, and a freezer that nobody wrote up at all. Fill them
@@ -64,8 +68,8 @@ pub fn main(init: std.process.Init) !void {
         fridge.tag(1),
     });
 
-    // The freezer: 3 drawers of 4 pizzas each, counted in bytes
-    // like the eggs. Tag the axes .drawers and .pizzas.
+    // The freezer: 3 drawers of 4 pizzas each. Same dtype as the
+    // fridge. Tag the axes .drawers and .pizzas.
     const freezer = ???;
 
     try stdout.print("{f}: {d} pizzas, and the last axis is called '{s}'.\n", .{

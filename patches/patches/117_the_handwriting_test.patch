@@ -1,0 +1,60 @@
+--- exercises/17_customs_office/117_the_handwriting_test.zig
++++ answers/17_customs_office/117_the_handwriting_test.zig
+@@ -108,12 +108,21 @@
+     /// `error.NotAnImageFile` if the magic number is not 2051,
+     /// `error.TruncatedFile` if the pixels are not all there.
+     pub fn parse(bytes: []const u8) !Register {
+-        return ???;
++        if (bytes.len < 16 or std.mem.readInt(u32, bytes[0..4], .big) != 2051) return error.NotAnImageFile;
++        const register: Register = .{
++            .count = std.mem.readInt(u32, bytes[4..8], .big),
++            .rows = std.mem.readInt(u32, bytes[8..12], .big),
++            .cols = std.mem.readInt(u32, bytes[12..16], .big),
++            .pixels = bytes[16..],
++        };
++        if (register.pixels.len != register.count * register.rows * register.cols) return error.TruncatedFile;
++        return register;
+     }
+ 
+     /// The `rows * cols` pixels of image `i`.
+     pub fn image(self: Register, i: usize) []const u8 {
+-        return ???;
++        const size = self.rows * self.cols;
++        return self.pixels[i * size ..][0..size];
+     }
+ };
+ 
+@@ -147,7 +156,10 @@
+     /// image: {.h = 28, .w = 28} u8, as found in the register
+     /// -> the digit: {} i32
+     pub fn forward(self: Net, image: zml.Tensor) zml.Tensor {
+-        return ???;
++        const pixels = image.convert(.f32).divByConst(255).merge(.{ .d = .{ .h, .w } });
++        const hidden = self.fc1.forward(pixels, .f32).relu().rename(.{ .dout = .d });
++        const scores = self.fc2.forward(hidden, .f32);
++        return scores.argMax(.dout).indices.squeeze(.dout);
+     }
+ 
+     pub fn load(
+@@ -219,16 +231,18 @@
+     // One parcel, as it is in the file: bytes.
+     const image: zml.Tensor = .init(.{ .h = 28, .w = 28 }, .u8);
+ 
+-    // TODO: `exe`.
++    var exe = try platform.compile(gpa, io, net, .forward, .{image}, .{});
++    defer exe.deinit();
+ 
+     var net_buffers = try net.load(gpa, io, platform, &store);
+     defer Net.unload(&net_buffers);
+ 
+     var same: usize = 0;
+     for (pulled, pytorch) |parcel, expected| {
+-        // TODO: `image_buffer`, the pixels of this parcel.
++        var image_buffer: zml.Buffer = try .fromBytes(io, platform, image.shape(), register.image(parcel));
++        defer image_buffer.deinit();
+ 
+-        var result: zml.Buffer = ???;
++        var result: zml.Buffer = try exe.eval(gpa, io, .{ net_buffers, image_buffer });
+         defer result.deinit();
+ 
+         const digit = try result.getValue(i32, io);

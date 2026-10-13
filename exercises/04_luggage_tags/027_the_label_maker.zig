@@ -58,6 +58,13 @@
 // four problems. Two panic. One is a blank. One runs, and is the
 // worst of the four.
 //
+// A word about the first panic, because it points at the wrong
+// suspect. `rename` looks for duplicates BEFORE it looks for the
+// old tags, so a rename written the wrong way around is reported
+// as "duplicated axis". Read the whole message, not its last
+// word: it prints the shape and the call. Which side of each `=`
+// is a tag the manifest really has?
+//
 const std = @import("std");
 const zml = @import("zml");
 

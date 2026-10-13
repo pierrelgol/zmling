@@ -34,7 +34,8 @@
 // count is comptime, so the result is an array, and an array
 // can be destructured:
 //
-//     const left, const right = pizza.chunkExact(.slices, 2);
+//     const north, const east, const south, const west =
+//         pizza.chunkExact(.slices, 4);
 //
 // The size of the axis must be divisible by the count (it's a
 // `@divExact` inside, and it means it).

@@ -62,10 +62,23 @@
 // the four values -2, -0.5, 0.5 and 2. Then each oven setting
 // gets its own Exe, because each one is a different graph.
 //
+// What to expect from the four ovens, for a value v (you cooked
+// with all of them in exercise 020):
+//
+//     relu          v if v > 0, else 0            -2  ->   0
+//     leakyReLU     v if v > 0, else slope·v      -2  ->  -0.2
+//     tanh          squashed between -1 and 1     -2  ->  -0.964
+//     sigmoid       squashed between  0 and 1     -2  ->   0.119
+//
+// None of them is a straight line, and that is the one thing
+// asked of an oven.
+//
 // From this exercise on, the model is yours to write. Chef
 // Babette left notes where things go:
 //
-//  - the `Tier` struct: its two fields and its `forward`;
+//  - the `Tier` struct: its two fields and its `forward`. An
+//    Activation is called like any layer: `oven.forward(x)`.
+//    The Linear still wants its `out_dtype` (exercise 089);
 //  - the four oven settings (one of them carries a payload);
 //  - the Buffers of a Tier. Ask yourself what an oven is made
 //    of before you type `.oven`;

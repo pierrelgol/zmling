@@ -91,8 +91,9 @@
 //
 // 2. Write `verdict`: the INDEX of the higher of the two scores,
 //    an i32 scalar (0 is alien, 1 is weather balloon). It calls
-//    `forward`; finding where the maximum sits is from chapter
-//    06.
+//    `forward`; finding where the maximum sits is the dish of
+//    the day, exercise 042, with the same leftover axis to get
+//    rid of.
 //
 // 3. The compile call for `forward` is missing something. The
 //    one for `verdict` is missing entirely.
@@ -102,7 +103,9 @@
 //
 // 5. Whoever wrote the call at the bottom got a panic for it.
 //    Its message talks about "argument 0". Count the slots. Then
-//    ask for the verdict: one output, so `eval` will do.
+//    ask for the verdict: one output, so `eval` will do. That
+//    Exe was compiled from the same model, so it has the same
+//    three slots, in the same order.
 //
 const std = @import("std");
 const zml = @import("zml");

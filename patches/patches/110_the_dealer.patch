@@ -14,15 +14,16 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -120,17 +120,22 @@
+@@ -119,16 +119,23 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
-     // A placeholder for the state of the generator.
--    const rng: zml.Tensor.Rng = ???;
-+    const rng: zml.Tensor.Rng = .init();
- 
--    // The Exe of `deal`.
+-    // `rng`, a placeholder for the state of the generator, and
+-    // the Exe of `deal`.
 -    ???;
++    // A placeholder for the state of the generator.
++    const rng: zml.Tensor.Rng = .init();
++
 +    var exe = try platform.compileFn(gpa, io, deal, .{rng}, .{});
 +    defer exe.deinit();
  

@@ -21,12 +21,13 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -113,8 +113,9 @@
+@@ -113,9 +113,9 @@
      for (&squares, 0..) |*square, i| square.* = @intCast(i);
  
      // The paper: a Buffer with the placeholder's shape, holding
 -    // `squares`. Call it `strip_buffer`, and release it when
 -    // `main` is done.
+-    ???;
 +    // `squares`.
 +    var strip_buffer: zml.Buffer = try .fromBytes(io, platform, strip.shape(), std.mem.sliceAsBytes(&squares));
 +    defer strip_buffer.deinit();

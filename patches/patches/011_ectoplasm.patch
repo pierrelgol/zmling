@@ -1,6 +1,6 @@
 --- exercises/02_ghost_tensors/011_ectoplasm.zig
 +++ answers/02_ghost_tensors/011_ectoplasm.zig
-@@ -88,15 +88,15 @@
+@@ -92,15 +92,15 @@
      // The body: same shape as the placeholder, plus the numbers.
      // Write the whole `fromBytes` call. Ask the placeholder for
      // its shape rather than spelling it out again.

@@ -119,6 +119,7 @@ pub fn main(init: std.process.Init) !void {
     // Gravel.net stopped here. Compile the two functions, then run
     // them: `partsNeeded` into a Buffer called `result`, and
     // `partsPerQuarry` into one called `per_quarry`.
+    ???;
 
     try stdout.print("per quarry {f}: {any}\n", .{ per_quarry.shape(), try per_quarry.getValue([2][2]f32, io) });
     try stdout.print("parts {f}:\n", .{result.shape()});

@@ -7,8 +7,10 @@
 //
 //     crowd = factor * factor * ... * factor      (n times)
 //
-// A power, by repeated multiplication, and a chance to put the
-// two kinds of loop side by side.
+// A power, by repeated multiplication. After 5 days that is
+// 2*2*2*2*2 = 32 people on Main Street, 243 on Elm Street, and
+// on Mill Lane still exactly 1: Phil. A chance to put the two
+// kinds of loop side by side.
 //
 // THE UNROLLED LOOP. `days` is a Zig number:
 //
@@ -88,6 +90,8 @@
 //      rumor goes nowhere.
 //   2. `Rumor` has lost its field, its `cond` and its `body`.
 //      `days_left` counts down to zero, like Phil's piano days.
+//      (`cond` has no use for `self`, hence its `_ = self;`.
+//      `body` does, and Zig won't have a discard there.)
 //   3. `main` never compiles `spreadLooped`, and never runs it.
 //   4. With all that written, `spreadLooped` panics during
 //      tracing. Read the message, then look at how the unrolled

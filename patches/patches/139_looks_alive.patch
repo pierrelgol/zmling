@@ -1,0 +1,54 @@
+--- exercises/20_the_autopsy/139_looks_alive.zig
++++ answers/20_the_autopsy/139_looks_alive.zig
+@@ -96,7 +96,7 @@
+     num_layers: u32,
+     num_heads: u32,
+     window_size: u32,
+-    layer_norm_eps: f32 = 1e-12,
++    layer_norm_epsilon: f32,
+     attention_layers: []const []const u8,
+ };
+ 
+@@ -187,9 +187,9 @@
+ 
+     pub fn init(view: zml.io.TensorStore.View, config: Config, kind: []const u8) Block {
+         return .{
+-            .ln_1 = layerNorm(view.withPrefix("ln_1"), config.layer_norm_eps),
++            .ln_1 = layerNorm(view.withPrefix("ln_1"), config.layer_norm_epsilon),
+             .attn = .init(view.withPrefix("attn").withPrefix("attention"), config, kind),
+-            .ln_2 = layerNorm(view.withPrefix("ln_2"), config.layer_norm_eps),
++            .ln_2 = layerNorm(view.withPrefix("ln_2"), config.layer_norm_epsilon),
+             .mlp = .init(view.withPrefix("mlp")),
+         };
+     }
+@@ -231,7 +231,7 @@
+                 .wpe = transformer.withPrefix("wpe").createReplicatedTensor("weight", .{ .pos, .d }),
+             },
+             .h = h,
+-            .ln_f = layerNorm(transformer.withPrefix("ln_f"), config.layer_norm_eps),
++            .ln_f = layerNorm(transformer.withPrefix("ln_f"), config.layer_norm_epsilon),
+         };
+     }
+ 
+@@ -458,14 +458,16 @@
+     try morgue.note("Inside block 7, default tolerance:\n", .{});
+     try morgue.openBlock(7, model.h[7], weights.h[7], .{});
+ 
+-    const strict: zml.testing.CompareOpts = ???;
++    // Ten times above the noise of a healthy layer, no more.
++    const strict: zml.testing.CompareOpts = .{ .absolute_tolerance = 1e-5, .relative_tolerance = 1e-4 };
+     try morgue.note("The isolated walk, strict:\n", .{});
+-    // The eight blocks, then `ln_f`.
+-    ???
++    for (model.h, weights.h, 0..) |block, block_weights, i| {
++        _ = try morgue.examine("transformer.h.{d}", .{i}, block, block_weights, strict);
++    }
++    _ = try morgue.examine("transformer.ln_f", .{}, model.ln_f, weights.ln_f, strict);
+ 
+     try morgue.note("Inside block 0, strict:\n", .{});
+-    // One call.
+-    ???
++    try morgue.openBlock(0, model.h[0], weights.h[0], strict);
+ 
+     try morgue.wholeBody(model, weights);
+     try stdout.flush();

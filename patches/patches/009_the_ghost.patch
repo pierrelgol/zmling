@@ -1,6 +1,6 @@
 --- exercises/02_ghost_tensors/009_the_ghost.zig
 +++ answers/02_ghost_tensors/009_the_ghost.zig
-@@ -61,13 +61,13 @@
+@@ -65,13 +65,13 @@
      const floor_plan = zml.Shape.init(.{ .rooms = 13, .candles = 7 }, .f32);
  
      // Summon a placeholder Tensor with the shape of the floor plan.
@@ -16,7 +16,7 @@
          ghost.count(),
      });
      try stdout.print("It would weigh {d} bytes, if it weighed anything.\n", .{ghost.byteSize()});
-@@ -75,7 +75,7 @@
+@@ -79,7 +79,7 @@
      // The cellar: 3 barrels, tagged .barrels, holding 32-bit
      // signed integers. No Shape this time: summon the placeholder
      // directly, the way the first line of the lesson does.

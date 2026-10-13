@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/077_the_shadow.zig
 +++ answers/11_time_loops/077_the_shadow.zig
-@@ -90,22 +90,24 @@
+@@ -92,22 +92,24 @@
  
      /// Gus saw his shadow.
      pub fn onTrue(self: Burrow) zml.Tensor {
@@ -29,7 +29,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -124,7 +126,7 @@
+@@ -126,7 +128,7 @@
  
      var exe = try platform.compileFn(gpa, io, prediction, .{ sunshine, temps }, .{});
      defer exe.deinit();
@@ -38,7 +38,7 @@
      defer exe2.deinit();
  
      var temps_buffer: zml.Buffer = try .fromBytes(io, platform, temps.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 3, 10 }));
-@@ -137,7 +139,7 @@
+@@ -139,7 +141,7 @@
  
          var result: zml.Buffer = try exe.eval(gpa, io, .{ sunshine_buffer, temps_buffer });
          defer result.deinit();

@@ -1,6 +1,6 @@
 --- exercises/14_heavy_lifting/097_the_locker.zig
 +++ answers/14_heavy_lifting/097_the_locker.zig
-@@ -91,7 +91,7 @@
+@@ -107,7 +107,7 @@
  /// Where byte `begin` of the tensor data sits, counted from the
  /// start of the file.
  fn dataOffset(header_length: usize, begin: usize) usize {
@@ -9,7 +9,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -105,13 +105,14 @@
+@@ -121,13 +121,14 @@
      defer file.close(io);
  
      // 1. The first eight bytes are the length of the header.
@@ -27,7 +27,7 @@
  
      try stdout.print("The header is {d} bytes of JSON:\n", .{header.len});
      // (Writers pad the header with spaces. Nobody needs to see those.)
-@@ -122,12 +123,13 @@
+@@ -138,12 +139,13 @@
      //    exactly the bytes an [4]f32 is made of. (On a little-endian
      //    machine, which is to say: on yours.)
      var plates: [4]f32 = undefined;

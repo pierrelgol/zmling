@@ -1,6 +1,6 @@
 --- exercises/12_the_exe_files/087_ten_sightings.zig
 +++ answers/12_the_exe_files/087_ten_sightings.zig
-@@ -83,7 +83,8 @@
+@@ -87,7 +87,8 @@
  
      /// {b,d} -> {b,d_out}
      pub fn forward(self: Detector, x: zml.Tensor) zml.Tensor {
@@ -10,7 +10,7 @@
      }
  };
  
-@@ -114,11 +115,13 @@
+@@ -118,11 +119,13 @@
      };
      const bias_data = [2]f32{ 0.5, -1 };
  
@@ -28,7 +28,7 @@
      defer runner.deinit(gpa);
  
      // glow, hum, speed
-@@ -132,9 +135,11 @@
+@@ -136,9 +139,11 @@
      while (first < sightings.len) : (first += batch_size) {
          const batch = sightings[first..@min(first + batch_size, sightings.len)];
  

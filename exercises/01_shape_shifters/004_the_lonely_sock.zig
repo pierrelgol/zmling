@@ -9,7 +9,7 @@
 //
 //     sock.rank()   -> 0
 //     sock.count()  -> 1     (an empty product is 1!)
-//     sock.dims()   -> { }
+//     sock.dims()   -> {  }  (nothing in there)
 //
 // There's also a shortcut that says what it means:
 //
@@ -60,7 +60,8 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("boxed sock:    rank {d}, count {d}, dims {any}\n", .{ boxed_sock.rank(), boxed_sock.count(), boxed_sock.dims() });
     try stdout.print("paranoid sock: rank {d}, count {d}, dims {any}\n", .{ paranoid_sock.rank(), paranoid_sock.count(), paranoid_sock.dims() });
 
-    // Shapes compare with `eql`: same dims and same dtype.
+    // Shapes compare with `eql`: same dims and same dtype. One
+    // sock on each side, and yet...
     try stdout.print("Same thing? {}\n", .{sock.eql(paranoid_sock)});
 
     // Compare the sock with a scalar shape of the same dtype,

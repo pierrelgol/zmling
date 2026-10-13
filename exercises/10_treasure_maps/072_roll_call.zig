@@ -16,7 +16,13 @@
 // Both have the shape of `x`. `indices` is the interesting half.
 // It is the permutation that sorts `x`: indices[0] is the
 // position, in the original tensor, of the element that ended
-// up first. When that's the only half you want, there is
+// up first:
+//
+//     loot      { 30, 80,  5, 80, 12 }
+//     values    { 80, 80, 30, 12,  5 }     descending
+//     indices   {  1,  3,  0,  4,  2 }     where each came from
+//
+// When that's the only half you want, there is
 //
 //     x.argsort(axis, .{ .descending = true })      // a Tensor
 //
@@ -46,11 +52,10 @@
 // .pirate, which by the batching rule of the previous exercise
 // means "for each pirate separately". It can't be both. And ZML
 // has a point: the axis of `order` isn't "pirate" any more, it
-// is "place in the line". Call it that:
-//
-//     order.rename(.{ .pirate = .rank })
-//
-// and the result comes out as {rank=5}, which is what it is.
+// is "place in the line". Call it that, .rank, before it goes
+// into `gather` (a `rename`, as for Chad's Synergy Matrix in
+// exercise 63), and the result comes out as {rank=5}, which is
+// what it is.
 //
 // Since `exe.eval` hands back one Buffer, the functions below
 // each return a single Tensor. (Returning the whole SortRes is
@@ -58,15 +63,17 @@
 // in one of them, and didn't rename in the other.
 //
 // The ship's surgeon would like one more number: the average
-// age of the THREE richest pirates. That is the front of the pay
-// line (a slice, chapter 8), turned into .f32 because a mean of
-// integers is an integer, and reduced to a single number with
-// no axis left. `ageOfTheTopThree` is yours.
+// age of the THREE richest pirates. That is the front of what
+// `agesInLine` returns (call it, then take a slice along .rank:
+// chapter 8), turned into .f32 because a mean of integers is an
+// integer, and reduced to a single number with no axis left.
+// `ageOfTheTopThree` is yours.
 //
 // The cabin boy has also dropped the middle of `main` over
 // board. The placeholders and the numbers survived, and so did
-// the prints. In between: three Exes, two Buffers, and three
-// results called `richest`, `ages` and `average`.
+// the prints. In between: three Exes and two input Buffers
+// (name them as you like), and three results that the prints
+// call `richest`, `ages` and `average`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -108,6 +115,7 @@ pub fn main(init: std.process.Init) !void {
     // Over board: three Exes, a Buffer for each of the two lists
     // above, and three results called `richest`, `ages` and
     // `average`.
+    ???;
 
     try stdout.print("the pay line {f}: {any}\n", .{ richest.shape(), try richest.getValue([5]i32, io) });
     try stdout.print("their ages   {f}: {any}\n", .{ ages.shape(), try ages.getValue([5]i32, io) });

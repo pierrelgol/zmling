@@ -1,5 +1,5 @@
 //
-// The last quiz. The House has heard about you, and the House
+// Quiz time. The House has heard about you, and the House
 // wants a talking sign above the door: a machine that recites
 // the motto of the casino, one word after the other, forever.
 //
@@ -32,6 +32,11 @@
 //
 //     embed.weight   {8, 3} f32    for the TokenEmbedding: tag it {.voc, .d}
 //     head.weight    {8, 3} f32    for the Linear, no bias: tag it {.voc, .d}
+//
+// Neither layer has an `init` that takes a view. A
+// `zml.nn.TokenEmbedding` is a struct with a single field,
+// `weight` (exercise 93). For the Linear, do what the `linear`
+// helper of exercise 101 did for the Coach.
 //
 // Why `.voc` for the output axis of the head, and not the
 // usual `.dout`? Because what comes out of that Linear are the
@@ -86,6 +91,14 @@
 //
 // One state for the dice, seed 2024, threaded through every
 // call of both Exes.
+//
+// Two things travel from one call to the next, and they do not
+// travel alike. The Rng is donated (exercise 111): in and out
+// through the same variable. The token is an ordinary Buffer
+// and nobody destroys it for you: each call makes a new one,
+// and the old one is yours to free, like the herd between two
+// rounds of gossip in exercise 109. The very first token is a
+// scalar Buffer (`zml.Buffer.scalar`, exercise 14).
 //
 // Everything from here on is yours: the fields of the struct,
 // its four methods, and `main`. Shapes, ghosts, tags, a gather,

@@ -1,6 +1,6 @@
 --- exercises/14_heavy_lifting/101_meet_the_coach.zig
 +++ answers/14_heavy_lifting/101_meet_the_coach.zig
-@@ -95,7 +95,7 @@
+@@ -102,7 +102,7 @@
  fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
      return .init(
          view.createReplicatedTensor("weight", .{ .dout, .d }),
@@ -9,7 +9,7 @@
          .d,
      );
  }
-@@ -106,12 +106,17 @@
+@@ -113,12 +113,17 @@
  
      /// `view` must stand on the coach: its layers are "0" and "1".
      pub fn init(view: zml.io.TensorStore.View) Coach {
@@ -29,7 +29,7 @@
      }
  
      pub fn load(
-@@ -121,14 +126,22 @@
+@@ -128,14 +133,22 @@
          platform: *const zml.Platform,
          store: *const zml.io.TensorStore,
      ) !zml.Bufferized(Coach) {
@@ -55,7 +55,7 @@
      }
  };
  
-@@ -153,13 +166,14 @@
+@@ -160,13 +173,14 @@
      defer store.deinit();
  
      // The coach is one of several things kept in this locker.
@@ -72,7 +72,7 @@
  
      // ...numbers are needed to run.
      var coach_buffers = try coach.load(gpa, io, platform, &store);
-@@ -174,7 +188,7 @@
+@@ -181,7 +195,7 @@
      }));
      defer lifts_buffer.deinit();
  

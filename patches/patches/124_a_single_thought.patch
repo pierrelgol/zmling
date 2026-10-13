@@ -1,0 +1,52 @@
+--- exercises/18_lost_in_translation/124_a_single_thought.zig
++++ answers/18_lost_in_translation/124_a_single_thought.zig
+@@ -157,7 +157,7 @@
+ 
+ /// The GELU BERT was trained with: x/2 * (1 + erf(x / sqrt(2))).
+ fn geluExact(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    return x.scale(0.5).mul(x.scale(1.0 / @sqrt(2.0)).erf().addConstant(1));
+ }
+ 
+ const Layer = struct {
+@@ -180,10 +180,10 @@
+             .key = linear(self.withPrefix("key")),
+             .value = linear(self.withPrefix("value")),
+             .attn_out = linear(attn_output.withPrefix("dense")),
+-            .attn_norm = ???,
+-            .up = ???,
+-            .down = ???,
+-            .out_norm = ???,
++            .attn_norm = layerNorm(attn_output.withPrefix("LayerNorm"), config.layer_norm_eps),
++            .up = linear(view.withPrefix("intermediate").withPrefix("dense")),
++            .down = linear(view.withPrefix("output").withPrefix("dense")),
++            .out_norm = layerNorm(view.withPrefix("output").withPrefix("LayerNorm"), config.layer_norm_eps),
+             .heads = config.num_attention_heads,
+         };
+     }
+@@ -191,15 +191,22 @@
+     /// BertAttention: everybody listens to everybody, then
+     /// BertSelfOutput. x: {.s, .d} -> {.s, .d}
+     pub fn attend(self: Layer, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        const split = .{ .h = self.heads, .hd = .auto };
++        const q = self.query.forward(x, .f32).splitAxis(.dout, split).rename(.{ .s = .q });
++        const k = self.key.forward(x, .f32).splitAxis(.dout, split).rename(.{ .s = .k });
++        const v = self.value.forward(x, .f32).splitAxis(.dout, split).rename(.{ .s = .k });
++        const heard = zml.nn.sdpa(q, k, v, .{}).merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
++
++        const projected = self.attn_out.forward(heard, .f32).rename(.{ .dout = .d });
++        return self.attn_norm.forward(projected.add(x));
+     }
+ 
+     /// The whole BertLayer. x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: Layer, x: zml.Tensor) zml.Tensor {
+         const y = self.attend(x);
+-        const up = self.up.forward(self.out_norm.forward(y), .f32).gelu().rename(.{ .dout = .d });
++        const up = geluExact(self.up.forward(y, .f32)).rename(.{ .dout = .d });
+         const down = self.down.forward(up, .f32).rename(.{ .dout = .d });
+-        return down.add(y);
++        return self.out_norm.forward(down.add(y));
+     }
+ };
+ 

@@ -33,6 +33,9 @@
 //     bags.add(flights)     -> {bags=4,f32}
 //     flights.add(bags)     -> {flights=4,f32}
 //
+// Same four numbers both times. Only the label on the result
+// depends on who was standing on the left.
+//
 // Same story at run time: when you call an Exe, each Buffer is
 // compared with its placeholder by dims and dtype only. Tags
 // exist while tracing and are gone afterwards. (That's the "tags
@@ -66,9 +69,15 @@
 // method of exercise 027), checks the labels, and only then adds.
 // Kevin "simplified" its first line. Run it, and find out what a
 // failed assert looks like when it happens inside a compile call.
+// (It does not look like much. Zig says "reached unreachable
+// code", which is how it pronounces "you asserted something
+// false". The useful part is the stack trace under it: `assert`,
+// then your own function and its line, then ZML's compiler.)
 //
-// Last, somebody took the line that runs Kevin's Exe (two lines,
-// with the cleanup). Exercise 010. The Buffers are waiting.
+// Last, somebody took the line that runs Kevin's Exe, the one
+// called `kevin` (two lines, with the cleanup). Exercise 011. The
+// Buffers are waiting, and the print wants a Buffer called
+// `result`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -144,7 +153,7 @@ pub fn main(init: std.process.Init) !void {
     var fees_buffer: zml.Buffer = try .fromBytes(io, platform, weights.shape(), std.mem.sliceAsBytes(&[_]f32{ 50, 50, 75, 120 }));
     defer fees_buffer.deinit();
 
-    // Run Kevin's Exe on the two Buffers.
+    // Run the Exe called `kevin` on the two Buffers, as `result`.
 
     try stdout.print("Kilograms plus dollars: {any}. Unit: unknown.\n", .{try result.getValue([4]f32, io)});
     try stdout.flush();

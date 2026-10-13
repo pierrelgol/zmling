@@ -1,0 +1,44 @@
+--- exercises/21_the_graduation/141_the_transcript.zig
++++ answers/21_the_graduation/141_the_transcript.zig
+@@ -148,22 +148,28 @@
+ 
+ /// How many blocks the checkpoint really has.
+ fn countLayers(view: View) u32 {
+-    return ???;
++    var n: u32 = 0;
++    while (view.withPrefix("layers").withLayer(n).hasKey("")) n += 1;
++    return n;
+ }
+ 
+ /// The hidden size of the feed-forward, the way model.py computes it.
+ fn hiddenFromFormula(dim: u32, multiple_of: u32) u32 {
+-    return ???;
++    const two_thirds = 2 * (4 * dim) / 3;
++    return multiple_of * ((two_thirds + multiple_of - 1) / multiple_of);
+ }
+ 
+ /// The hidden size of the feed-forward, the way the checkpoint states it.
+ fn hiddenFromShapes(view: View) !u32 {
+-    return ???;
++    const w1 = try shapeOf(view, "layers.0.feed_forward.w1.weight");
++    return size(w1, 0);
+ }
+ 
+ /// The number of key/value heads, from the width of `wk`.
+ fn kvHeadsFromShapes(view: View, config: Config) !u32 {
+-    return ???;
++    const wk = try shapeOf(view, "layers.0.attention.wk.weight");
++    const head_dim = config.dim / config.n_heads;
++    return size(wk, 0) / head_dim;
+ }
+ 
+ fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
+@@ -210,7 +216,7 @@
+     try stdout.print("  biases: {d}\n", .{biases});
+ 
+     // The names of model.py start here.
+-    const view = store.view();
++    const view = store.view().withPrefix("_orig_mod");
+ 
+     const table = try shapeOf(view, "tok_embeddings.weight");
+     try stdout.print("the token table: {f}\n", .{table});

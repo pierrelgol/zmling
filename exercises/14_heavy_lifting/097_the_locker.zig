@@ -79,10 +79,26 @@
 //     bytes. It gets printed, so that you can READ it: the next
 //     steps are written in there;
 //  3. `dataOffset`: where a `data_offsets` position really is,
-//     counted from the start of the file. Then the plates;
+//     counted from the start of the file. Then the plates:
+//     whoever put them away read them from the wrong place. If
+//     a plate weighs a few quintillion kg, that's him;
 //  4. the combination, all yours: find its entry in the header
 //     you printed, declare the right array for its dtype and
 //     shape, and read it the way the plates were read.
+//
+// A worked example, so that step 3 is arithmetic and not faith.
+// Say the header is 100 bytes long, and a tensor has
+// `data_offsets` [16, 28]. In the file, its first byte is at
+//
+//     8 (the length)  +  100 (the header)  +  16  =  byte 124
+//
+// and it is 28 - 16 = 12 bytes long: three 4-byte numbers.
+//
+// (Step 4 needs the print of step 2, and the program will not
+// compile until step 4 is written. Break the circle either way:
+// give `combination` a throwaway value for one run, or simply
+// open gym.safetensors in a text editor. Nine tenths of it is
+// text.)
 //
 const std = @import("std");
 

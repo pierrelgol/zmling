@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/023_order_up.zig
 +++ answers/03_arithmetic_diner/023_order_up.zig
-@@ -87,18 +87,19 @@
+@@ -99,18 +99,19 @@
  
  /// (temps - mean) / sqrt(variance + epsilon)
  fn standardize(temps: zml.Tensor, mean: zml.Tensor, variance: zml.Tensor) zml.Tensor {
@@ -23,10 +23,10 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -123,6 +124,10 @@
+@@ -135,6 +136,10 @@
      defer temps_buffer.deinit();
-     // The mean, and the variance for a standard deviation of 50
-     // degrees.
+     // `mean_buffer`, and `variance_buffer` for a standard
+     // deviation of 50 degrees.
 +    var mean_buffer: zml.Buffer = try .scalar(io, platform, 375, .f32);
 +    defer mean_buffer.deinit();
 +    var variance_buffer: zml.Buffer = try .scalar(io, platform, 2500, .f32);

@@ -530,6 +530,7 @@ const exercises = [_]Exercise{
         \\coupon 10: { 8, 2, 14, 19 }
         \\coupon 0: { 20, 11, 24, 33 }
         ,
+        .hint = "Follow one table through the five rules on a napkin. Where does the dtype change, and what must rule 5 add to?\nAnd the tables are numbered from 1.\n",
     },
     // Chapter 04: Luggage Tags
     .{
@@ -607,7 +608,7 @@ const exercises = [_]Exercise{
         \\New machine {n=1,c=3,h=2,w=5,f32}: a pixel of 10 becomes 1.000
         \\Handheld    {h=2,w=5,f32}: a pixel of 10 becomes 1.000
         ,
-        .hint = "The function says dim(1). Which axis is that on the NEW machine?\n",
+        .hint = "The function says dim(1) and dim(2). Which axes are those on the NEW machine? And does the handheld have an axis 2 at all?\n",
     },
     .{
         .main_file = "04_luggage_tags/032_quiz_flight_zg404.zig",
@@ -615,6 +616,7 @@ const exercises = [_]Exercise{
         \\Report {flights=2,bags=3,f32}, bags on axis 1, fully tagged: true
         \\Excess: { { 0, 1, 0 }, { 4, 0, 3 } }
         ,
+        .hint = "The airline's table needs new stickers AND a quarter turn; stickers alone move no suitcase.\nIf the assert fails ('reached unreachable code'), print both shapes: what still differs?\n",
     },
     // Chapter 05: Broadcast News
     .{
@@ -724,7 +726,7 @@ const exercises = [_]Exercise{
     .{
         .main_file = "06_reduction_kitchen/042_dish_of_the_day.zig",
         .output =
-        \\The blackboard is a {day=5,i32}.
+        \\The blackboard is a {day=5,i32}, with a {day=5,f32} of portions.
         \\Tuesday: soup, 12 sold
         \\Wednesday: risotto, 14 sold
         \\Thursday: duck, 11 sold
@@ -737,6 +739,7 @@ const exercises = [_]Exercise{
         .main_file = "06_reduction_kitchen/043_running_low.zig",
         .output =
         \\Butter: 7.0 2.5 10.5 5.5 -0.5 -2.5 7.5 3.5
+        \\Chef Odile reads a {f32} and a {i32}.
         \\Lowest point: -2.5 kg, after hour 5. We ran out. Nobody tell Chef Odile.
         ,
         .hint = "First a panic about bytes: how many numbers should come out of `stock`?\n",
@@ -772,6 +775,7 @@ const exercises = [_]Exercise{
         \\shares {dish=4,f32}: soup 0.085 duck 0.370 risotto 0.320 tart 0.224
         \\against the average {table=3,f32}: 0.641 1.036 1.324
         ,
+        .hint = "Each printed shape tells you what is left to squeeze. A true scalar prints as {f32} or {i32}.\n",
     },
     // Chapter 07: Origami Club
     .{
@@ -866,7 +870,7 @@ const exercises = [_]Exercise{
         \\  { 0, 4, 0, 5, 0, 6, 0 }
         \\  { 0, 0, 0, 0, 0, 0, 0 }
         ,
-        .hint = "Once it compiles, count the columns of the card.\n",
+        .hint = "The compile error starts inside ZML; the `note:` under it points at your line. Once it compiles, count the columns of the card.\n",
     },
     .{
         .main_file = "07_origami_club/053_quiz_a_thousand_cranes.zig",
@@ -950,7 +954,7 @@ const exercises = [_]Exercise{
         \\fullest before the swap: { 30, 31, 32, 33 }
         \\fullest after the swap: { 99, 99, 99, 99 }
         ,
-        .hint = "Out of its box means the .pizzas axis is gone. Compare the shape printed with the shape promised.\n",
+        .hint = "Out of its box means the .pizzas axis is gone. Compare the shape printed with the shape promised. For `fullest`, write down the shape after every step.\n",
     },
     .{
         .main_file = "08_slice_of_life/060_quiz_the_usual.zig",
@@ -1085,7 +1089,12 @@ const exercises = [_]Exercise{
         \\The ledger: { 30, 5, -13, 0, 50, 0 }
         \\The crew's purse: 72 doubloons.
         ,
-        .hint = "Where the mask is TRUE, the value is KEPT.\n",
+        .hint =
+        \\Where the mask is TRUE, the value is KEPT.
+        \\`select` belongs to the bool tensor, and its branches come in the order "true, false".
+        \\The purse is the ledger, reduced, with no souvenir left.
+        \\
+        ,
     },
     .{
         .main_file = "10_treasure_maps/070_x_marks_the_index.zig",
@@ -1100,6 +1109,7 @@ const exercises = [_]Exercise{
         .hint =
         \\One stop is right, and only by accident.
         \\What is the index of the FIRST island?
+        \\If the first line differs: the lesson says what the axis of `route` is called.
         \\
         ,
     },
@@ -1110,7 +1120,12 @@ const exercises = [_]Exercise{
         \\dig X number 2 first.
         \\best of each latitude {lat=4,i32}: { 7, 9, 4, 8 }
         ,
-        .hint = "First the order of the fields. Then look at the shape that is printed before the crash.\n",
+        .hint =
+        \\First the order of the fields. Then look at the shape that is printed before the crash:
+        \\which tag would make `best_lon` walk in step with the sea?
+        \\`firstToDig` wants WHERE the maximum is, not how much, and no axis around the answer.
+        \\
+        ,
     },
     .{
         .main_file = "10_treasure_maps/072_roll_call.zig",
@@ -1135,7 +1150,8 @@ const exercises = [_]Exercise{
         \\Top-3 accuracy of the crew: 0.50
         ,
         .hint =
-        \\The compile error quotes an example call. It is a very good example.
+        \\The compile error starts inside ZML (the `note:` lines under it lead back to yours),
+        \\and it quotes an example call. It is a very good example.
         \\For the bets: build the Shape of the grid once, and `broad` both sides to it.
         \\
         ,
@@ -1148,7 +1164,12 @@ const exercises = [_]Exercise{
         \\Island 3: 70 doubloons. Send 5 diggers and 2 lookouts.
         \\That makes 11 diggers and 5 lookouts. Polly stays on the ship.
         ,
-        .hint = "Mask first, then pick. And \"safe\" is the opposite of \"more than 3 sharks\".\n",
+        .hint =
+        \\Mask first, then pick. And "safe" is the opposite of "more than 3 sharks".
+        \\`topK` hands you positions along .island under a new name: just what `gather` likes.
+        \\Two outputs: `eval` refuses, the runner of exercise 73 does not.
+        \\
+        ,
     },
     // Chapter 11: Time Loops
     .{
@@ -1247,7 +1268,7 @@ const exercises = [_]Exercise{
         \\Night 2: peak 9, 3 seconds over the threshold.
         \\Night 3: peak 6, 2 seconds over the threshold.
         ,
-        .hint = "run takes the inputs as a tuple, then a tuple of pointers to the destinations, then the call options. A count is a sum of bools that became numbers.\n",
+        .hint = "run takes the inputs as a tuple, then a tuple of pointers to the destinations, then the call options. A count is a sum of bools that became numbers. And the two defers: one per Buffer the call made. Nobody checks those but you.\n",
     },
     .{
         .main_file = "12_the_exe_files/084_the_autopsy.zig",
@@ -1274,7 +1295,7 @@ const exercises = [_]Exercise{
         \\3 layers, 7 inputs.
         \\What reaches the top: { 2.5, 4.5 }
         ,
-        .hint = "The lesson gives the formula of a layer and the loop of the network. A Bufferized(Layer) is a struct of two Buffers. deinitAll is happy with a Layer, just not with a slice of them.\n",
+        .hint = "The lesson gives the formula of a layer and the loop of the network. A Bufferized(Layer) is a struct of two Buffers. deinitAll is happy with a Layer, just not with a slice of them. If Zig then asks for a const, it is right.\n",
     },
     .{
         .main_file = "12_the_exe_files/087_ten_sightings.zig",
@@ -1381,9 +1402,9 @@ const exercises = [_]Exercise{
         .output =
         \\verdicts {cake=4,i32}, confidence {cake=4,f32}
         \\  plain          -> rejected (62.2% sure)
-        \\  strawberry     -> served   (62.2% sure)
-        \\  olive          -> served   (62.2% sure)
-        \\  salted caramel -> rejected (62.2% sure)
+        \\  strawberry     -> served   (81.8% sure)
+        \\  olive          -> served   (81.8% sure)
+        \\  salted caramel -> rejected (92.4% sure)
         ,
         .hint = "The panic names a tag, and the shape that does not have it. Then: is there an oven between the tiers? Two outputs need a runner.\n",
     },
@@ -1395,7 +1416,7 @@ const exercises = [_]Exercise{
         \\  2 eclairs, 2 macarons     -> tea time  (70.0% sure)
         \\  3 brownies, 1 eclair      -> a wedding (97.5% sure)
         ,
-        .hint = "Seven steps, in order. A panic names the shapes it got: compare them with the tags that step expects.\n",
+        .hint = "Seven steps, in order. A panic names the shapes it got: hold them against the table of shapes in the lesson, and you know which step is off.\n",
     },
     // Chapter 14: Heavy Lifting
     .{
@@ -1488,7 +1509,7 @@ const exercises = [_]Exercise{
         \\  Chad NEVER SKIP LEG DAY.  1 banana, 3 spinach: $7.50, taste 0
         \\  You  DO YOU EVEN LIFT?    0 banana, 0 spinach: $0.50, taste 0
         ,
-        .hint = "Draw the tree of the file first: every dot in a name is one struct deeper. Not every layer in there has a bias.\n",
+        .hint = "Draw the tree of the file first: every dot in a name is one struct deeper. Not every layer in there has a bias. Build leaves first: `linear`, `Coach`, `Blendtron`, `Gym`, then `main`.\n",
     },
     // Chapter 15: Pay Attention
     .{
@@ -1630,7 +1651,7 @@ const exercises = [_]Exercise{
         \\  Paca   3.085  0.000 11.602  0.000
         \\  Dolly  0.441  5.442  4.448 16.127
         ,
-        .hint = "Steps 1 to 5, one at a time. When ZML panics, the shapes in the message tell you which tag is off. In `main`: the result of a round is the input of the next one.\n",
+        .hint = "Steps 1 to 5, one at a time. When ZML panics, the shapes in the message tell you which tag is off. In `main`: four Linears want four placeholders of their own, and the result of a round is the input of the next one.\n",
     },
     // Chapter 16: Casino Royale
     .{
@@ -1698,5 +1719,563 @@ const exercises = [_]Exercise{
         \\It still got the next word right more often than not: true
         ,
         .hint = "Build it in the order of the chapters: fields, `init`, `forward`, `load`, then `main`. Run the sober Exe first; the night shift is the same loop with a counter instead of a print.\n",
+    },
+    // Chapter 17: The Customs Office
+    .{
+        .main_file = "17_customs_office/115_nothing_to_declare.zig",
+        .output =
+        \\In the suitcase: 4 tensors
+        \\  fc1.bias   {500,f32}
+        \\  fc1.weight {500,784,f32}
+        \\  fc2.bias   {10,f32}
+        \\  fc2.weight {10,500,f32}
+        \\Every tensor is f32: true
+        \\Parameters: 397510
+        \\What the matrices say:
+        \\  fc1.weight: 784 numbers in, 500 numbers out
+        \\  fc2.weight: 500 numbers in, 10 numbers out
+        ,
+        .hint = "Three loops over `registry.iterator()`: `entry.key_ptr.*` is the name, `entry.value_ptr.shape` the shape. A Linear weight is {out, in}.\n",
+    },
+    .{
+        .main_file = "17_customs_office/116_fill_in_the_form.zig",
+        .output =
+        \\fc1.weight {dout=500,d=784,f32}
+        \\fc1.bias   {dout=500,f32}
+        \\fc2.weight {dout=10,d=500,f32}
+        \\fc2.bias   {dout=10,f32}
+        \\{d=784,f32} in, {dout=10,f32} out
+        \\In a blank form, M. Nist sees a 5
+        ,
+        .hint = "Fill in the blanks first, then run and read the two panics one after the other: the first quotes a name, the second quotes two shapes. Compare each with what exercise 115 printed.\n",
+    },
+    .{
+        .main_file = "17_customs_office/117_the_handwriting_test.zig",
+        .output =
+        \\The register: 10000 parcels of 28 x 28 pixels
+        \\Parcel 0:
+        \\............................
+        \\............................
+        \\............................
+        \\............................
+        \\............................
+        \\............................
+        \\............................
+        \\.......###..................
+        \\......###############.......
+        \\..........############......
+        \\...................##.......
+        \\...................##.......
+        \\..................##........
+        \\.................###........
+        \\.................##.........
+        \\................###.........
+        \\................##..........
+        \\................##..........
+        \\...............##...........
+        \\..............###...........
+        \\.............###............
+        \\.............##.............
+        \\............##..............
+        \\...........###..............
+        \\...........###..............
+        \\...........###..............
+        \\...........##...............
+        \\............................
+        \\parcel    0: M. Nist reads a 7
+        \\parcel    1: M. Nist reads a 2
+        \\parcel    2: M. Nist reads a 1
+        \\parcel    3: M. Nist reads a 0
+        \\parcel    4: M. Nist reads a 4
+        \\parcel  115: M. Nist reads a 4
+        \\parcel  674: M. Nist reads a 5
+        \\parcel 1522: M. Nist reads a 9
+        \\Same as PyTorch: 8 / 8
+        ,
+        .hint = "If parcel 0 does not look like a 7, the bug is in `Register`. If it does and the digits are off, compare `forward` with the seven Python lines, one by one.\n",
+    },
+    .{
+        .main_file = "17_customs_office/118_trust_but_verify.zig",
+        .output =
+        \\Tolerances: absolute 0.001, relative 0.01, close fraction 0.999
+        \\Digits like PyTorch:       8 / 8
+        \\Hidden layer like PyTorch: 8 / 8
+        \\Scores like PyTorch:       8 / 8
+        ,
+        .hint = "With a relative tolerance of 1, how far from 30 may a score be? Fix `opts`, write the hidden check, then look at which of the two counts is 0, and at the sign of the scores PyTorch gets.\n",
+    },
+    .{
+        .main_file = "17_customs_office/119_rush_hour.zig",
+        .output =
+        \\200 parcels in one call: {b=200,i32}
+        \\parcel 149: M. Nist reads a 9, the label says 2
+        \\Like PyTorch: 200 / 200
+        \\Like the label: 199 / 200
+        ,
+        .hint = "Read the shapes in the panic: who made a `.d` of 156800? Name the axes instead of counting them: `merge` for the pixels, a tag for `argMax` and `squeeze`.\n",
+    },
+    .{
+        .main_file = "17_customs_office/120_quiz_port_of_entry.zig",
+        .output =
+        \\In the suitcase: 4 tensors, 397510 parameters
+        \\The register: 10000 parcels of 28 x 28 pixels
+        \\Scores like PyTorch on the first 200 parcels: true
+        \\Digits like PyTorch: 1000 / 1000
+        \\Digits like the label: 985 / 1000
+        ,
+        .hint = "Build it in the order of the list, and run after each step. Exercises 115 to 119 each hold one piece. If the scores do not match, the report on stderr says how wrong: rounding, or a different computation?\n",
+    },
+    // Chapter 18: Lost in Translation
+    .{
+        .main_file = "18_lost_in_translation/121_the_resume.zig",
+        .output =
+        \\Bertie's resume:
+        \\  layers: 2
+        \\  hidden size: 128
+        \\  heads: 2, with 64 numbers each
+        \\  intermediate size: 512
+        \\  vocabulary: 30522 tokens
+        \\  longest sentence: 512 tokens
+        \\  activation: gelu
+        \\  layer norm eps: 1e-12
+        \\The checkpoint:
+        \\  word table {30522,128,f32}, as announced: true
+        \\  layers in the file: 2, as announced: true
+        ,
+        .hint = "`error.UnknownField` is about the parser's options, `error.MissingField` about a field with no default. Where does HuggingFace keep the values a config.json does not mention?\n",
+    },
+    .{
+        .main_file = "18_lost_in_translation/122_the_glossary.zig",
+        .output =
+        \\The capital of France is [MASK].
+        \\  [CLS] the capital of france is [MASK] . [SEP]
+        \\  ours:    { 101, 1996, 3007, 1997, 2605, 2003, 103, 1012, 102 }
+        \\  PyTorch: { 101, 1996, 3007, 1997, 2605, 2003, 103, 1012, 102 }
+        \\  same ids: true
+        \\  [MASK] is token 103, at position 6
+        \\Unintelligible, said Bertie.
+        \\  un ##int ##elli ##gible , said bertie .
+        \\  and back: unintelligible, said bertie.
+        ,
+        .hint = "Count the ids on the two lines. What does Python put around a sentence that the ZML encoder does not?\n",
+    },
+    .{
+        .main_file = "18_lost_in_translation/123_three_dictionaries.zig",
+        .output =
+        \\in the file, under bert.embeddings.
+        \\  LayerNorm.bias {128,f32}
+        \\  LayerNorm.weight {128,f32}
+        \\  position_embeddings.weight {512,128,f32}
+        \\  token_type_embeddings.weight {2,128,f32}
+        \\  word_embeddings.weight {30522,128,f32}
+        \\embeddings: {s=9,d=128,f32}
+        \\same as PyTorch: true
+        ,
+        .hint = "A panic naming a tensor: compare it, letter by letter, with the names printed just above. If it says `false`: `token_type_ids=None` does not mean \"no token types\".\n",
+    },
+    .{
+        .main_file = "18_lost_in_translation/124_a_single_thought.zig",
+        .output =
+        \\attention half, same as PyTorch: true
+        \\whole layer, same as PyTorch: true
+        \\whole layer, strictly the same: true
+        ,
+        .hint = "Where is the LayerNorm in `BertOutput.forward`: before the dense layers, or around the sum? If only the strict check fails, look at which GELU is called.\n",
+    },
+    .{
+        .main_file = "18_lost_in_translation/125_second_thoughts.zig",
+        .output =
+        \\layers on the resume: 2
+        \\layers in the model: 2, in the weights: 2
+        \\compared with bert.encoder.layer.1.out
+        \\hidden states: {s=9,d=128,f32}
+        \\same as PyTorch: true
+        ,
+        .hint = "The view given to `Encoder.init` stands on \"bert\". Layer names count from 0. Buffers first, then the slice that held them.\n",
+    },
+    .{
+        .main_file = "18_lost_in_translation/126_the_missing_page.zig",
+        .output =
+        \\cls.predictions.decoder.weight in the file: false
+        \\cls.predictions.bias in the file: true
+        \\scores: {voc=30522,f32}, same as PyTorch: true
+        \\The capital of France is [MASK].
+        \\[MASK] = france
+        ,
+        .hint = "No tensor named `cls.predictions.decoder.weight`: correct, and the file is not broken. What does the reference say about that name?\n",
+    },
+    .{
+        .main_file = "18_lost_in_translation/127_quiz_mind_the_gap.zig",
+        .output =
+        \\He was born in New [MASK] City.
+        \\  Bertie: york, PyTorch: york
+        \\He opened the [MASK] and went inside.
+        \\  Bertie: door, PyTorch: door
+        \\The prime [MASK] of Japan.
+        \\  Bertie: minister, PyTorch: minister
+        \\The interpreter speaks English and [MASK].
+        \\  Bertie: english, PyTorch: english
+        \\They agree on 4 sentences out of 4.
+        ,
+        .hint = "Build it in the order of the chapter, and reuse your own exercises: 121 for the config, 122 for the ids, 123 to 125 for the encoder, 126 for the head.\n",
+    },
+    // Chapter 19: Once Upon a Time
+    .{
+        .main_file = "19_once_upon_a_time/128_the_donation_box.zig",
+        .output =
+        \\The box: 108 tensors, 3745984 numbers.
+        \\The biggest: transformer.wte.weight {50257,64,f32}, 85% of the numbers.
+        \\lm_head.weight is in the box: false
+        \\Blocks: 8
+        \\The Linears of block 0:
+        \\  attn.attention.q_proj    {64,64,f32}   bias: no
+        \\  attn.attention.k_proj    {64,64,f32}   bias: no
+        \\  attn.attention.v_proj    {64,64,f32}   bias: no
+        \\  attn.attention.out_proj  {64,64,f32}   bias: yes
+        \\  mlp.c_fc                 {256,64,f32}  bias: yes
+        \\  mlp.c_proj               {64,256,f32}  bias: yes
+        \\The voice of block 0 is wired: 4 Linears, 1 bias.
+        ,
+        .hint = "Two panics wait behind the `???`s, and each one names the tensor it could not find. Compare that name, letter by letter, with the names listed in the lesson. Then: is every Linear supposed to have that tensor?\n",
+    },
+    .{
+        .main_file = "19_once_upon_a_time/129_page_numbers.zig",
+        .output =
+        \\"Once upon a time, there was a little dragon"
+        \\10 tokens: { 7454, 2402, 257, 640, 11, 612, 373, 257, 1310, 10441 }
+        \\pieces: [Once][Ġupon][Ġa][Ġtime][,][Ġthere][Ġwas][Ġa][Ġlittle][Ġdragon]
+        \\same ids as PyTorch: true
+        \\the position table: {pos=2048,d=64,f32}
+        \\token vectors match PyTorch: true
+        \\position vectors match PyTorch: true
+        \\what block 0 receives matches PyTorch: true
+        ,
+        .hint = "Four `false`, and stderr complains about shapes before it complains about numbers. Count the tokens, and look at the first piece: who asked for it?\n",
+    },
+    .{
+        .main_file = "19_once_upon_a_time/130_no_square_roots.zig",
+        .output =
+        \\16 heads of 4 numbers each
+        \\blocks: global local global local global local global local
+        \\a local block hears the last 256 tokens
+        \\block 0 (global),  10 tokens, matches PyTorch: true
+        \\block 1 (local),   10 tokens, matches PyTorch: true
+        \\block 1 (local),  300 tokens, matches PyTorch: true
+        ,
+        .hint = "Each fix turns different lines true. All three false: what does `sdpa` do to the scores when you tell it nothing? Only the 300-token line false: which blocks are local, and who tells the mask?\n",
+    },
+    .{
+        .main_file = "19_once_upon_a_time/131_bath_first.zig",
+        .output =
+        \\activation_function: gelu_new
+        \\the activation matches PyTorch, strictly: true
+        \\ln_1 matches PyTorch: true
+        \\attn matches PyTorch: true
+        \\mlp matches PyTorch: true
+        \\the whole block matches PyTorch: true
+        ,
+        .hint = "`mlp` true and the whole block false: the parts are fine, their order is not. Put Pip's two lines next to the two lines of the lesson. The strict line is about one function only, and about one key of config.json.\n",
+    },
+    .{
+        .main_file = "19_once_upon_a_time/132_the_same_book_twice.zig",
+        .output =
+        \\8 blocks between the two tables and the head
+        \\what the head receives matches PyTorch: true
+        \\the scores match PyTorch: true
+        \\"Once upon a time, there was a little dragon" and then:
+        \\  1. "."
+        \\  2. " named"
+        \\  3. " who"
+        ,
+        .hint = "`Checkpoint has no tensor named lm_head.weight`: it is not coming. Which tensor does the class tie it to? If both checks then say false, compare `hidden` with the last line of the PyTorch loop.\n",
+    },
+    .{
+        .main_file = "19_once_upon_a_time/133_one_page_one_word.zig",
+        .output =
+        \\10 tokens on a page of 43, the scores match PyTorch: true
+        \\Once upon a time, there was a little dragon. He lived in a big castle with his family. One day, the dragon was very hungry. He wanted to eat some food, but he was too hungry.
+        ,
+        .hint = "A story that falls apart right after the prompt: the scores are read at the wrong place of the page. The place of the last real token changes at every turn of the loop, so it cannot be baked into the Exe.\n",
+    },
+    .{
+        .main_file = "19_once_upon_a_time/134_quiz_the_owl_who_read.zig",
+        .output =
+        \\9 tokens in, 33 tokens out
+        \\The old owl wanted to read a story to the owl. He asked the owl if he could read the story. The owl said yes and the owl was happy.
+        \\the same story as PyTorch: true
+        ,
+        .hint = "Build it in the order of the chapter: Config, linear, Attention, Mlp, Block, the model, then `main`. If the owl goes off script, the checks of exercises 129 to 132 still work on your structs: `activations.safetensors` is still in the directory.\n",
+    },
+    // Chapter 20: The Autopsy
+    .{
+        .main_file = "20_the_autopsy/135_the_reference_body.zig",
+        .output =
+        \\transformer.h.0.ln_1: ok
+        \\transformer.h.0.attn.attention: ok
+        \\transformer.h.0.attn.attention.q_proj: ok
+        \\transformer.h.0.mlp: ok
+        \\transformer.h.0: ok
+        \\transformer.ln_f: ok
+        \\The control, block 0 on the table with the papers of block 1:
+        \\transformer.h.1: DIVERGES
+        \\Dr. Mortis was fooled: false
+        ,
+        .hint = "`runAlone` is exercise 101 in four lines: a placeholder, `platform.compile(..., layer, .forward, .{x}, .{})`, `exe.eval` with the weights and the input. `examine` needs two keys, `name.in` and `name.out`: one `bufPrint` each.\n",
+    },
+    .{
+        .main_file = "20_the_autopsy/136_where_it_starts.zig",
+        .output =
+        \\The chained walk, each stage fed by the port:
+        \\transformer.drop.in: ok
+        \\transformer.h.0.out: ok
+        \\transformer.h.1.out: ok
+        \\transformer.h.2.out: ok
+        \\transformer.h.3.out: ok
+        \\transformer.h.4.out: ok
+        \\transformer.h.5.out: ok
+        \\transformer.h.6.out: ok
+        \\transformer.h.7.out: ok
+        \\transformer.ln_f.out: ok
+        \\The trouble starts at: nowhere
+        \\The isolated walk, each layer fed by PyTorch:
+        \\transformer.h.0: ok
+        \\transformer.h.1: ok
+        \\transformer.h.2: ok
+        \\transformer.h.3: ok
+        \\transformer.h.4: ok
+        \\transformer.h.5: ok
+        \\transformer.h.6: ok
+        \\transformer.h.7: ok
+        \\transformer.ln_f: ok
+        \\Inside block 0:
+        \\transformer.h.0.ln_1: ok
+        \\transformer.h.0.attn.attention: ok
+        \\transformer.h.0.ln_2: ok
+        \\transformer.h.0.mlp: ok
+        \\last_logits: ok
+        \\Once upon a time, there was a little dragon. He lived in a big castle with his family. One day, the dragon was very hungry. He wanted to eat some food, but he was too hungry.
+        \\
+        \\The dragon said, "
+        ,
+        .hint = "For the walk: keep one `stream` Buffer, and replace it after each stage (deinit the old one). Then let the verdicts choose what you read: which part of block 0 is sick, and is there any code of yours in it?\n",
+    },
+    .{
+        .main_file = "20_the_autopsy/137_between_the_organs.zig",
+        .output =
+        \\Block 0, part by part:
+        \\transformer.h.0.ln_1: ok
+        \\transformer.h.0.attn.attention: ok
+        \\transformer.h.0.ln_2: ok
+        \\transformer.h.0.mlp: ok
+        \\The attention of block 0, leaf by leaf:
+        \\transformer.h.0.attn.attention.q_proj: ok
+        \\transformer.h.0.attn.attention.k_proj: ok
+        \\transformer.h.0.attn.attention.v_proj: ok
+        \\transformer.h.0.attn.attention.out_proj: ok
+        \\The probe, in the middle of the glue:
+        \\transformer.h.0.attn.attention.attn_dropout.in: ok
+        \\last_logits: ok
+        \\Once upon a time, there was a little dragon. He lived in a big castle with his family. One day, the dragon was very hungry. He wanted to eat some food, but he was too hungry.
+        \\
+        \\The dragon said, "
+        ,
+        .hint = "The probe test is `runAlone` with `.probs` instead of `.forward`. For the fix, put `probs` next to the six PyTorch lines of the lesson and count the operations.\n",
+    },
+    .{
+        .main_file = "20_the_autopsy/138_mislabelled.zig",
+        .output =
+        \\The labels, as ZML reads them (PyTorch says [out, in]):
+        \\c_fc.weight {dout=256,d=64,f32}
+        \\q_proj.weight {dout=64,d=64,f32}
+        \\The isolated walk, each layer fed by PyTorch:
+        \\transformer.h.0: ok
+        \\transformer.h.1: ok
+        \\transformer.h.2: ok
+        \\transformer.h.3: ok
+        \\transformer.h.4: ok
+        \\transformer.h.5: ok
+        \\transformer.h.6: ok
+        \\transformer.h.7: ok
+        \\transformer.ln_f: ok
+        \\Inside block 0:
+        \\transformer.h.0.ln_1: ok
+        \\transformer.h.0.attn.attention: ok
+        \\transformer.h.0.attn.attention.q_proj: ok
+        \\transformer.h.0.attn.attention.k_proj: ok
+        \\transformer.h.0.attn.attention.v_proj: ok
+        \\transformer.h.0.attn.attention.out_proj: ok
+        \\transformer.h.0.ln_2: ok
+        \\transformer.h.0.mlp: ok
+        \\transformer.h.0.mlp.c_fc: ok
+        \\transformer.h.0.mlp.c_proj: ok
+        \\last_logits: ok
+        \\Once upon a time, there was a little dragon. He lived in a big castle with his family. One day, the dragon was very hungry. He wanted to eat some food, but he was too hungry.
+        \\
+        \\The dragon said, "
+        ,
+        .hint = "Ten calls of `m.examine`, with `block.attn.q_proj` and `weights.attn.q_proj` style pairs. For the fix: compare the two shapes printed at the top with PyTorch's [out, in].\n",
+    },
+    .{
+        .main_file = "20_the_autopsy/139_looks_alive.zig",
+        .output =
+        \\The isolated walk, default tolerance:
+        \\transformer.h.0: ok
+        \\transformer.h.1: ok
+        \\transformer.h.2: ok
+        \\transformer.h.3: ok
+        \\transformer.h.4: ok
+        \\transformer.h.5: ok
+        \\transformer.h.6: ok
+        \\transformer.h.7: ok
+        \\transformer.ln_f: ok
+        \\Inside block 7, default tolerance:
+        \\transformer.h.7.ln_1: ok
+        \\transformer.h.7.attn.attention: ok
+        \\transformer.h.7.attn.attention.q_proj: ok
+        \\transformer.h.7.attn.attention.k_proj: ok
+        \\transformer.h.7.attn.attention.v_proj: ok
+        \\transformer.h.7.attn.attention.out_proj: ok
+        \\transformer.h.7.ln_2: ok
+        \\transformer.h.7.mlp: ok
+        \\transformer.h.7.mlp.c_fc: ok
+        \\transformer.h.7.mlp.c_proj: ok
+        \\The isolated walk, strict:
+        \\transformer.h.0: ok
+        \\transformer.h.1: ok
+        \\transformer.h.2: ok
+        \\transformer.h.3: ok
+        \\transformer.h.4: ok
+        \\transformer.h.5: ok
+        \\transformer.h.6: ok
+        \\transformer.h.7: ok
+        \\transformer.ln_f: ok
+        \\Inside block 0, strict:
+        \\transformer.h.0.ln_1: ok
+        \\transformer.h.0.attn.attention: ok
+        \\transformer.h.0.attn.attention.q_proj: ok
+        \\transformer.h.0.attn.attention.k_proj: ok
+        \\transformer.h.0.attn.attention.v_proj: ok
+        \\transformer.h.0.attn.attention.out_proj: ok
+        \\transformer.h.0.ln_2: ok
+        \\transformer.h.0.mlp: ok
+        \\transformer.h.0.mlp.c_fc: ok
+        \\transformer.h.0.mlp.c_proj: ok
+        \\last_logits: ok
+        \\Once upon a time, there was a little dragon. He lived in a big castle with his family. One day, the dragon was very hungry. He wanted to eat some food, but he was too hungry.
+        \\
+        \\The dragon said, "
+        ,
+        .hint = "`strict` is a `CompareOpts` with two fields set. When ln_1 and ln_2 are sick in every block and they are library code, look at what they were given, and where `config.json` spells it.\n",
+    },
+    .{
+        .main_file = "20_the_autopsy/140_quiz_the_cold_case.zig",
+        .output =
+        \\transformer.drop.in: ok
+        \\transformer.h.0: ok
+        \\transformer.h.1: ok
+        \\transformer.h.2: ok
+        \\transformer.h.3: ok
+        \\transformer.h.4: ok
+        \\transformer.h.5: ok
+        \\transformer.h.6: ok
+        \\transformer.h.7: ok
+        \\transformer.ln_f: ok
+        \\transformer.h.0.ln_1: ok
+        \\transformer.h.0.attn.attention: ok
+        \\transformer.h.0.attn.attention.q_proj: ok
+        \\transformer.h.0.attn.attention.k_proj: ok
+        \\transformer.h.0.attn.attention.v_proj: ok
+        \\transformer.h.0.attn.attention.out_proj: ok
+        \\transformer.h.0.ln_2: ok
+        \\transformer.h.0.mlp: ok
+        \\transformer.h.0.mlp.c_fc: ok
+        \\transformer.h.0.mlp.c_proj: ok
+        \\last_logits: ok
+        \\Once upon a time, there was a little dragon. He lived in a big castle with his family. One day, the dragon was very hungry. He wanted to eat some food, but he was too hungry.
+        \\
+        \\The dragon said, "
+        ,
+        .hint = "Fix what the verdicts point at, run again: a parent whose children are all ok is sick in its glue, and that goes for a Block too. The lesson has the author's code for each place.\n",
+    },
+    // Chapter 21: The Graduation
+    .{
+        .main_file = "21_the_graduation/141_the_transcript.zig",
+        .output =
+        \\tensors in the file: 47
+        \\  named _orig_mod.something: 47
+        \\  biases: 0
+        \\the token table: {512,64,f32}
+        \\wq: {64,64,f32}  wk: {32,64,f32}
+        \\            config  checkpoint
+        \\vocabulary     512         512
+        \\dim             64          64
+        \\layers           5           5
+        \\kv heads         4           4
+        \\hidden size, by the formula of model.py: 172
+        \\hidden size, by the shape of w1: 172
+        \\a separate output matrix: false
+        ,
+        .hint = "`error.NoSuchTensor`: the names of model.py are not the names of the file, and `main` prints how every one of them starts. `hasKey` matches the START of a name. In Zig, `/` on integers already rounds down.\n",
+    },
+    .{
+        .main_file = "21_the_graduation/142_cap_and_gown.zig",
+        .output =
+        \\w1 {dout=172,d=64,f32}, w3 {dout=172,d=64,f32}, w2 {dout=64,d=172,f32}
+        \\the gown {s=5,d=64,f32} matches PyTorch: true
+        \\the cap {s=5,d=64,f32} matches PyTorch: true
+        ,
+        .hint = "The gown: `zml.nn.rmsNorm` is `_norm`, the weight is yours (a `broad` away). The cap prints `false`: in the Python, which of the two wide matrices sits inside `F.silu(...)`? The missing test is the one above it with other names.\n",
+    },
+    .{
+        .main_file = "21_the_graduation/143_turn_the_tassel.zig",
+        .output =
+        \\the queries, after the turn: {s=5,h=8,hd=8,f32}
+        \\  the first token matches PyTorch: true
+        \\  all 5 tokens match PyTorch: true
+        ,
+        .hint = "`splitAxis(.dout, .{ .h = ..., .hd = .auto })`. `true` then `false`: position 0 is turned by an angle of 0, so it proves nothing. `reshape(..., -1, 2)` pairs each number with the one right after it: which `Layout` is that?\n",
+    },
+    .{
+        .main_file = "21_the_graduation/144_sharing_notes.zig",
+        .output =
+        \\8 heads ask, 4 heads answer: 2 share each set of notes
+        \\the attention {s=5,d=64,f32} matches PyTorch: true
+        ,
+        .hint = "Three Linears, three splits (not all with the same number of heads), `rope` on q and k, renames to `.q` and `.k`, `sdpa` with a causal mask, `merge`, `wo`. The panic shows k and v with `hd=4`: 32 numbers cut in how many heads?\n",
+    },
+    .{
+        .main_file = "21_the_graduation/145_the_speech.zig",
+        .output =
+        \\the prompt, in tokens: { 1, 403, 407, 261, 378 }
+        \\the logits {s=5,voc=512,f32} match PyTorch: true
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do.
+        ,
+        .hint = "The block is the two lines of Python, with `rmsNorm(x, weight)` for the norms. `init` allocates the slice of blocks; `forward` ends with a `dot` against the token table. The prefix belongs where the view is made. Four prompt tokens instead of five: who is missing?\n",
+    },
+    .{
+        .main_file = "21_the_graduation/146_by_heart.zig",
+        .output =
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do.
+        \\the same speech as PyTorch, token for token: true
+        \\positions run through the model, by heart: 105
+        \\positions run through the model, yesterday: 10706
+        ,
+        .hint = "`positions`: an `arange` along `.s`, plus `pos`. `filed`: two `dynamicUpdateSlice`, offsets `.layer` and `.k`, and the keys are spun BEFORE they are filed (as `.k`, not `.s`). The mask is exercise 108's with one row per query. In `main`: the prefill runs once at position 0; each decode feeds the token that just came out, at ITS position.\n",
+    },
+    .{
+        .main_file = "21_the_graduation/147_quiz_the_graduation.zig",
+        .output =
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do.
+        \\The speech is PyTorch's, token for token: true
+        \\For the photograph, dice in hand, the same speech again: true
+        \\At the party, Tiny told another story: true
+        \\It started with "Once upon a time": true
+        \\Every word of it was one of her 512: true
+        \\Class dismissed.
+        ,
+        .hint = "Build it in the order of the chapter: 142, 143, 144, 145, and get the greedy speech right WITHOUT a cache first. Then 146. Then `sampleTokens` instead of the argMax, and the Rng threaded like the cache. A wrong first line? Compare with `activations.safetensors`, layer by layer.\n",
     },
 };

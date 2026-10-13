@@ -70,7 +70,10 @@
 //     0: {pizzas=3,slices=4}. It is one subtraction, and
 //     Luigi's question decides whether it works. Think back to
 //     the newsroom (exercise 036): what kind of right-hand
-//     side does ZML agree to stretch?
+//     side does ZML agree to stretch? Answer wrong and you
+//     will be told so, in the usual words:
+//
+//         subtract expects tensor shapes to match, got {pizzas=3,slices=4,i32} and {slices=4,i32}
 //
 // Luigi prepared the first two. He got both questions right,
 // and then answered each of them on the wrong order. The third
@@ -147,6 +150,7 @@ pub fn main(init: std.process.Init) !void {
     {
         // Same journey as the block above, for `comparedToFirst`:
         // an Exe, a result, and a zml.Slice called `plate`.
+        ???;
 
         try stdout.print("compared:   {f} {any}\n", .{ plate.shape, plate.constItems(i32) });
     }

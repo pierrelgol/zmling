@@ -48,6 +48,30 @@
 // iteration has to free its own. A `defer` inside the loop body
 // does exactly that.
 //
+// A word from Scally about that, off the record: NOBODY CHECKS
+// IT. A Buffer's memory lives on the device (your CPU today, a
+// GPU tomorrow) and is handed out by the runtime underneath ZML,
+// not by `gpa`. Zig's leak-checking allocator never sees it.
+// Forget a `deinit` and this program prints the same three
+// lines. Free one Buffer twice and its neighbour never, same
+// three lines: a second `deinit` on the same variable does
+// nothing at all. zmling says PASSED either way. And then one
+// day the same loop runs once per word in a chatbot, on a GPU
+// with 24 GB of memory, and that is how the Bureau loses a
+// machine around lunchtime.
+//
+// So this part is on your honor. After each call, exactly the
+// Buffers that the call made are freed, each one once. How many
+// outputs does this Exe have?
+//
+// (What `gpa` does watch is host memory, like the two tables
+// inside the runner. Leave out `runner.deinit(gpa)` and the
+// program complains on its way out, `error(SafeAllocator):
+// leaked ...`, but on stderr and with a clean exit, and zmling
+// only shows you stderr when an exercise fails. To hear it, run
+// the exercise by hand, from the `zml` directory:
+// `bazel run //zmling/12_the_exe_files:083`.)
+//
 // And `exe.eval`? Here is its entire body, more or less:
 //
 //     var result: Buffer = undefined;
@@ -120,7 +144,7 @@ pub fn main(init: std.process.Init) !void {
 
         var report: zml.Bufferized(Report) = undefined;
         runner.run(io, ???, ???, ???);
-        // What the call put in `report` is yours now.
+        // What the call put in `report` is yours now. All of it, once.
         defer ???;
         defer ???;
 

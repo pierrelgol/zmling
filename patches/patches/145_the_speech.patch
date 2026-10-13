@@ -1,0 +1,87 @@
+--- exercises/21_the_graduation/145_the_speech.zig
++++ answers/21_the_graduation/145_the_speech.zig
+@@ -224,23 +224,34 @@
+ 
+     /// x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: Block, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        const h = x.add(self.attention.forward(rmsNorm(x, self.attention_norm)));
++        return h.add(self.feed_forward.forward(rmsNorm(h, self.ffn_norm)));
+     }
+ };
+ 
+ const Llama = struct {
+-    // The token table, the blocks, the last norm.
+-    ???,
++    tok_embeddings: zml.nn.TokenEmbedding,
++    layers: []Block,
++    norm: zml.Tensor,
+ 
+     /// The model, with placeholders made from the file. The caller
+     /// frees `layers`.
+     pub fn init(gpa: std.mem.Allocator, view: zml.io.TensorStore.View, config: Config) !Llama {
+-        return ???;
++        const layers = try gpa.alloc(Block, config.n_layers);
++        for (layers, 0..) |*layer, i| layer.* = .init(view.withPrefix("layers").withLayer(i), config);
++        return .{
++            .tok_embeddings = .{ .weight = view.withPrefix("tok_embeddings").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .layers = layers,
++            .norm = view.withPrefix("norm").createReplicatedTensor("weight", .{.d}),
++        };
+     }
+ 
+     /// tokens: {.s} -> logits: {.s, .voc}
+     pub fn forward(self: Llama, tokens: zml.Tensor) zml.Tensor {
+-        return ???;
++        var x = self.tok_embeddings.forward(tokens);
++        for (self.layers) |layer| x = layer.forward(x);
++        x = rmsNorm(x, self.norm);
++        return x.dot(self.tok_embeddings.weight, .d);
+     }
+ 
+     /// tokens: {.s}, last: {} -> the most likely token after
+@@ -320,7 +331,7 @@
+     var decoder = try tokenizer.decoder();
+     defer decoder.deinit();
+ 
+-    const model: Llama = try .init(gpa, store.view(), config);
++    const model: Llama = try .init(gpa, store.view().withPrefix("_orig_mod"), config);
+     defer gpa.free(model.layers);
+ 
+     // A struct with a slice in it: `bufferize` allocates the same
+@@ -337,9 +348,13 @@
+     // The story: the BOS, the prompt, and zeros to be written over.
+     var story: [story_len]u32 = @splat(0);
+     var len: usize = 0;
+-    // `story` starts with the BOS and the tokens of `prompt`, and
+-    // `len` says how many tokens that is.
+-    ???;
++    {
++        const ids = try encoder.encodeAlloc(gpa, prompt);
++        defer gpa.free(ids);
++        story[0] = bos;
++        @memcpy(story[1..][0..ids.len], ids);
++        len = 1 + ids.len;
++    }
+     try stdout.print("the prompt, in tokens: {any}\n", .{story[0..len]});
+ 
+     // First the proof: the logits of the prompt against PyTorch's.
+@@ -366,8 +381,16 @@
+         var next_exe = try platform.compile(gpa, io, model, .next, .{ tokens, last }, .{});
+         defer next_exe.deinit();
+ 
+-        // One token per run, until `story` is full.
+-        ???;
++        while (len < story_len) : (len += 1) {
++            var tokens_buffer: zml.Buffer = try .fromBytes(io, platform, tokens.shape(), std.mem.sliceAsBytes(&story));
++            defer tokens_buffer.deinit();
++            var last_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(len - 1)), .i32);
++            defer last_buffer.deinit();
++
++            var next_buffer = try next_exe.eval(gpa, io, .{ weights, tokens_buffer, last_buffer });
++            defer next_buffer.deinit();
++            story[len] = @intCast(try next_buffer.getValue(i32, io));
++        }
+     }
+ 
+     var text = try decoder.decodeAlloc(gpa, &story);

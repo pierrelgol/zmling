@@ -127,6 +127,7 @@ pub fn main(init: std.process.Init) !void {
 
     // The same three steps for `gaps`: an Exe called `gaps_exe`,
     // its result, and the three numbers in an array called `gap`.
+    ???;
 
     try stdout.print("Scoreboard {f}\n", .{exe.output_shapes[0]});
     for (board, 1..) |round, i| {

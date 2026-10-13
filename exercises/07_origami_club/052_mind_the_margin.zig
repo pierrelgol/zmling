@@ -31,6 +31,9 @@
 //
 //     low + d + (d - 1) * interior + high
 //
+// (Try it on the last example: 0 + 3 + 2 * 1 + 0 = 5, and
+// `1 0 2 0 3` is indeed five numbers. Coach measured.)
+//
 // Two things in there deserve a second look. `interior` spreads
 // the elements apart, which is how some upsampling layers are
 // built. And `low` and `high` may be NEGATIVE, in which case
@@ -55,6 +58,10 @@
 // it:
 //
 //     error: expected type 'tensor.Tensor.Pad', found '...struct...'
+//
+// That first line points inside ZML (zml/shape.zig), where
+// there is nothing for you to fix. Read on: a few lines below,
+// a `note: struct declared here` points at YOUR line.
 //
 // The error names the cure: write the type yourself, as in the
 // examples above. A local alias keeps it short:

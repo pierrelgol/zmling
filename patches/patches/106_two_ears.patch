@@ -1,6 +1,6 @@
 --- exercises/15_pay_attention/106_two_ears.zig
 +++ answers/15_pay_attention/106_two_ears.zig
-@@ -72,7 +72,19 @@
+@@ -76,7 +76,19 @@
  /// Self-attention with `heads` heads. x, v: {.s, .d} -> {.s, .d}
  /// x is used for the queries and for the keys, v for the values.
  fn listen(x: zml.Tensor, v: zml.Tensor, heads: u32) zml.Tensor {
@@ -21,7 +21,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -109,10 +121,12 @@
+@@ -113,10 +125,12 @@
      }));
      defer v_buffer.deinit();
  

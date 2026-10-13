@@ -1,0 +1,61 @@
+--- exercises/18_lost_in_translation/126_the_missing_page.zig
++++ answers/18_lost_in_translation/126_the_missing_page.zig
+@@ -240,20 +240,22 @@
+ const Head = struct {
+     dense: zml.nn.Linear,
+     norm: zml.nn.LayerNorm,
+-    decoder: zml.nn.Linear,
++    bias: zml.Tensor,
+ 
+     /// `view` must stand on "cls.predictions".
+     pub fn init(view: zml.io.TensorStore.View, config: Config) Head {
+         return .{
+             .dense = linear(view.withPrefix("transform").withPrefix("dense")),
+             .norm = layerNorm(view.withPrefix("transform").withPrefix("LayerNorm"), config.layer_norm_eps),
+-            .decoder = linear(view.withPrefix("decoder")),
++            .bias = view.createReplicatedTensor("bias", .{.voc}),
+         };
+     }
+ 
+-    /// x: {.d} -> scores {.voc}
+-    pub fn forward(self: Head, x: zml.Tensor) zml.Tensor {
+-        return ???;
++    /// x: {.d}, word_table: {.voc, .d} -> scores {.voc}
++    pub fn forward(self: Head, x: zml.Tensor, word_table: zml.Tensor) zml.Tensor {
++        const h = self.norm.forward(geluExact(self.dense.forward(x, .f32)).rename(.{ .dout = .d }));
++        // The decoder: its matrix is the word table, its bias is ours.
++        return h.dot(word_table, .d).add(self.bias);
+     }
+ };
+ 
+@@ -274,7 +276,7 @@
+     /// -> a score for every word of the glossary, {.voc}
+     pub fn forward(self: Bert, tokens: zml.Tensor, where: zml.Tensor) zml.Tensor {
+         const x = self.encoder.forward(tokens).gather(.{ .s = where }, .{});
+-        return self.head.forward(x);
++        return self.head.forward(x, self.encoder.embeddings.word.weight);
+     }
+ };
+ 
+@@ -390,13 +392,18 @@
+     var exe = try platform.compile(gpa, io, model, .forward, .{ tokens, zml.Tensor.init(.{}, .i32) }, .{});
+     defer exe.deinit();
+ 
+-    // `got`: the scores for `ids`, at the position `where`.
+-    ???;
++    var ids_buffer: zml.Buffer = try .fromBytes(io, platform, tokens.shape(), std.mem.sliceAsBytes(ids));
++    defer ids_buffer.deinit();
++    var where_buffer: zml.Buffer = try .scalar(io, platform, where, .i32);
++    defer where_buffer.deinit();
++
++    var got: zml.Buffer = try exe.eval(gpa, io, .{ weights, ids_buffer, where_buffer });
++    defer got.deinit();
+ 
+     // The word with the highest score.
+     const scores = try got.toSliceAlloc(gpa, io);
+     defer scores.free(gpa);
+-    const best: u32 = ???;
++    const best: u32 = @intCast(std.mem.indexOfMax(f32, scores.items(f32)));
+ 
+     const same = if (zml.testing.expectClose(io, want, got, .{})) |_| true else |_| false;
+     try stdout.print("scores: {f}, same as PyTorch: {}\n", .{ got.shape(), same });

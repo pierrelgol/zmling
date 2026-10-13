@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/054_just_a_slice.zig
 +++ answers/08_slice_of_life/054_just_a_slice.zig
-@@ -91,22 +91,22 @@
+@@ -93,22 +93,22 @@
  
  /// The last two slices of the pizza.
  fn lastTwo(pizza: zml.Tensor) zml.Tensor {

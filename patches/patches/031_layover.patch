@@ -1,6 +1,6 @@
 --- exercises/04_luggage_tags/031_layover.zig
 +++ answers/04_luggage_tags/031_layover.zig
-@@ -64,7 +64,7 @@
+@@ -75,7 +75,7 @@
  
  /// Each pixel divided by the number of pixels per image (h * w).
  fn dilute(scan: zml.Tensor) zml.Tensor {
@@ -9,20 +9,20 @@
  }
  
  /// Compiles `dilute` for the given layout, runs it on a scan
-@@ -77,6 +77,9 @@
+@@ -88,6 +88,9 @@
      defer exe.deinit();
  
-     // One scan in host memory, every pixel is 10.
+     // One scan in host memory, as `pixels`; every pixel is 10.
 +    const pixels: zml.Slice = try .alloc(gpa, layout);
 +    defer pixels.free(gpa);
 +    for (pixels.items(f32)) |*p| p.* = 10;
  
      var scan_buffer: zml.Buffer = try .fromSlice(io, platform, pixels);
      defer scan_buffer.deinit();
-@@ -85,7 +88,10 @@
-     defer result.deinit();
+@@ -97,7 +100,10 @@
  
-     // The result, back in host memory; its first pixel.
+     // The result, back in host memory; its first pixel. More
+     // than one line: host memory is yours to give back.
 -    return ???;
 +    const diluted: zml.Slice = try result.toSliceAlloc(gpa, io);
 +    defer diluted.free(gpa);
@@ -31,7 +31,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -103,7 +109,7 @@
+@@ -115,7 +121,7 @@
      const old_machine = zml.Shape.init(.{ .n = 1, .h = 2, .w = 5, .c = 3 }, .f32);
      const new_machine = zml.Shape.init(.{ .n = 1, .c = 3, .h = 2, .w = 5 }, .f32);
      // 2 rows of 5 pixels, and nothing else.

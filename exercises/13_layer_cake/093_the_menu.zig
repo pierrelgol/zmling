@@ -42,12 +42,24 @@
 //    matter what you called its axes;
 //
 //  - `idx` holds the ids. Any shape, but an INTEGER dtype: you
-//    cannot order item number 2.5;
+//    cannot order item number 2.5. (Ours are `.i32`, like the
+//    Zig array they are typed in at the bottom);
 //
 //  - the result has the axes of `idx`, followed by `.d`. An
 //    order of four items, `{s=4}`, comes back as `{s=4, d=3}`:
 //    four rows of the table. (`.s` for "sequence": the usual
 //    tag for "position in the list of tokens".)
+//
+// In numbers, with a toy table of three rows:
+//
+//     table {voc=3,d=2}       ids {s=4}       result {s=4,d=2}
+//       row 0:   1  2            2               5  6
+//       row 1:   3  4            0               1  2
+//       row 2:   5  6            2               5  6
+//                                1               3  4
+//
+// No arithmetic at all: rows are copied, in the order asked, as
+// often as asked.
 //
 // Where do the rows come from? They are learned, like any other
 // weight, and training has a pleasant side effect: items that

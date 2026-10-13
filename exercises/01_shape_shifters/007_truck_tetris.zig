@@ -23,6 +23,13 @@
 // `insert` take the same things `Shape.init` does, so you can add
 // tagged axes: `s.append(.{ .extra = 4 })`.
 //
+// That goes for permutations as well. With `t = {a=10,b=11,f32}`:
+//
+//     t.transpose(.{ .b, .a }) -> {b=11,a=10,f32}
+//
+// You list the tags in the order you want them. The tags travel
+// with their sizes, which is the whole point of having them.
+//
 // Now the important part. Read it twice.
 //
 //     A Shape is a VALUE. None of these methods modify it.
@@ -37,8 +44,13 @@
 // be mutated in place. Zig, bless its heart, refuses to let a
 // return value be silently thrown away.
 //
-// That is the first of four things to fix. The last one is a
-// line the nephew never wrote at all.
+// That is one of four things to fix. The compiler starts with
+// the two blanks, as always: a method name, and a last line the
+// nephew never wrote at all. Once those are filled in, it finds
+// the Java habit for you ("value of type ... ignored"). The
+// fourth is a permutation that loads the truck in the wrong
+// order: nothing crashes, you'll see it in the output. The
+// highway part is correct. Regrettable, but correct.
 //
 const std = @import("std");
 const zml = @import("zml");

@@ -52,10 +52,15 @@
 //     price = price / 2         it's also half-price hour
 //     price = price + 0.5       coffee. Coffee is never half price.
 //
+// For the silver dollar, 4 inches across: 4^2 is 16, a quarter of
+// that is 4 dollars, the coupon makes it 3, half-price hour 1.50,
+// and with the coffee Flo rings up 2 dollars. Keep that napkin.
+//
 // A chain of methods reads left to right, in the order things
 // happen. The dishwasher typed this one up, and got creative.
 // There are two problems: the compiler will find one for you.
-// Only Flo will find the other.
+// Only Flo will find the other, with the napkin from above: every
+// step is there, and the prices are still wrong.
 //
 // Then the register. Everybody pays with a twenty, and the change
 // is 20 - price: a constant on the LEFT, see above. That recipe,
@@ -65,7 +70,8 @@
 // host: the `result` of the first Exe is a Buffer like any other,
 // so it goes straight into the second Exe. What main() lost is
 // the line (well, two) that turns `change` into an Exe. Exercise
-// 010 taught those; they have not changed.
+// 010 taught those; they have not changed. The run right below
+// expects the Exe to be called `change_exe`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -108,7 +114,8 @@ pub fn main(init: std.process.Init) !void {
     // The register. Its input has the shape of the prices.
     const prices: zml.Tensor = .init(.{ .pancakes = 4 }, .f32);
 
-    // Compile `change` for `prices`, and clean up after yourself.
+    // Compile `change` for `prices`, as `change_exe`, and clean up
+    // after yourself.
 
     // No Buffer to build: the prices are on the device already.
     var change_result: zml.Buffer = try change_exe.eval(gpa, io, .{result});

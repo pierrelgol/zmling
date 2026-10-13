@@ -34,8 +34,22 @@
 // By the way, reshaping the Shape of a real tensor never moves
 // any data around: the numbers stay in the same order in memory
 // (row by row, last axis fastest) and only the bookkeeping
-// changes. Keep that in the back of your head for the Origami
-// chapter.
+// changes. Six plates, numbered 1 to 6, seen through three
+// shapes:
+//
+//     {2,3}:  1 2 3      {3,2}:  1 2      {6}:  1 2 3 4 5 6
+//             4 5 6              3 4
+//                                5 6
+//
+// Read any of them left to right, top to bottom: 1 2 3 4 5 6.
+// Nobody touched a plate. Keep that in the back of your head for
+// the Origami chapter.
+//
+// Four things on today's list: a blank, a number the nephew got
+// wrong, a "reshape" that changes nothing at all, and one reshape
+// to write from scratch. The wrong number panics. In the message
+// your `.auto` shows up as -1: they are the same thing, and -1
+// is how ZML remembers it.
 //
 const std = @import("std");
 const zml = @import("zml");

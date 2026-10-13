@@ -56,8 +56,8 @@
 // those. Another reason to prefer real tags.)
 //
 // Brenda needs the paperwork for the week of X-ray scans filled
-// in. Kevin left one line blank, which for once was the right
-// call. He should have left three more: a tag that isn't there
+// in. Kevin left two blanks, which for once was the right call.
+// He should have left three more: a tag that isn't there
 // (the small print above), a position that is off, and a "no
 // tag" where a position was wanted.
 //
@@ -76,6 +76,7 @@ const zml = @import("zml");
 fn total(scans: zml.Tensor) i64 {
     return ???;
 }
+
 pub fn main(init: std.process.Init) !void {
     var buffer: [4096]u8 = undefined;
     var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);

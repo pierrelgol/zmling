@@ -48,15 +48,27 @@
 // has dtype .bool, and the Buffer is made from an array of Zig
 // `bool`.
 //
+// The three articles, one after the other, on today's six
+// chests:
+//
+//     loot      30    5   80   12   80    1
+//     capped    30    5   50   12   50    5     Article 1
+//     cursed     .    .  yes    .    .  yes
+//     paid      30    5  -13   12   50  -13     Article 2
+//     found    yes  yes  yes   no  yes   no
+//     ledger    30    5  -13    0   50    0     Article 3
+//
 // The cabin boy kept the ledger. He skipped Article 1 because
 // it was boring, left Article 2 for later, and read `mask`
 // backwards.
 //
 // Once the ledger is right, the crew wants its total: the
-// PURSE, one number. The program used to add it up in a Zig
-// `for` loop after the fact; the Captain wants it in the graph
-// (chapter 6). `purse` is yours to write, and to compile, and
-// to run: the last print reads a Buffer called `total`.
+// PURSE, one number with no axis around it. You could read the
+// six entries back and add them up in a Zig `for` loop, but
+// the Captain wants it in the graph, where it will still work
+// for six million chests (chapter 6). `purse` is yours to write
+// (it may call `payout`), and to compile, and to run: the last
+// print reads a Buffer called `total`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -65,6 +77,7 @@ const zml = @import("zml");
 fn payout(loot: zml.Tensor, cursed: zml.Tensor, found: zml.Tensor) zml.Tensor {
     // Article 1 is missing: `capped` is the loot, never less than
     // 5 and never more than 50.
+    ???;
 
     // Article 2: -13 where the chest is cursed, `capped` elsewhere.
     const paid = ???;
@@ -98,6 +111,7 @@ pub fn main(init: std.process.Init) !void {
     defer exe.deinit();
 
     // The purse needs an Exe as well.
+    ???;
 
     var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
     defer loot_buffer.deinit();
@@ -110,6 +124,7 @@ pub fn main(init: std.process.Init) !void {
     defer result.deinit();
 
     // Run it into a Buffer called `total`.
+    ???;
 
     try stdout.print("The ledger: {any}\n", .{try result.getValue([6]i32, io)});
     try stdout.print("The crew's purse: {d} doubloons.\n", .{try total.getValue(i32, io)});

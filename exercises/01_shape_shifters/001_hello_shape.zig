@@ -41,8 +41,20 @@
 // The data type is a `zml.DataType`, an enum with members such
 // as .f32, .f16, .i64, .u8 and .bool.
 //
+// The first two answers do not depend on it. The third one does:
+//
+//     byteSize() = count() x (bytes taken by ONE element)
+//
+// A .u8 is a single byte, which is why the example says 96 twice.
+// Cushions are fatter than that.
+//
 // Old Shifty's nephew started the paperwork below but could not
 // remember what cushions are made of. Please finish the job.
+//
+// A word about `???`. In zmling it marks a blank: something for
+// you to write. It is not Zig, so the compiler stops on that very
+// line and grumbles ("expected type expression", or thereabouts).
+// You did not break anything. That is the exercise saying hello.
 //
 const std = @import("std");
 const zml = @import("zml");

@@ -56,7 +56,9 @@
 // the highest. `worstHour` is yours to write: one number, a true
 // scalar, and an integer. `main` runs it, but stops short of
 // reading the answer: it needs the right Zig type. Start with
-// these two, nothing builds without them.
+// these two, nothing builds without them. (The second line of
+// the output is the shape of both scalars. A true scalar has
+// nothing but its dtype between the braces.)
 //
 // The commis before you (he works at a TV station now) confused
 // a few things in the other two rituals. The first one earns you
@@ -124,6 +126,8 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("Butter:", .{});
     for (try levels.getValue([8]f32, io)) |kg| try stdout.print(" {d:.1}", .{kg});
     try stdout.print("\n", .{});
+
+    try stdout.print("Chef Odile reads a {f} and a {f}.\n", .{ low.shape(), worst.shape() });
 
     const lowest_kg = try low.getValue(f32, io);
     const worst_hour = try worst.getValue(???, io);

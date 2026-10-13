@@ -37,6 +37,17 @@
 // backwards is a rite of passage, and with tags you can't get
 // it wrong: you simply write the order you want to see.
 //
+// If you must use indices, do it on paper first (we have
+// plenty). Write the shape you have NOW with its positions,
+// then the shape you WANT, and under each of its axes the
+// position that axis has now:
+//
+//     now:     sheets   rows     cols
+//              0        1        2
+//
+//     want:    cols     sheets   rows
+//              2        0        1        <- the permutation
+//
 // The permutation must mention every axis exactly once. Two
 // conveniences on top of that:
 //
@@ -59,11 +70,13 @@
 // pile of paper, and we only look at the shape they produce
 // (`exe.output_shapes`, no need to run anything).
 //
-// Timmy wrote `restack`, Ingrid wrote `flip`. The other two
-// moves were left to you, and so was the middle of the small sheet's block in
-// `main`: the Exe is compiled and the Buffer is ready, but
-// nobody runs the one on the other or brings the answer home.
-// You did both in exercise 013.
+// Timmy wrote `restack`, Ingrid wrote `flip`. Only one of them
+// read this lesson to the end, and the shapes will tell Coach
+// which. The other two moves were left to you, and so was the
+// middle of the small sheet's block in `main`: the Exe is
+// compiled and the Buffer is ready, but nobody runs the one on
+// the other (exercise 011) or brings the answer home as a
+// zml.Slice (exercise 013).
 //
 const std = @import("std");
 const zml = @import("zml");

@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/055_with_or_without_the_box.zig
 +++ answers/08_slice_of_life/055_with_or_without_the_box.zig
-@@ -82,17 +82,17 @@
+@@ -85,17 +85,17 @@
  
  /// Pizza number 1, plus basil. Result: {slices=4}.
  fn extraBasil(tray: zml.Tensor, basil: zml.Tensor) zml.Tensor {
@@ -21,10 +21,11 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -147,6 +147,14 @@
+@@ -150,7 +150,14 @@
      {
          // Same journey as the block above, for `comparedToFirst`:
          // an Exe, a result, and a zml.Slice called `plate`.
+-        ???;
 +        var exe = try platform.compileFn(gpa, io, comparedToFirst, .{tray}, .{});
 +        defer exe.deinit();
 +

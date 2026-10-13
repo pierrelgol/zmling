@@ -31,6 +31,9 @@
 //
 //     panic: Expected argument 0 to have shape {4,f32}, got {5,f32}
 //
+// (Arguments are counted from 0, in the order of the tuple you
+// gave to `eval`. So "argument 0" is the first Buffer.)
+//
 // Not "something that could be reshaped", not "the same number
 // of bytes". Need a different size? Compile another Exe. This
 // sounds strict, and it is! It's also why the compiler can

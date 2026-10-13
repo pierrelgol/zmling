@@ -15,13 +15,14 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -116,9 +116,15 @@
+@@ -116,10 +116,15 @@
      }));
      defer recipes_buffer.deinit();
  
 -    // Gravel.net stopped here. Compile the two functions, then run
 -    // them: `partsNeeded` into a Buffer called `result`, and
 -    // `partsPerQuarry` into one called `per_quarry`.
+-    ???;
 +    var exe = try platform.compileFn(gpa, io, partsNeeded, .{ orders, recipes }, .{});
 +    defer exe.deinit();
 +    var per_quarry_exe = try platform.compileFn(gpa, io, partsPerQuarry, .{ orders, recipes }, .{});

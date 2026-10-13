@@ -56,18 +56,24 @@
 // drew in exercise 104, the row of the newcomer: 0 for the
 // rows of the archive up to `pos` (herself included), -inf for
 // the others. The same three ops, except that this time the
-// listener's position is not an `arange`, it is `pos`.
+// listener's position is not an `arange`, it is `pos` (an i32
+// here, and `cmp` wants the same dtype on both sides).
 //
 // With the mask, the rest is exercise 103 for a single
-// listener: scores, mask, softmax, blend. The newcomer's query
-// is a lone `{.hd}` vector: against `{.k, .hd}` keys, `dot`
-// gives her one score per row of the archive.
+// listener: scores (scaled, as always), mask, softmax, blend.
+// The newcomer's query is a lone `{.hd}` vector: against
+// `{.k, .hd}` keys, `dot` gives her one score per row of the
+// archive.
 //
 // The step function returns two things, what the newcomer
 // heard and the new archive, so it runs with the `Runner` of
 // chapter 12: `runner.run(io, inputs, outputs, .{ .wait = true })`.
 // The Archive is a struct of Tensors: on the Buffer side it is
-// a `zml.Bufferized(Archive)`, going in and coming out.
+// a `zml.Bufferized(Archive)`, going in and coming out. `main`
+// keeps the archive as two loose Buffers, `archive_k` and
+// `archive_v` (the last print wants them that way): wrap them
+// in a `zml.Bufferized(Archive)` to send them in, and declare
+// another one, `undefined`, for `run` to fill.
 //
 // (ZML's Llama example has the same struct, named `KvCache`,
 // with one more axis for the layers. It writes with a more
@@ -81,8 +87,9 @@
 //     let her listen to the updated archive.
 //  4. `main`: compile `step` and get a runner. Then, in the
 //     loop, run one step, and make the archive that came out
-//     the archive that goes in next. The old one is yours to
-//     free: nothing was donated.
+//     the archive that goes in next. The old one is still
+//     alive after the run, and still yours: free its two
+//     Buffers before you drop them.
 //
 // If you get it right, the llamas hear, one by one, exactly
 // what the causal attention of exercise 105 computed for the
@@ -94,7 +101,8 @@ const zml = @import("zml");
 const max_len = 4;
 
 const Archive = struct {
-    // Every key so far, and every value so far: {.k = max_len, .hd}.
+    // Two fields, `k` and `v`: every key so far, and every value
+    // so far. Each is {.k = max_len, .hd}.
     ???,
 
     /// The archive, with one key and one value {.hd} filed at row `pos`.

@@ -1,6 +1,6 @@
 --- exercises/13_layer_cake/091_level_the_tiers.zig
 +++ answers/13_layer_cake/091_level_the_tiers.zig
-@@ -74,7 +74,10 @@
+@@ -99,7 +99,10 @@
  /// The layer norm of the lesson, by hand, with an eps of 1e-5.
  /// x: {.cake, .d}, weight and bias: {.d}. Returns {.cake, .d}.
  fn levelByHand(x: zml.Tensor, weight: zml.Tensor, bias: zml.Tensor) zml.Tensor {
@@ -12,7 +12,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -92,27 +95,27 @@
+@@ -117,27 +120,27 @@
      const bias: zml.Tensor = .init(.{ .d = 4 }, .f32);
  
      // A flat cake must come out flat. Not as four NaN.
@@ -47,7 +47,7 @@
  
      const heights = [3][4]f32{
          .{ 2, 4, 4, 6 }, // the lopsided one
-@@ -125,7 +128,7 @@
+@@ -150,7 +153,7 @@
      var result: zml.Buffer = try exe.eval(gpa, io, .{ level_buffers, cakes_buffer });
      defer result.deinit();
  

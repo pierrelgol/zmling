@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/024_quiz_the_dinner_rush.zig
 +++ answers/03_arithmetic_diner/024_quiz_the_dinner_rush.zig
-@@ -64,17 +64,19 @@
+@@ -74,17 +74,19 @@
  /// Rules 1 and 2: plates * price - coupon, never below zero.
  /// Dollars and cents.
  fn bill(plates: zml.Tensor, price: zml.Tensor, coupon: zml.Tensor) zml.Tensor {
@@ -23,7 +23,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -90,24 +92,36 @@
+@@ -100,18 +102,24 @@
  
      // Four placeholders: three of four elements tagged .tables,
      // and the coupon.
@@ -36,7 +36,7 @@
 +    const mood: zml.Tensor = .init(.{ .tables = 4 }, .f32);
 +    const coupon: zml.Tensor = .init(.{}, .f32);
  
-     // The register, compiled once.
+     // The register, compiled once, as `exe`.
 +    var exe = try platform.compileFn(gpa, io, register, .{ plates, price, mood, coupon }, .{});
 +    defer exe.deinit();
  
@@ -52,8 +52,10 @@
  
      // Dinner rush, then the rest of the evening.
      for ([_]f32{ 10, 0 }) |dollars_off| {
-         // The coupon, the run, and the four totals back on the
-         // host.
+@@ -119,7 +127,13 @@
+         // back on the host. That is more than one line: write
+         // them above this one, cleanup included, and end with
+         // `totals`.
 -        const totals = ???;
 +        var coupon_buffer: zml.Buffer = try .scalar(io, platform, dollars_off, .f32);
 +        defer coupon_buffer.deinit();

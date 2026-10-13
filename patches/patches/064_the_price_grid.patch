@@ -1,6 +1,6 @@
 --- exercises/09_dot_com_bubble/064_the_price_grid.zig
 +++ answers/09_dot_com_bubble/064_the_price_grid.zig
-@@ -67,7 +67,7 @@
+@@ -74,7 +74,7 @@
  
  /// Dollars per tier if the whole stock sold at that tier: {tiers}.
  fn revenuePerTier(prices: zml.Tensor, tiers: zml.Tensor, stock: zml.Tensor) zml.Tensor {
@@ -9,7 +9,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -83,15 +83,15 @@
+@@ -90,16 +90,15 @@
  
      // Three products and three tiers. The grid should come out
      // as {products=3,tiers=3,f32}.
@@ -25,17 +25,19 @@
      defer exe.deinit();
 -
 -    // Marketing's follow-up question needs an Exe of its own.
+-    ???;
 +    var sold_out_exe = try platform.compileFn(gpa, io, revenuePerTier, .{ prices, tiers, stock }, .{});
 +    defer sold_out_exe.deinit();
  
      var prices_buffer: zml.Buffer = try .fromBytes(io, platform, prices.shape(), std.mem.sliceAsBytes(&[_]f32{ 5, 20, 1000 }));
      defer prices_buffer.deinit();
-@@ -103,8 +103,8 @@
+@@ -111,9 +110,8 @@
  
      var result: zml.Buffer = try exe.eval(gpa, io, .{ prices_buffer, tiers_buffer });
      defer result.deinit();
 -
 -    // ...and an answer: a Buffer called `sold_out`.
+-    ???;
 +    var sold_out: zml.Buffer = try sold_out_exe.eval(gpa, io, .{ prices_buffer, tiers_buffer, stock_buffer });
 +    defer sold_out.deinit();
  

@@ -42,7 +42,11 @@
 // 1. It wants EXACTLY one tag per axis. Otherwise it panics, and
 //    the message says "Not enough tags for shape ..., got ..."
 //    even when the trouble is that you gave too many. Count the
-//    axes of the shape and the tags of the tuple yourself.
+//    axes of the shape and the tags of the tuple yourself:
+//
+//        {3,4,f32}   .withTags(.{ .carousels })         panic
+//        {3,4,f32}   .withTags(.{ .carousels, .bags })
+//                                -> {carousels=3,bags=4,f32}
 //
 // 2. To leave an axis unlabeled, use the tag `._`: a single
 //    underscore is ZML's "no tag". `t.withTags(.{ ._, .bags })`.
@@ -68,13 +72,15 @@
 // pounds (1 kg is 2.2 lb), and it wants them LABELED. The recipe
 // `inPounds` receives the delivery as it came, untagged, and
 // returns it tagged and in pounds: the labeling happens inside
-// the recipe, between two ordinary operations of the diner. Write
-// it. The Exe reports the shape of what it returns, labels
-// included (`output_shapes`, exercise 021).
+// the recipe, in the same chain as an ordinary operation of the
+// diner (the constant kind, exercise 018). Write it. The Exe
+// reports the shape of what it returns, labels included: that is
+// `output_shapes`, from exercise 010.
 //
-// The delivery has to get onto the device too. Three carousels of
-// four numbers: the last Buffer you built from a table like that
-// was in exercise 022.
+// The delivery has to get onto the device too, and that is
+// exercise 011. `kilograms` is a table, three rows of four, and
+// `sliceAsBytes` doesn't mind: the `bills` of exercise 022 went
+// to the device the same way.
 //
 const std = @import("std");
 const zml = @import("zml");

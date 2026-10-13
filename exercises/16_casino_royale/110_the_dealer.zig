@@ -1,7 +1,7 @@
 //
 // Chapter 16: Casino Royale
 //
-// Last stop. You have shapes, ghosts, layers, attention, and a
+// One more stop. You have shapes, ghosts, layers, attention, and a
 // gym membership you will never use again. One thing is still
 // missing before you can build a machine that talks: LUCK.
 //
@@ -84,8 +84,8 @@
 //     missing: both hands in ONE tensor, stacked along a new
 //     `.hand` axis the way you boxed pizzas in exercise 57, and
 //     turned into honest cards. A float in [1, 14), rounded
-//     down, is 1, 2, ... 13: `floor` rounds, and `convert`
-//     (exercise 21) makes the i32.
+//     down, is 1, 2, ... 13: `floor` (exercise 19) rounds,
+//     and `convert` (exercise 21) makes the i32.
 //
 //  2. `main` prints its report, and nothing else: the
 //     placeholder, the Exe, and what happens on each of the
@@ -119,10 +119,8 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    // A placeholder for the state of the generator.
-    const rng: zml.Tensor.Rng = ???;
-
-    // The Exe of `deal`.
+    // `rng`, a placeholder for the state of the generator, and
+    // the Exe of `deal`.
     ???;
 
     // Three evenings at table 4. The first two start from the

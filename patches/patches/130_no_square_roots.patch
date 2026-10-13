@@ -1,0 +1,55 @@
+--- exercises/19_once_upon_a_time/130_no_square_roots.zig
++++ answers/19_once_upon_a_time/130_no_square_roots.zig
+@@ -153,7 +153,15 @@
+ 
+     /// `view` must stand on a block: "transformer.h.N.".
+     pub fn init(view: zml.io.TensorStore.View, config: Config, kind: []const u8) Attention {
+-        return ???;
++        const attention = view.withPrefix("attn").withPrefix("attention");
++        return .{
++            .q_proj = linear(attention.withPrefix("q_proj")),
++            .k_proj = linear(attention.withPrefix("k_proj")),
++            .v_proj = linear(attention.withPrefix("v_proj")),
++            .out_proj = linear(attention.withPrefix("out_proj")),
++            .heads = config.num_heads,
++            .window = if (std.mem.eql(u8, kind, "local")) config.window_size else null,
++        };
+     }
+ 
+     /// x: {.s, .d} -> {.s, .d}
+@@ -167,7 +175,10 @@
+             q.rename(.{ .s = .q }),
+             k.rename(.{ .s = .k }),
+             v.rename(.{ .s = .k }),
+-            .{ .attn_mask = zml.nn.causalAttnMask(.{ .q = x.dim(.s), .k = x.dim(.s) }, .f32, null) },
++            .{
++                .attn_mask = zml.nn.causalAttnMask(.{ .q = x.dim(.s), .k = x.dim(.s) }, .f32, self.window),
++                .scale = .scalar(1, .f32),
++            },
+         );
+ 
+         const merged = heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
+@@ -223,9 +234,20 @@
+     // reference input, and our names.
+     const x: zml.Tensor = .init(.{ .s = x_buffer.shape().dim(0), .d = x_buffer.shape().dim(1) }, .f32);
+ 
+-    // The attention of block `layer`, its weights on the device, an
+-    // Exe, and `got`: what it makes of `x_buffer`.
+-    ???;
++    const block = store.view().withPrefix("transformer").withPrefix("h").withLayer(layer);
++    const model: Attention = .init(block, config, config.attention_layers[layer]);
++
++    var weights = try zml.mem.bufferize(gpa, Attention, &model);
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Attention, &weights);
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, Attention, &model, &weights, store, .{});
++    try loader.await(io);
++
++    var exe = try platform.compile(gpa, io, model, .forward, .{x}, .{});
++    defer exe.deinit();
++    var got: zml.Buffer = try exe.eval(gpa, io, .{ weights, x_buffer });
++    defer got.deinit();
+ 
+     return matches(io, want, got);
+ }

@@ -1,6 +1,6 @@
 --- exercises/07_origami_club/050_neighbours_only.zig
 +++ answers/07_origami_club/050_neighbours_only.zig
-@@ -84,17 +84,17 @@
+@@ -92,17 +92,17 @@
  const zml = @import("zml");
  
  fn longStrips(pile: zml.Tensor) zml.Tensor {
@@ -21,7 +21,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -122,7 +122,7 @@
+@@ -130,7 +130,7 @@
          defer exe.deinit();
  
          // Run it on the pile.

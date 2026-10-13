@@ -22,6 +22,9 @@
 //     a.add(b).mul(c)        is (a + b) * c
 //     a.add(b.mul(c))        is  a + (b * c)
 //
+// With a = 1, b = 2 and c = 3 the first one is 9 and the second
+// one is 7. Both compile. Only one of them is your formula.
+//
 // The parentheses of the formula become the NESTING of the calls.
 // Whatever must be computed first, on its own, goes inside an
 // argument.
@@ -61,6 +64,13 @@
 //      (`epsilon` is a tiny number that keeps the division from
 //      blowing up if the variance happens to be zero.)
 //
+//      The VARIANCE measures how spread out the temperatures
+//      are, and its square root is the STANDARD DEVIATION: the
+//      typical distance from the mean, in degrees. With a mean
+//      of 375 and a standard deviation of 50, a burner at 400 is
+//      25 degrees too hot, which makes z = 25 / 50 = 0.5: half a
+//      standard deviation above the mean.
+//
 //   2. Softplus, one more smooth cousin of relu:
 //
 //          softplus(z) = log(1 + e^z)
@@ -76,9 +86,11 @@
 // the first habit above again.
 //
 // In main(), two Buffers are missing: the mean and the variance,
-// one number each (exercise 014). The thermometer's manual gives
-// a mean of 375 degrees and a standard deviation of 50 degrees.
-// The recipe does not take a standard deviation.
+// one number each (exercise 014). The `eval` line calls them
+// `mean_buffer` and `variance_buffer`. The thermometer's manual
+// gives a mean of 375 degrees and a standard deviation of 50
+// degrees. The recipe does not take a standard deviation: look
+// at what sits under its square root.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -121,8 +133,8 @@ pub fn main(init: std.process.Init) !void {
 
     var temps_buffer: zml.Buffer = try .fromBytes(io, platform, temps.shape(), std.mem.sliceAsBytes(&[_]f32{ 300, 350, 400, 450 }));
     defer temps_buffer.deinit();
-    // The mean, and the variance for a standard deviation of 50
-    // degrees.
+    // `mean_buffer`, and `variance_buffer` for a standard
+    // deviation of 50 degrees.
 
     var result: zml.Buffer = try exe.eval(gpa, io, .{ temps_buffer, mean_buffer, variance_buffer });
     defer result.deinit();

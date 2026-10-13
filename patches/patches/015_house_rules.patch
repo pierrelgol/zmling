@@ -1,6 +1,6 @@
 --- exercises/02_ghost_tensors/015_house_rules.zig
 +++ answers/02_ghost_tensors/015_house_rules.zig
-@@ -72,24 +72,21 @@
+@@ -75,24 +75,21 @@
      const agatha: zml.Tensor = .init(.{ .hours = 4 }, .i32);
      const bartholomew: zml.Tensor = .init(.{ .hours = 4 }, .i32);
  

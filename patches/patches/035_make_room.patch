@@ -1,9 +1,9 @@
 --- exercises/05_broadcast_news/035_make_room.zig
 +++ answers/05_broadcast_news/035_make_room.zig
-@@ -80,15 +80,18 @@
-     //    Don't write 3 and 4! You've built Shapes from numbers
-     //    before, and `x.dim(.tag)` returns a number: build this
-     //    one from the sizes of the two inputs.
+@@ -92,15 +92,18 @@
+     //    Don't write 3 and 4! Ask the two inputs for their
+     //    sizes, so that the day a fourth anchor is hired, this
+     //    function doesn't need to know.
 +    const table = zml.Shape.init(.{ .anchor = fees.dim(.anchor), .segment = minutes.dim(.segment) }, .f32);
  
      // 2. A column out of the fees:
@@ -20,7 +20,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -103,7 +106,7 @@
+@@ -115,7 +118,7 @@
      defer platform.deinit(gpa, io);
  
      const fees: zml.Tensor = .init(.{ .anchor = 3 }, .f32);
@@ -29,7 +29,7 @@
  
      var exe = try platform.compileFn(gpa, io, payTable, .{ fees, minutes }, .{});
      defer exe.deinit();
-@@ -118,7 +121,7 @@
+@@ -130,7 +133,7 @@
      var minutes_buffer: zml.Buffer = try .fromBytes(io, platform, minutes.shape(), std.mem.sliceAsBytes(&[_]f32{ 12, 3, 5, 2 }));
      defer minutes_buffer.deinit();
  

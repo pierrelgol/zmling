@@ -1,6 +1,6 @@
 --- exercises/09_dot_com_bubble/061_no_matmul.zig
 +++ answers/09_dot_com_bubble/061_no_matmul.zig
-@@ -70,13 +70,13 @@
+@@ -77,13 +77,13 @@
  
  /// Total dollars: sum over products of price * units.
  fn revenue(prices: zml.Tensor, units: zml.Tensor) zml.Tensor {
@@ -16,7 +16,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -93,7 +93,7 @@
+@@ -100,7 +100,7 @@
      // Pet Rock, Deluxe Rock, Family Pack, Enterprise Rock (TM).
      const prices: zml.Tensor = .init(.{ .products = 4 }, .f32);
      const costs: zml.Tensor = .init(.{ .products = 4 }, .f32);

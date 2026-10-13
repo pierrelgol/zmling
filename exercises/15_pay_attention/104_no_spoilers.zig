@@ -33,10 +33,22 @@
 // its column:
 //
 //  - The row numbers 0, 1, 2... are an `arange` (exercise 22).
-//    Tag it `.q` and stretch it over the whole table with
-//    `broad` (chapter 5): every cell now holds the position of
-//    its LISTENER. Same again tagged `.k`: every cell holds the
-//    position of its SPEAKER. Integers will do.
+//    Tag it `.q` (`withTags`, exercise 25) and stretch it over
+//    the whole table with `broad` (exercise 33): every cell now
+//    holds the position of its LISTENER. Same again tagged
+//    `.k`: every cell holds the position of its SPEAKER.
+//    Integers will do.
+//
+//        listener        speaker
+//        0 0 0 0         0 1 2 3
+//        1 1 1 1         0 1 2 3
+//        2 2 2 2         0 1 2 3
+//        3 3 3 3         0 1 2 3
+//
+//    `broad` wants the Shape of the table, and no tensor has
+//    that shape yet. Make it: a `zml.Shape` is built the way a
+//    placeholder is, `.init`, the sizes with their tags, a
+//    dtype.
 //
 //  - A cell is allowed when its speaker does not stand behind
 //    its listener. That is a comparison, the `cmp` of chapter 10
@@ -51,6 +63,7 @@
 //
 //     listener < speaker + window
 //
+// (a tensor plus a plain number is `addConstant`, exercise 18),
 // glued to the first one with `logical(.AND, ...)`, exercise 68
 // again. `window` is a plain Zig optional, `null` meaning "no
 // limit": an ordinary Zig `if (window) |w|` decides, while
@@ -95,7 +108,10 @@
 //
 //  4. In `main`: three Exes per kind of herd, to compile and to
 //     run. Mind what each function takes: Tensors become
-//     placeholders, and plain Zig values are just passed along.
+//     placeholders, and plain Zig values are just passed along
+//     in the compile tuple, like the 7 of `.{ mood, 7 }` in
+//     exercise 75. Once baked in, they are NOT in the tuple of
+//     `eval`: only Buffers go there.
 //
 const std = @import("std");
 const zml = @import("zml");

@@ -3,7 +3,7 @@
 Learn [ZML](https://github.com/zml/zml) by fixing tiny broken programs.
 
 zmling is to ZML what [Ziglings](https://codeberg.org/ziglings/exercises) is to Zig, and
-[Rustlings](https://github.com/rust-lang/rustlings) to Rust: a hundred-odd small programs, each
+[Rustlings](https://github.com/rust-lang/rustlings) to Rust: about a hundred and fifty small programs, each
 one broken on purpose, each one teaching one thing. You read the comments, fix the program, and
 move on to the next. The first ones need a word or two. Then the gaps grow: a function body, the
 code that compiles and runs it, a model struct, and in the last chapters most of the program,
@@ -80,6 +80,11 @@ Everything ZML logs goes to stderr and is ignored, so feel free to add `std.debu
 | 14 | Heavy Lifting | loading weights from safetensors files |
 | 15 | Pay Attention! | attention, causal masks, rotary embeddings, KV caches |
 | 16 | Casino Royale | random numbers, sampling, and a tiny language model |
+| 17 | The Customs Office | the porting workflow on a real checkpoint (MNIST): inspect, declare, preprocess, verify against PyTorch |
+| 18 | Lost in Translation | porting a HuggingFace encoder (bert-tiny): `config.json`, tokenizer, tied weights |
+| 19 | Once Upon a Time | porting a decoder (TinyStories-1M, a GPT-Neo): read the author's code, then write a story |
+| 20 | The Autopsy | debugging a port that runs and writes garbage: reference activations, layer by layer |
+| 21 | The Graduation | a whole Llama 2 (stories260K) from its author's `model.py`: RoPE, grouped-query attention, KV cache |
 
 ## How it works
 

@@ -77,6 +77,12 @@
 // `arange` for the positions (it can count in floats), and a
 // `broad` so that one angle per llama meets her numbers.
 //
+// Follow the shapes and it nearly writes itself. A `slice`
+// keeps its axis, so the x's are a column `{.s, .hd = 1}`, and
+// so are the y's. The angles are born `{.s}`, one per llama,
+// and must become such a column too. The two new columns,
+// glued along `.hd`, are the herd again.
+//
 // The program shows four things:
 //
 //  - the herd after the spin, and the length of each vector;
@@ -173,7 +179,8 @@ pub fn main(init: std.process.Init) !void {
         }
     }
 
-    // One Exe for `scoresAt`, used for both lines of llamas.
+    // One Exe for `scoresAt`, used for both lines of llamas (it
+    // is the east-facing herd, `x_buffer`, that lines up twice).
     ???;
 
     for ([_][4]i32{ .{ 0, 1, 2, 3 }, .{ 100, 101, 102, 103 } }) |line| {

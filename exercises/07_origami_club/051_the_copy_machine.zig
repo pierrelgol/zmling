@@ -43,9 +43,9 @@
 // with `x.axis(.rows)`, which you met in the tags chapter.
 //
 // (PyTorch people: `repeat1d` is `torch.Tensor.repeat` on one
-// axis, `stutter1d` is `repeat_interleave`. Stuttering is how
-// nearest-neighbour upscaling of an image is done: stutter the
-// height, stutter the width.)
+// axis, `stutter1d` is `repeat_interleave`. Stuttering is what
+// nearest-neighbour upscaling of an image is made of, and a
+// very small image is waiting for you below.)
 //
 // While we're at the copier, one more: the mirror.
 //
@@ -73,8 +73,16 @@
 //                                  { 3, 4 }
 //
 // and wants it twice as tall and twice as wide, every square
-// becoming a block of 2 by 2: {rows=4,cols=4}. That is the
-// nearest-neighbour upscaling mentioned above. Write `poster`.
+// becoming a block of 2 by 2:
+//
+//     poster {rows=4,cols=4}       { 1, 1, 2, 2 },
+//                                  { 1, 1, 2, 2 },
+//                                  { 3, 3, 4, 4 },
+//                                  { 3, 3, 4, 4 }
+//
+// That is the nearest-neighbour upscaling mentioned above, and
+// the reason photocopied posters look the way they do. Write
+// `poster`.
 //
 // Then write its trip through the machine in `main`. The
 // placeholder, the numbers and the prints are there. The Exe,
@@ -138,6 +146,7 @@ pub fn main(init: std.process.Init) !void {
     // Compile `poster` for the stamp, put `ink` in a Buffer, run,
     // and copy the result to a zml.Slice called `squares`.
     // Release everything you create.
+    ???;
 
     try stdout.print("Poster {f}\n", .{squares.shape});
 

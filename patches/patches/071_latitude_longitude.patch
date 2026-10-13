@@ -1,6 +1,6 @@
 --- exercises/10_treasure_maps/071_latitude_longitude.zig
 +++ answers/10_treasure_maps/071_latitude_longitude.zig
-@@ -64,17 +64,17 @@
+@@ -72,17 +72,17 @@
  
  /// The gold under each X.
  fn dig(sea: zml.Tensor, lats: zml.Tensor, lons: zml.Tensor) zml.Tensor {
@@ -21,7 +21,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -92,14 +92,14 @@
+@@ -100,15 +100,14 @@
      const lats: zml.Tensor = .init(.{ .x = 3 }, .i32);
      const lons: zml.Tensor = .init(.{ .x = 3 }, .i32);
      // One longitude per latitude. The tag has to say so.
@@ -34,17 +34,19 @@
      defer best_exe.deinit();
 -
 -    // `firstToDig` needs an Exe as well.
+-    ???;
 +    var first_exe = try platform.compileFn(gpa, io, firstToDig, .{ sea, lats, lons }, .{});
 +    defer first_exe.deinit();
  
      // Gold under each square of the sea.
      var sea_buffer: zml.Buffer = try .fromBytes(io, platform, sea.shape(), std.mem.sliceAsBytes(&[4][3]i32{
-@@ -120,8 +120,8 @@
+@@ -129,9 +128,8 @@
      defer dug.deinit();
      var best: zml.Buffer = try best_exe.eval(gpa, io, .{ sea_buffer, best_lon_buffer });
      defer best.deinit();
 -
 -    // Run it into a Buffer called `first`.
+-    ???;
 +    var first: zml.Buffer = try first_exe.eval(gpa, io, .{ sea_buffer, lats_buffer, lons_buffer });
 +    defer first.deinit();
  

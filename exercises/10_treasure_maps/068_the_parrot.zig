@@ -94,6 +94,7 @@ pub fn main(init: std.process.Init) !void {
     defer exe.deinit();
 
     // The Captain's number needs an Exe as well.
+    ???;
 
     var doubloons_buffer: zml.Buffer = try .fromBytes(io, platform, doubloons.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
     defer doubloons_buffer.deinit();
@@ -105,6 +106,7 @@ pub fn main(init: std.process.Init) !void {
     defer result.deinit();
 
     // Run it into a Buffer called `holes`.
+    ???;
 
     try stdout.print("Polly answers with a {f}.\n", .{result.shape()});
     try stdout.print("Worth the shovel: {any}\n", .{try result.getValue([6]bool, io)});

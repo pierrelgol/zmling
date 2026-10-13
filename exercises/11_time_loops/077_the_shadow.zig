@@ -70,7 +70,9 @@
 // The task. The station's light meter reports the minutes of
 // sunshine this morning, as an i32 scalar. Any sunshine at all
 // means a shadow. A shadow means 10 degrees colder for the three
-// weeks ahead; no shadow means 5 degrees warmer.
+// weeks ahead; no shadow means 5 degrees warmer. The forecast on
+// file is { 1, 3, 10 }: with a shadow that makes { -9, -7, 0 },
+// without one { 6, 8, 15 }.
 //
 //   1. Write the two branches of `Burrow`.
 //   2. `prediction` doesn't survive tracing: run it and read the

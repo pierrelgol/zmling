@@ -1,6 +1,6 @@
 --- exercises/10_treasure_maps/074_quiz_buried_treasure.zig
 +++ answers/10_treasure_maps/074_quiz_buried_treasure.zig
-@@ -59,10 +59,19 @@
+@@ -60,10 +60,19 @@
  
  /// Steps 1 and 2: the two best islands that are safe to land on.
  fn plan(gold: zml.Tensor, sharks: zml.Tensor) zml.Tensor.SortRes {
@@ -22,12 +22,13 @@
  
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -87,8 +96,35 @@
+@@ -88,9 +97,35 @@
          .{ 8, 8 },
      };
  
 -    // Your code goes here. It ends with `res` (filled in by a
 -    // runner), `landing` and `party_total`.
+-    ???;
 +    const gold: zml.Tensor = .init(.{ .island = 6 }, .i32);
 +    const sharks: zml.Tensor = .init(.{ .island = 6 }, .i32);
 +    const parties: zml.Tensor = .init(.{ .island = 6, .role = 2 }, .i32);

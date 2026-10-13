@@ -1,6 +1,6 @@
 --- exercises/04_luggage_tags/032_quiz_flight_zg404.zig
 +++ answers/04_luggage_tags/032_quiz_flight_zg404.zig
-@@ -67,24 +67,24 @@
+@@ -70,24 +70,24 @@
  /// The airline's table, in the office's tags and layout:
  /// {flights, bags}.
  fn toOfficeLayout(limits: zml.Tensor) zml.Tensor {
@@ -31,7 +31,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -99,8 +99,8 @@
+@@ -102,8 +102,8 @@
      defer platform.deinit(gpa, io);
  
      // The two tables, as they arrive at the office.
@@ -42,7 +42,7 @@
  
      var exe = try platform.compileFn(gpa, io, excessReport, .{ weights, limits }, .{});
      defer exe.deinit();
-@@ -109,16 +109,18 @@
+@@ -112,16 +112,18 @@
      defer weights_buffer.deinit();
  
      // The airline's limits.

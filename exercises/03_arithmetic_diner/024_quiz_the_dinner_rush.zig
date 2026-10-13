@@ -32,7 +32,15 @@
 //
 //   5. The walk: table number t pays t dollars extra. Tables are
 //      numbered 1, 2, 3, 4 and nobody hands you that list. Make
-//      it from scratch.
+//      it from scratch. (A list that comes out of `arange`
+//      carries no tag. That's fine: the sign in the window says
+//      same shape and same dtype, and four integers are four
+//      integers.)
+//
+// On a napkin, table 1 during the rush: 2 plates at 7.50 is 15
+// dollars, the coupon leaves 5. Their mood is 0, the sigmoid of 0
+// is 0.5, so the factor is 1.25 and the bill 6.25. Rounded up: 7.
+// Plus 1 for the walk: 8.
 //
 // Flo likes her recipes small, so there are three of them: `bill`
 // is rules 1 and 2, `tipFactor` is rule 3, and `register` calls
@@ -52,7 +60,9 @@
 // below tell you what goes in and what must come out.
 //
 // Of main(), the dishwasher left the data, one Buffer and the
-// prints. He's on his break. He is always on his break.
+// prints. The prints expect an Exe called `exe` and, on each turn
+// of the loop, the four totals in `totals`; every other name is
+// yours to choose. He's on his break. He is always on his break.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -95,7 +105,7 @@ pub fn main(init: std.process.Init) !void {
     const mood: zml.Tensor = ???;
     const coupon: zml.Tensor = ???;
 
-    // The register, compiled once.
+    // The register, compiled once, as `exe`.
 
     try stdout.print("The register rings up {f}\n", .{exe.output_shapes[0]});
 
@@ -105,8 +115,10 @@ pub fn main(init: std.process.Init) !void {
 
     // Dinner rush, then the rest of the evening.
     for ([_]f32{ 10, 0 }) |dollars_off| {
-        // The coupon, the run, and the four totals back on the
-        // host.
+        // The coupon as a body, the run, and the four totals
+        // back on the host. That is more than one line: write
+        // them above this one, cleanup included, and end with
+        // `totals`.
         const totals = ???;
 
         try stdout.print("coupon {d}: {any}\n", .{ dollars_off, totals });

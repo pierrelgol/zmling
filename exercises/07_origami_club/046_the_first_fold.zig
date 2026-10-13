@@ -115,6 +115,7 @@ pub fn main(init: std.process.Init) !void {
     // The paper: a Buffer with the placeholder's shape, holding
     // `squares`. Call it `strip_buffer`, and release it when
     // `main` is done.
+    ???;
 
     // One Exe per fold. (`inline for`, because compileFn needs
     // to know each function at compile time.)

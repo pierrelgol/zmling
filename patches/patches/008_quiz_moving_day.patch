@@ -1,6 +1,6 @@
 --- exercises/01_shape_shifters/008_quiz_moving_day.zig
 +++ answers/01_shape_shifters/008_quiz_moving_day.zig
-@@ -54,31 +54,31 @@
+@@ -61,31 +61,31 @@
      const stdout = &stdout_writer.interface;
  
      // 1.

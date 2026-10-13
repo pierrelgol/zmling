@@ -1,6 +1,6 @@
 --- exercises/13_layer_cake/096_quiz_the_wedding_cake.zig
 +++ answers/13_layer_cake/096_quiz_the_wedding_cake.zig
-@@ -70,13 +70,30 @@
+@@ -95,13 +95,30 @@
  const zml = @import("zml");
  
  const Till = struct {
@@ -38,7 +38,7 @@
  };
  
  const menu_weight = [5][3]f32{
-@@ -127,12 +144,43 @@
+@@ -152,12 +169,43 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  

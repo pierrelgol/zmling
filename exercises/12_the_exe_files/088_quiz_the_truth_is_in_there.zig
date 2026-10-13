@@ -21,9 +21,11 @@
 // `alien`), and a `forward` that returns one. A Layer knows how
 // to run itself, and `t.relu()` you have known since the diner.
 //
-// So is everything in `main`, from the placeholders to the
-// calls. The weights are below, as arrays; the `print` lines
-// tell you which names they expect.
+// `main` is yours as well, from the placeholders to the calls.
+// The weights are below, as arrays; the `print` lines tell you
+// which names they expect. The two agents differ in one setting
+// and nothing else, so they can be made of the same
+// placeholders, like the two polygraphs of exercise 085.
 //
 // Part 2. Friday, 4 PM. Skimmer has "reviewed" the output layer
 // himself: his version of its weight and bias is below, and the
@@ -32,7 +34,10 @@
 // often it says alien. No third compile: the weights are inputs
 // (exercise 087), and other Buffers of the same shapes will do.
 // That makes two complete sets of weights to upload. You may
-// find that a small function saves typing.
+// find that a small function saves typing. (If it needs them as
+// parameters: `io` is a `std.Io` and `platform` a
+// `*const zml.Platform`. It can fail, so it returns a
+// `!zml.Bufferized(Agent)`.)
 //
 // What you will need, all from this chapter:
 //
@@ -45,9 +50,14 @@
 // {d_out=?}; read the sizes off the arrays. The case file is
 // {d=3}. All f32.
 //
+// An Exe with two outputs is no job for `eval`. `run` wants a
+// destination, and a `zml.Bufferized(Agent.Verdict)` is one
+// (exercise 083).
+//
 // And the fine print, also from this chapter: the model goes
-// first; a placeholder serves ONE input; each call makes new
-// output Buffers, and they are yours.
+// first; a placeholder serves ONE input of an Exe (two Exes may
+// share it); each call makes new output Buffers, and they are
+// yours: on your honor, as in the stakeout.
 //
 // The truth is in there.
 //

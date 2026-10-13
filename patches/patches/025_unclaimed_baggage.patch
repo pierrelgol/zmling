@@ -1,6 +1,6 @@
 --- exercises/04_luggage_tags/025_unclaimed_baggage.zig
 +++ answers/04_luggage_tags/025_unclaimed_baggage.zig
-@@ -88,7 +88,7 @@
+@@ -94,7 +94,7 @@
  
  /// The delivery, labeled .carousels and .bags, in pounds.
  fn inPounds(delivery: zml.Tensor) zml.Tensor {
@@ -9,7 +9,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -109,14 +109,14 @@
+@@ -115,14 +115,14 @@
  
      // Carousels first, then bags. The weights are in kilograms,
      // but a unit is not an axis.
@@ -27,7 +27,7 @@
      });
  
      // The original didn't change.
-@@ -127,7 +127,7 @@
+@@ -133,7 +133,7 @@
      defer exe.deinit();
  
      // The kilograms, on the device, in the shape of the delivery.

@@ -53,7 +53,9 @@
 // About the new `forward`: `x.dot(weight, .d)` with x
 // {b=4,d=3} and weight {d_out=2,d=3} gives {b=4,d_out=2}, one
 // row of two scores per sighting. The bias {d_out=2} has to be
-// stretched to that shape by hand, with `broad` (chapter 05).
+// stretched to that shape by hand, with `broad` (chapter 05):
+// the two shapes don't have the same number of axes, and ZML
+// refuses to guess which one you meant.
 //
 // The task. The night shift left you this:
 //
@@ -69,8 +71,10 @@
 // 4. The agent on night duty made each Buffer exactly as big as
 //    its batch. Two calls go well; the third one panics, and by
 //    now you can read that message in your sleep. Pad the batch
-//    instead: a [batch_size][3]f32 full of zeros (`@splat`),
-//    with the real rows copied to the front (`@memcpy`).
+//    instead: a [batch_size][3]f32 full of zeros (`@splat`, and
+//    an array of arrays is a splat of splats), with the real
+//    rows copied to the front (`@memcpy`). The Buffer then has
+//    the shape the Exe was compiled for, whatever the batch.
 //
 const std = @import("std");
 const zml = @import("zml");

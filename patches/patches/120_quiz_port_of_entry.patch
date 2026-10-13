@@ -1,0 +1,189 @@
+--- exercises/17_customs_office/120_quiz_port_of_entry.zig
++++ answers/17_customs_office/120_quiz_port_of_entry.zig
+@@ -81,30 +81,61 @@
+ 
+ /// An IDX file of images, already in memory.
+ const Register = struct {
+-    // How many images, their size, and the pixels.
+-    ???,
+-
+-    /// Reads the header of `bytes` (the whole file), and checks it.
++    count: usize,
++    rows: usize,
++    cols: usize,
++    /// Everything after the header.
++    pixels: []const u8,
++
++    /// Reads the header of `bytes` (the whole file), and checks it:
++    /// `error.NotAnImageFile` if the magic number is not 2051,
++    /// `error.TruncatedFile` if the pixels are not all there.
+     pub fn parse(bytes: []const u8) !Register {
+-        return ???;
++        if (bytes.len < 16 or std.mem.readInt(u32, bytes[0..4], .big) != 2051) return error.NotAnImageFile;
++        const register: Register = .{
++            .count = std.mem.readInt(u32, bytes[4..8], .big),
++            .rows = std.mem.readInt(u32, bytes[8..12], .big),
++            .cols = std.mem.readInt(u32, bytes[12..16], .big),
++            .pixels = bytes[16..],
++        };
++        if (register.pixels.len != register.count * register.rows * register.cols) return error.TruncatedFile;
++        return register;
++    }
++
++    /// The `rows * cols` pixels of image `i`.
++    pub fn image(self: Register, i: usize) []const u8 {
++        const size = self.rows * self.cols;
++        return self.pixels[i * size ..][0..size];
+     }
+ };
+ 
++/// A `nn.Linear` with a bias, from the tensors found under `view`.
++fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
++    return .init(
++        view.createReplicatedTensor("weight", .{ .dout, .d }),
++        view.createReplicatedTensor("bias", .{.dout}),
++        .d,
++    );
++}
++
+ const Net = struct {
+-    // The two layers.
+-    ???,
++    fc1: zml.nn.Linear,
++    fc2: zml.nn.Linear,
+ 
+-    /// The model, with placeholders made from the checkpoint.
+     pub fn init(view: zml.io.TensorStore.View) Net {
+-        return ???;
++        return .{
++            .fc1 = linear(view.withPrefix("fc1")),
++            .fc2 = linear(view.withPrefix("fc2")),
++        };
+     }
+ 
+     /// images: {.b, .h = 28, .w = 28} u8 -> the scores: {.b, .dout = 10} f32
+     pub fn forward(self: Net, images: zml.Tensor) zml.Tensor {
+-        return ???;
++        const pixels = images.convert(.f32).divByConst(255).merge(.{ .d = .{ .h, .w } });
++        const hidden = self.fc1.forward(pixels, .f32).relu().rename(.{ .dout = .d });
++        return self.fc2.forward(hidden, .f32);
+     }
+ 
+-    /// The weights, from the file to the device.
+     pub fn load(
+         self: *const Net,
+         gpa: std.mem.Allocator,
+@@ -112,12 +143,22 @@
+         platform: *const zml.Platform,
+         store: *const zml.io.TensorStore,
+     ) !zml.Bufferized(Net) {
+-        return ???;
++        var buffers = try zml.mem.bufferize(gpa, Net, self);
++
++        var loader: zml.io.Loader = try .init(gpa, platform, .default);
++        defer loader.deinit();
++
++        try loader.load(io, Net, self, &buffers, store, .{});
++        try loader.await(io);
++
++        return buffers;
+     }
+ 
+-    /// Frees what `load` returned.
+     pub fn unload(buffers: *zml.Bufferized(Net)) void {
+-        ???;
++        buffers.fc1.weight.deinit();
++        if (buffers.fc1.bias) |*bias| bias.deinit();
++        buffers.fc2.weight.deinit();
++        if (buffers.fc2.bias) |*bias| bias.deinit();
+     }
+ };
+ 
+@@ -154,13 +195,80 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // The checkpoint and its inventory, the model, the Exe, the
+-    // weights, the register, the reference, and the batches.
+-    //
+-    // The lines below want: `registry`, `parameters`, `register`,
+-    // `scores_like_pytorch` (a bool), `like_pytorch` and `like_label`
+-    // (two counts).
+-    ???;
++    // 1. Inspect.
++    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, checkpoint_path, gpa);
++    defer gpa.free(path);
++
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++
++    var parameters: usize = 0;
++    var it = registry.iterator();
++    while (it.next()) |entry| parameters += entry.value_ptr.shape.count();
++
++    // 2. Declare.
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++    defer store.deinit();
++
++    const net: Net = .init(store.view());
++
++    const images: zml.Tensor = .init(.{ .b = batch, .h = 28, .w = 28 }, .u8);
++
++    var exe = try platform.compile(gpa, io, net, .forward, .{images}, .{});
++    defer exe.deinit();
++
++    var net_buffers = try net.load(gpa, io, platform, &store);
++    defer Net.unload(&net_buffers);
++
++    // The register, and what PyTorch made of it.
++    const register_bytes = try readFile(gpa, io, register_path);
++    defer gpa.free(register_bytes);
++
++    const register: Register = try .parse(register_bytes);
++
++    const reference_file = try std.Io.Dir.cwd().realPathFileAlloc(io, reference_path, gpa);
++    defer gpa.free(reference_file);
++
++    var reference_registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, reference_file);
++    defer reference_registry.deinit();
++
++    var reference_store: zml.io.TensorStore = .fromRegistry(gpa, &reference_registry, &.{platform.replicated_mesh});
++    defer reference_store.deinit();
++
++    const want_scores = try reference(gpa, io, &reference_store, "logits");
++    defer want_scores.free(gpa);
++    const pytorch = try reference(gpa, io, &reference_store, "digits");
++    defer pytorch.free(gpa);
++    const labels = try reference(gpa, io, &reference_store, "labels");
++    defer labels.free(gpa);
++
++    // 3, 4, 5. Run, verify, count.
++    var scores_like_pytorch = false;
++    var like_pytorch: usize = 0;
++    var like_label: usize = 0;
++    for (0..batches) |n| {
++        const first = n * batch;
++
++        var images_buffer: zml.Buffer = try .fromBytes(io, platform, images.shape(), register.pixels[first * 784 ..][0 .. batch * 784]);
++        defer images_buffer.deinit();
++
++        var result: zml.Buffer = try exe.eval(gpa, io, .{ net_buffers, images_buffer });
++        defer result.deinit();
++
++        // The reference has the scores of the first batch.
++        if (n == 0) {
++            scores_like_pytorch = if (zml.testing.expectClose(io, want_scores, result, .{})) true else |_| false;
++        }
++
++        const scores: zml.Slice = try result.toSliceAlloc(gpa, io);
++        defer scores.free(gpa);
++
++        for (0..batch) |i| {
++            const digit = std.mem.indexOfMax(f32, scores.items(f32)[i * 10 ..][0..10]);
++            if (digit == pytorch.items(u8)[first + i]) like_pytorch += 1;
++            if (digit == labels.items(u8)[first + i]) like_label += 1;
++        }
++    }
+ 
+     try stdout.print("In the suitcase: {d} tensors, {d} parameters\n", .{ registry.tensors.count(), parameters });
+     try stdout.print("The register: {d} parcels of {d} x {d} pixels\n", .{ register.count, register.rows, register.cols });

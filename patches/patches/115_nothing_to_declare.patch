@@ -1,0 +1,51 @@
+--- exercises/17_customs_office/115_nothing_to_declare.zig
++++ answers/17_customs_office/115_nothing_to_declare.zig
+@@ -90,7 +90,10 @@
+ 
+ /// How many numbers the checkpoint holds, all tensors together.
+ fn parameterCount(registry: *zml.safetensors.TensorRegistry) usize {
+-    return ???;
++    var total: usize = 0;
++    var it = registry.iterator();
++    while (it.next()) |entry| total += entry.value_ptr.shape.count();
++    return total;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -105,7 +108,8 @@
+     defer gpa.free(path);
+ 
+     // The header of the file. No weight is read.
+-    var registry: zml.safetensors.TensorRegistry = ???;
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
+ 
+     try stdout.print("In the suitcase: {d} tensors\n", .{registry.tensors.count()});
+ 
+@@ -115,7 +119,12 @@
+     //
+     // `all_f32` must end up false if one of them is not f32.
+     var all_f32 = true;
+-    ???;
++    var it = registry.iterator();
++    while (it.next()) |entry| {
++        const shape = entry.value_ptr.shape;
++        try stdout.print("  {s:<10} {f}\n", .{ entry.key_ptr.*, shape });
++        if (shape.dtype() != .f32) all_f32 = false;
++    }
+     try stdout.print("Every tensor is f32: {}\n", .{all_f32});
+     try stdout.print("Parameters: {d}\n", .{parameterCount(&registry)});
+ 
+@@ -123,6 +132,11 @@
+     //
+     //     try stdout.print("  {s}: {d} numbers in, {d} numbers out\n", .{ name, in, out });
+     try stdout.print("What the matrices say:\n", .{});
+-    ???;
++    it = registry.iterator();
++    while (it.next()) |entry| {
++        const shape = entry.value_ptr.shape;
++        if (shape.rank() != 2) continue;
++        try stdout.print("  {s}: {d} numbers in, {d} numbers out\n", .{ entry.key_ptr.*, shape.dim(1), shape.dim(0) });
++    }
+     try stdout.flush();
+ }

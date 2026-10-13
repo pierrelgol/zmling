@@ -106,6 +106,7 @@ pub fn main(init: std.process.Init) !void {
 
     // Part 3 goes here. It ends with three Buffers: `scores`,
     // `picks` and `sure`.
+    ???;
 
     const names = [_][]const u8{ "PetRocks.com", "Gravel.net", "Foosball.org" };
     const verdicts = [_][]const u8{ "BUY", "SELL" };

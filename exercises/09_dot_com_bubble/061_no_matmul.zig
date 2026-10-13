@@ -9,7 +9,11 @@
 //     prices   { 5, 20, 50, 1000 }     dollars, per product
 //     units    { 120, 30, 4, 0 }       sold this quarter
 //
-// Multiply them pair by pair, add everything up: 1400 dollars.
+// Multiply them pair by pair, add everything up:
+//
+//     5*120 + 20*30 + 50*4 + 1000*0  =  1400 dollars
+//
+// (Nobody bought the Enterprise Rock. Chad blames the economy.)
 // That operation is the DOT PRODUCT, and it is the single most
 // important thing a neural network does. A "linear layer" is
 // dot products. "Attention" is dot products. Whatever the
@@ -60,10 +64,13 @@
 // units, a margin being a price minus a cost (element by
 // element: chapter 3). Nobody wrote `profit`. You do.
 //
-// When all of that compiles, `dot` will panic about one of the
-// placeholders in `main`. Read what it says: it checks exactly
-// the three things listed above, and it names the one it
-// didn't find.
+// When all of that compiles, `dot` will panic while tracing.
+// Read what it says: it shows a tensor, by its shape, and the
+// tag it looked for in there and didn't find. Your two functions
+// are fine by then. The tensor it complains about is one of the
+// placeholders of `main`, and that is where the repair goes:
+// prices and units are two lists over the same four products,
+// and their shapes ought to say so.
 //
 const std = @import("std");
 const zml = @import("zml");

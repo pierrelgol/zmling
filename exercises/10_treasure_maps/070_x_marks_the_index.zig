@@ -52,8 +52,13 @@
 //
 // The map of the archipelago has 5 islands and 3 clues for each
 // (paces north, paces east, depth of the hole). The Captain
-// dictates today's route; the cabin boy writes it down.
-// Pirates count from one.
+// dictates today's route; the cabin boy writes it down, number
+// for number. Pirates count from one. Tensors don't, and you
+// have read the fine print: nothing is going to complain. The
+// Captain's words are in a comment in `main` and they stay as
+// they are (nobody corrects the Captain). The numbers right
+// under them are the cabin boy's, and those are yours to put
+// right.
 //
 // The bosun has a question of his own: how much work is the
 // whole trip? Paces north, paces east and feet of digging, each
@@ -63,9 +68,11 @@
 //
 // `main` has the map and its Buffer, and the route's Buffer,
 // which is asking for the shape of a placeholder that isn't
-// there: one position per stop, four stops, and a dtype that
-// `gather` accepts. Then compile both functions and run them,
-// into `result` and `effort`.
+// there: `route`, one position per stop along an axis tagged
+// .stop, four stops, and a dtype that `gather` accepts (look at
+// the numbers its Buffer is made of). Then compile both
+// functions and run them, into Buffers called `result` and
+// `effort`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -95,6 +102,7 @@ pub fn main(init: std.process.Init) !void {
 
     // The placeholder `route` goes here, and then an Exe for each
     // of the two functions.
+    ???;
 
     var map_buffer: zml.Buffer = try .fromBytes(io, platform, map.shape(), std.mem.sliceAsBytes(&[5][3]i32{
         .{ 1, 2, 3 }, // Skull Island
@@ -111,6 +119,7 @@ pub fn main(init: std.process.Init) !void {
     defer route_buffer.deinit();
 
     // Run both: `result` for the clues, `effort` for the bosun.
+    ???;
 
     try stdout.print("clues {f}:\n", .{result.shape()});
     for (try result.getValue([4][3]i32, io), 1..) |clues, stop| {

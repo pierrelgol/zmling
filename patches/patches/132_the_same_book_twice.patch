@@ -1,0 +1,65 @@
+--- exercises/19_once_upon_a_time/132_the_same_book_twice.zig
++++ answers/19_once_upon_a_time/132_the_same_book_twice.zig
+@@ -236,21 +236,20 @@
+     wpe: zml.Tensor,
+     h: []Block,
+     ln_f: zml.nn.LayerNorm,
+-    lm_head: zml.nn.Linear,
+ 
+     /// `view` must stand on the root of the file. The blocks are
+     /// allocated: the caller frees `h`.
+     pub fn init(gpa: std.mem.Allocator, view: zml.io.TensorStore.View, config: Config) !GptNeo {
+         const transformer = view.withPrefix("transformer");
+         const h = try gpa.alloc(Block, config.num_layers);
+-        // Every block of the stack, each of its own kind.
+-        ???;
++        for (h, 0..) |*block, i| {
++            block.* = .init(transformer.withPrefix("h").withLayer(i), config, config.attention_layers[i]);
++        }
+         return .{
+             .wte = .{ .weight = transformer.withPrefix("wte").createReplicatedTensor("weight", .{ .voc, .d }) },
+             .wpe = transformer.withPrefix("wpe").createReplicatedTensor("weight", .{ .pos, .d }),
+             .h = h,
+             .ln_f = layerNorm(transformer.withPrefix("ln_f"), config.layer_norm_epsilon),
+-            .lm_head = linear(view.withPrefix("lm_head")),
+         };
+     }
+ 
+@@ -259,7 +258,7 @@
+         const positions = self.wpe.slice(.pos, .{ .end = tokens.dim(.s) }).rename(.{ .pos = .s });
+         var x = self.wte.forward(tokens).add(positions);
+         for (self.h) |block| x = block.forward(x);
+-        return x;
++        return self.ln_f.forward(x);
+     }
+ 
+     /// tokens: {.s} i32 -> the scores of the token that comes
+@@ -267,7 +266,7 @@
+     pub fn forward(self: GptNeo, tokens: zml.Tensor) zml.Tensor {
+         const x = self.hidden(tokens);
+         const last = x.slice(.s, .{ .start = x.dim(.s) - 1 }).squeeze(.s);
+-        return self.lm_head.forward(last, .f32).rename(.{ .dout = .voc });
++        return last.dot(self.wte.weight, .d);
+     }
+ };
+ 
+@@ -337,9 +336,16 @@
+     var decoder = try tokenizer.decoder();
+     defer decoder.deinit();
+ 
+-    // `model`, and `weights`: its Buffers, loaded. Everything that
+-    // was allocated on the way gets freed, in the right order.
+-    ???;
++    const model: GptNeo = try .init(gpa, store.view(), config);
++    defer gpa.free(model.h);
++
++    var weights = try zml.mem.bufferize(gpa, GptNeo, &model);
++    defer gpa.free(weights.h);
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(GptNeo, &weights);
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, GptNeo, &model, &weights, &store, .{});
++    try loader.await(io);
+ 
+     const ids = try encoder.encodeAlloc(gpa, prompt);
+     defer gpa.free(ids);

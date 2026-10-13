@@ -1,6 +1,6 @@
 --- exercises/05_broadcast_news/038_quiz_live_at_six.zig
 +++ answers/05_broadcast_news/038_quiz_live_at_six.zig
-@@ -65,12 +65,15 @@
+@@ -71,12 +71,15 @@
  
  /// 4. Nothing below 35, nothing above 160. Same shape as `picture`.
  fn legal(picture: zml.Tensor) zml.Tensor {
@@ -18,7 +18,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -85,12 +88,14 @@
+@@ -91,12 +94,14 @@
      defer platform.deinit(gpa, io);
  
      // Four placeholders, with the shapes listed above. All f32.
@@ -37,7 +37,7 @@
  
      // Frame 1 is frame 0 with the studio lights at full power.
      var frames_buffer: zml.Buffer = try .fromBytes(io, platform, frames.shape(), std.mem.sliceAsBytes(&[2][3][2][2]f32{
-@@ -118,8 +123,12 @@
+@@ -124,8 +129,12 @@
      defer vignette_buffer.deinit();
  
      // The exposures: 1 for frame 0, and 4 for frame 1.
