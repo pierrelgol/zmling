@@ -1,0 +1,27 @@
+--- exercises/01_shape_shifters/003_whats_in_the_box.zig
++++ answers/01_shape_shifters/003_whats_in_the_box.zig
+@@ -48,13 +48,13 @@
+     const stdout = &stdout_writer.interface;
+ 
+     // Which data type makes this crate weigh 2000 bytes?
+-    const marble: zml.DataType = .f32;
++    const marble: zml.DataType = .f16;
+     const crate = zml.Shape.init(.{1000}, marble);
+ 
+     // The receipt has to state how heavy ONE marble is. There's a
+     // method for that; multiplying by hand is how the last truck
+     // tipped over.
+-    const one_marble: u16 = marble.???();
++    const one_marble: u16 = marble.sizeOf();
+ 
+     try stdout.print("{d} marbles of {s} ({s}), {d} bytes each: {d} bytes.\n", .{
+         crate.count(),
+@@ -67,7 +67,7 @@
+     // The customer's own inventory software is written in Zig and
+     // stores marble serial numbers as `u64`. Which DataType would
+     // a crate of serial numbers have? Don't type it, compute it.
+-    const serial = zml.DataType.fromZigType(???);
++    const serial = zml.DataType.fromZigType(u64);
+     try stdout.print("Serial numbers are {s}: {d} bits.\n", .{ @tagName(serial), serial.bitSizeOf() });
+     try stdout.flush();
+ }

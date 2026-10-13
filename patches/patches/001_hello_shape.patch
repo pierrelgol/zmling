@@ -1,0 +1,11 @@
+--- exercises/01_shape_shifters/001_hello_shape.zig
++++ answers/01_shape_shifters/001_hello_shape.zig
+@@ -56,7 +56,7 @@
+     const stdout = &stdout_writer.interface;
+ 
+     // Two rows of three cushions, each one a 32-bit float.
+-    const sofa = zml.Shape.init(.{ 2, 3 }, ???);
++    const sofa = zml.Shape.init(.{ 2, 3 }, .f32);
+ 
+     try stdout.print("The sofa has {d} axes, {d} cushions, and weighs {d} bytes.\n", .{
+         sofa.rank(),

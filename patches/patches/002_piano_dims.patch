@@ -1,0 +1,16 @@
+--- exercises/01_shape_shifters/002_piano_dims.zig
++++ answers/01_shape_shifters/002_piano_dims.zig
+@@ -50,11 +50,11 @@
+     const piano = zml.Shape.init(.{ 3, 88, 2 }, .i16);
+ 
+     // The number of keys, please. Not the number of octave-blocks.
+-    const keys = piano.dim(0);
++    const keys = piano.dim(1);
+ 
+     // The size of the LAST axis. This must keep working when
+     // somebody adds another axis in front, so use a negative axis.
+-    const hammers = piano.dim(3);
++    const hammers = piano.dim(-1);
+ 
+     try stdout.print("{d} keys, {d} hammers each. Full manifest: {any}\n", .{ keys, hammers, piano.dims() });
+     try stdout.flush();

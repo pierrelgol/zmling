@@ -1,0 +1,16 @@
+--- exercises/01_shape_shifters/005_label_your_boxes.zig
++++ answers/01_shape_shifters/005_label_your_boxes.zig
+@@ -46,11 +46,11 @@
+ 
+     const fridge = zml.Shape.init(.{ .shelves = 5, .eggs = 12 }, .u8);
+ 
+-    const eggs_per_shelf = fridge.dim(.egg);
++    const eggs_per_shelf = fridge.dim(.eggs);
+ 
+     // And which axis NUMBER is the shelves one? Ask the shape,
+     // using the tag.
+-    const shelves_axis = fridge.axis(???);
++    const shelves_axis = fridge.axis(.shelves);
+ 
+     try stdout.print("{f}: {d} eggs per shelf, shelves are axis {d}, axis 1 is called '{s}'.\n", .{
+         fridge,

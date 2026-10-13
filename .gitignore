@@ -2,3 +2,6 @@
 zig-out/
 zig-pkg/
 *.o
+.progress.txt
+/answers/
+/patches/healed/

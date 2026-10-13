@@ -1,0 +1,29 @@
+--- exercises/01_shape_shifters/007_truck_tetris.zig
++++ answers/01_shape_shifters/007_truck_tetris.zig
+@@ -49,22 +49,22 @@
+     var truck = zml.Shape.init(.{ .rows = 3, .boxes = 5 }, .u8);
+ 
+     // A fourth row fits.
+-    truck.setDim(.rows, 4);
++    truck = truck.setDim(.rows, 4);
+ 
+     // Turns out we can stack them two high: add a tagged axis of
+     // size 2 called .layers at the end.
+-    truck = truck.???(.{ .layers = 2 });
++    truck = truck.append(.{ .layers = 2 });
+ 
+     // Shifty wants the layers first, then rows, then boxes.
+     // (Yes, a tuple of tags works as a permutation.)
+-    truck = truck.transpose(.{ .rows, .boxes, .layers });
++    truck = truck.transpose(.{ .layers, .rows, .boxes });
+ 
+     try stdout.print("Loaded: {f}, {d} boxes in total.\n", .{ truck, truck.count() });
+ 
+     // On the highway, boxes fly off the back. All of them. That
+     // axis is gone; and what remains is counted in 64-bit signed
+     // regrets.
+-    const aftermath = truck.remove(.rows).withDtype(.i64);
++    const aftermath = truck.remove(.boxes).withDtype(.i64);
+ 
+     try stdout.print("Aftermath: {f}.\n", .{aftermath});
+     try stdout.flush();

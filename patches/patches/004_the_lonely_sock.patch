@@ -1,0 +1,15 @@
+--- exercises/01_shape_shifters/004_the_lonely_sock.zig
++++ answers/01_shape_shifters/004_the_lonely_sock.zig
+@@ -46,10 +46,10 @@
+     const stdout = &stdout_writer.interface;
+ 
+     // One sock. No box. Rank 0.
+-    const sock = zml.Shape.init(.{1}, .u8);
++    const sock = zml.Shape.init(.{}, .u8);
+ 
+     // One sock, in a box, in a crate, in a container. Rank 3.
+-    const paranoid_sock = zml.Shape.init(.{}, .u8);
++    const paranoid_sock = zml.Shape.init(.{ 1, 1, 1 }, .u8);
+ 
+     try stdout.print("sock:          rank {d}, count {d}, dims {any}\n", .{ sock.rank(), sock.count(), sock.dims() });
+     try stdout.print("paranoid sock: rank {d}, count {d}, dims {any}\n", .{ paranoid_sock.rank(), paranoid_sock.count(), paranoid_sock.dims() });

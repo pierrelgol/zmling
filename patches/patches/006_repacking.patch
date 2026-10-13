@@ -1,0 +1,21 @@
+--- exercises/01_shape_shifters/006_repacking.zig
++++ answers/01_shape_shifters/006_repacking.zig
+@@ -42,15 +42,15 @@
+     const plates = zml.Shape.init(.{ 10, 12 }, .u16);
+ 
+     // Stacks of 8, as many as it takes. Let ZML do the division.
+-    const cupboard = plates.reshape(.{ ???, 8 });
++    const cupboard = plates.reshape(.{ .auto, 8 });
+ 
+     // The dishwasher takes racks of 6. The nephew insists it's
+     // 7. It is not. (Run it once with the 7 to see what ZML has
+     // to say about that.)
+-    const dishwasher = plates.reshape(.{ .auto, 7 });
++    const dishwasher = plates.reshape(.{ .auto, 6 });
+ 
+     // For the insurance form: one long line of plates, rank 1.
+-    const insurance = plates.reshape(.{ 10, 12 });
++    const insurance = plates.reshape(.{.auto});
+ 
+     try stdout.print("cupboard {f}, dishwasher {f}, insurance {f}\n", .{ cupboard, dishwasher, insurance });
+     try stdout.flush();
