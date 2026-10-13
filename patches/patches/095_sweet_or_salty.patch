@@ -1,11 +1,67 @@
 --- exercises/13_layer_cake/095_sweet_or_salty.zig
 +++ answers/13_layer_cake/095_sweet_or_salty.zig
-@@ -75,7 +75,7 @@
+@@ -105,10 +105,13 @@
  
-     /// fillings: {.cake, .d} -> the index of the best class for each cake: {.cake}, i32.
-     pub fn forward(self: Taster, fillings: zml.Tensor) zml.Tensor {
+     /// fillings: {.cake, .d} -> for each cake, a class and a confidence.
+     pub fn forward(self: Taster, fillings: zml.Tensor) Verdict {
 -        const hidden = self.hidden.forward(fillings, fillings.dtype());
 +        const hidden = self.hidden.forward(fillings, fillings.dtype()).relu().rename(.{ .dout = .d });
          const logits = self.verdict.forward(hidden, hidden.dtype());
-         return logits.argMax(.dout).indices.squeeze(.dout);
+-        // The two moves: probabilities, then the best one.
+-        return ???;
++        const best = logits.softmax(.dout).argMax(.dout);
++        return .{
++            .class = best.indices.squeeze(.dout),
++            .confidence = best.values.squeeze(.dout),
++        };
      }
+ };
+ 
+@@ -123,12 +126,14 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // Two Linears: 2 flavors in, 2 hunches out; 2 hunches in, 2
+-    // classes out. Both with a bias.
+-    const taster: Taster = ???;
++    const taster: Taster = .{
++        .hidden = .init(.init(.{ .dout = 2, .d = 2 }, .f32), .init(.{ .dout = 2 }, .f32), .d),
++        .verdict = .init(.init(.{ .dout = 2, .d = 2 }, .f32), .init(.{ .dout = 2 }, .f32), .d),
++    };
+     const fillings: zml.Tensor = .init(.{ .cake = 4, .d = 2 }, .f32);
+ 
+-    // TODO: `exe`.
++    var exe = try platform.compile(gpa, io, taster, .forward, .{fillings}, .{});
++    defer exe.deinit();
+ 
+     // h0 = s + t, h1 = s + t - 1 (the relu is in `forward`)
+     var w1: zml.Buffer = try .fromBytes(io, platform, taster.hidden.weight.shape(), std.mem.sliceAsBytes(&[2][2]f32{ .{ 1, 1 }, .{ 1, 1 } }));
+@@ -142,7 +147,10 @@
+     var b2: zml.Buffer = try .fromBytes(io, platform, taster.verdict.bias.?.shape(), std.mem.sliceAsBytes(&[2]f32{ 0.5, 0 }));
+     defer b2.deinit();
+ 
+-    const taster_buffers: zml.Bufferized(Taster) = ???;
++    const taster_buffers: zml.Bufferized(Taster) = .{
++        .hidden = .{ .weight = w1, .bias = b1, .quantization = null },
++        .verdict = .{ .weight = w2, .bias = b2, .quantization = null },
++    };
+ 
+     const names = [_][]const u8{ "plain", "strawberry", "olive", "salted caramel" };
+     //                          sweet, salty
+@@ -150,9 +158,13 @@
+     var fillings_buffer: zml.Buffer = try .fromBytes(io, platform, fillings.shape(), std.mem.sliceAsBytes(&flavors));
+     defer fillings_buffer.deinit();
+ 
+-    // TODO: two outputs. A runner, and `verdicts`, a struct of
+-    // Buffers for it to fill. Both of those Buffers are yours to
+-    // free.
++    // Two outputs: a runner, and a struct of Buffers for it to fill.
++    var runner = try exe.runner(gpa);
++    defer runner.deinit(gpa);
++
++    var verdicts: zml.Bufferized(Taster.Verdict) = undefined;
++    runner.run(io, .{ taster_buffers, fillings_buffer }, .{&verdicts}, .{ .wait = true });
++    defer zml.Buffer.deinitAll(Taster.Verdict, &verdicts);
+ 
+     try stdout.print("verdicts {f}, confidence {f}\n", .{ verdicts.class.shape(), verdicts.confidence.shape() });
+     const classes = [_][]const u8{ "rejected", "served" };

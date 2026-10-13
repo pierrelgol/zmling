@@ -47,7 +47,8 @@
 //     ghost.dim(ax)   ghost.dims()     ghost.axis(ax)
 //
 // Madame Zelda hands you the floor plan. "Thirteen rooms, seven
-// candles each. Summon me something that fits."
+// candles each. Summon me something that fits. And something
+// small for the cellar, while you're at it."
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -66,9 +67,20 @@ pub fn main(init: std.process.Init) !void {
         ghost,
         // The size of the .rooms axis. Tensors answer the same
         // questions as their Shape.
-        ghost.dim(???),
+        ghost.dim(.candles),
         ghost.count(),
     });
     try stdout.print("It would weigh {d} bytes, if it weighed anything.\n", .{ghost.byteSize()});
+
+    // The cellar: 3 barrels, tagged .barrels, holding 32-bit
+    // signed integers. No Shape this time: summon the placeholder
+    // directly, the way the first line of the lesson does.
+    const cellar_ghost = ???;
+
+    try stdout.print("{f} lurks in the cellar: rank {d}, made of {s}.\n", .{
+        cellar_ghost,
+        cellar_ghost.rank(),
+        @tagName(cellar_ghost.dtype()),
+    });
     try stdout.flush();
 }

@@ -1,6 +1,6 @@
 --- exercises/07_origami_club/047_turn_the_paper.zig
 +++ answers/07_origami_club/047_turn_the_paper.zig
-@@ -64,18 +64,18 @@
+@@ -70,13 +70,13 @@
  
  /// Rows become columns.
  fn turn(sheet: zml.Tensor) zml.Tensor {
@@ -16,9 +16,25 @@
  }
  
  /// Exchange .sheets and .rows, don't touch .cols.
- fn flip(pile: zml.Tensor) zml.Tensor {
--    return pile.swapAxes(???, ???);
-+    return pile.swapAxes(.sheets, .rows);
- }
+@@ -86,7 +86,7 @@
  
  /// All the axes, backwards.
+ fn insideOut(pile: zml.Tensor) zml.Tensor {
+-    return ???;
++    return pile.transpose(.{});
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -112,10 +112,10 @@
+ 
+         // Run the Exe on the sheet, then copy the result to host
+         // memory as a zml.Slice called `turned`.
+-        var result: zml.Buffer = ???;
++        var result: zml.Buffer = try exe.eval(gpa, io, .{sheet_buffer});
+         defer result.deinit();
+ 
+-        const turned: zml.Slice = ???;
++        const turned: zml.Slice = try result.toSliceAlloc(gpa, io);
+         defer turned.free(gpa);
+ 
+         try stdout.print("turn:      {f}\n", .{turned.shape});

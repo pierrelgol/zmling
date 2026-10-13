@@ -56,19 +56,33 @@
 // `rename` costs nothing at run time. It only changes what the
 // axis is called while the graph is being built.
 //
-// Run this as it is, then deliver Chad's slide.
+// Three functions today. `localRevenue` is the batched product
+// above, and nobody has written it. `synergyMatrix` is Chad's
+// obvious code: once the rest compiles, watch what it does to
+// the last lines of `main`, then deliver his slide.
+//
+// The third one is for the accountants, who don't care about
+// days: `officeTotals` is the local revenue added up over the
+// days, {office=2} and nothing else (a reduction leaves a
+// souvenir behind: chapter 6). It also needs an Exe and a
+// result in `main`, where the print is waiting for them.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 /// Dollars per office and per day.
 fn localRevenue(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
-    return orders.dot(prices, .products);
+    return ???;
 }
 
 /// For every (office, partner) pair, the dot product of their price lists.
 fn synergyMatrix(prices: zml.Tensor) zml.Tensor {
     return prices.dot(prices, .products);
+}
+
+/// Dollars per office, all days together: {office}.
+fn officeTotals(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -90,6 +104,8 @@ pub fn main(init: std.process.Init) !void {
     var synergy_exe = try platform.compileFn(gpa, io, synergyMatrix, .{prices}, .{});
     defer synergy_exe.deinit();
 
+    // The accountants are waiting: `officeTotals` needs an Exe too.
+
     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[2][3][4]f32{
         // San Francisco
         .{ .{ 10, 2, 0, 0 }, .{ 20, 5, 1, 0 }, .{ 40, 10, 2, 1 } },
@@ -108,7 +124,10 @@ pub fn main(init: std.process.Init) !void {
     var synergy: zml.Buffer = try synergy_exe.eval(gpa, io, .{prices_buffer});
     defer synergy.deinit();
 
+    // Run it. The second print reads a Buffer called `totals`.
+
     try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([2][3]f32, io) });
+    try stdout.print("totals {f}: {any}\n", .{ totals.shape(), try totals.getValue([2]f32, io) });
     try stdout.print("synergy {f}:\n", .{synergy.shape()});
     // Printed now, in case the next line doesn't go as planned.
     try stdout.flush();

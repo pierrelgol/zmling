@@ -56,7 +56,7 @@
 //     "one element OF the axis"       .single(i)   axis dropped
 //     "a shorter axis"                start/end    axis kept
 //
-// Two orders tonight:
+// Three orders tonight:
 //
 //   - `extraBasil`: take pizza number 1 out of its box and add
 //     the basil leaves, slice by slice. `basil` is {slices=4}.
@@ -64,8 +64,18 @@
 //   - `lastBoxed`: the LAST pizza of the tray, still in its
 //     box, so the delivery bag can stack it: {pizzas=1,slices=4}.
 //
-// Luigi prepared both. He got both questions right, and then
-// answered each of them on the wrong order.
+//   - `comparedToFirst`: Nonna's quality control. For every
+//     pizza of the tray and every slice position, how many
+//     MORE olives it has than the same slice of pizza number
+//     0: {pizzas=3,slices=4}. It is one subtraction, and
+//     Luigi's question decides whether it works. Think back to
+//     the newsroom (exercise 036): what kind of right-hand
+//     side does ZML agree to stretch?
+//
+// Luigi prepared the first two. He got both questions right,
+// and then answered each of them on the wrong order. The third
+// he never touched: neither the function, nor its block in
+// `main`, where only the print is left.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -78,6 +88,11 @@ fn extraBasil(tray: zml.Tensor, basil: zml.Tensor) zml.Tensor {
 /// The last pizza, in its box. Result: {pizzas=1,slices=4}.
 fn lastBoxed(tray: zml.Tensor) zml.Tensor {
     return tray.slice(.pizzas, .single(-1));
+}
+
+/// Every pizza minus pizza number 0. Result: {pizzas=3,slices=4}.
+fn comparedToFirst(tray: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -128,6 +143,12 @@ pub fn main(init: std.process.Init) !void {
         defer plate.free(gpa);
 
         try stdout.print("lastBoxed:  {f} {any}\n", .{ plate.shape, plate.constItems(i32) });
+    }
+    {
+        // Same journey as the block above, for `comparedToFirst`:
+        // an Exe, a result, and a zml.Slice called `plate`.
+
+        try stdout.print("compared:   {f} {any}\n", .{ plate.shape, plate.constItems(i32) });
     }
     try stdout.flush();
 }

@@ -1,6 +1,6 @@
 --- exercises/06_reduction_kitchen/040_skim_it_off.zig
 +++ answers/06_reduction_kitchen/040_skim_it_off.zig
-@@ -60,12 +60,12 @@
+@@ -65,12 +65,12 @@
  
  /// Plates for each table: {table=3}.
  fn platesPerTable(orders: zml.Tensor) zml.Tensor {
@@ -15,3 +15,20 @@
  }
  
  pub fn main(init: std.process.Init) !void {
+@@ -90,6 +90,8 @@
+     defer per_table_exe.deinit();
+ 
+     // The second Exe, for `platesTonight`: `tonight_exe`.
++    var tonight_exe = try platform.compileFn(gpa, io, platesTonight, .{orders}, .{});
++    defer tonight_exe.deinit();
+ 
+     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[3][4]i32{
+         .{ 2, 1, 0, 2 },
+@@ -105,6 +107,6 @@
+     defer tonight.deinit();
+ 
+     try stdout.print("Jean-Luc carries {f}: {any}\n", .{ per_table.shape(), try per_table.getValue([3]i32, io) });
+-    try stdout.print("Chef Odile gets {f}: {d} plates\n", .{ tonight.shape(), try tonight.getValue(???, io) });
++    try stdout.print("Chef Odile gets {f}: {d} plates\n", .{ tonight.shape(), try tonight.getValue(i32, io) });
+     try stdout.flush();
+ }

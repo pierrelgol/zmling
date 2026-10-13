@@ -72,10 +72,15 @@
 // means a shadow. A shadow means 10 degrees colder for the three
 // weeks ahead; no shadow means 5 degrees warmer.
 //
-// `prediction` doesn't survive tracing: run it and read the
-// panic. `prediction2` must give the same answer using `if2`.
-// (Zig will insist that you write `prediction2` before it lets
-// you meet the panic. Zig is like that.)
+//   1. Write the two branches of `Burrow`.
+//   2. `prediction` doesn't survive tracing: run it and read the
+//      panic.
+//   3. `prediction2` must give the same answer using `if2`.
+//   4. In `main`, `prediction2` is never compiled and never
+//      run. Gus's lawyer is waiting.
+//
+// (Zig will insist on 1, 3 and 4 before it lets you meet the
+// panic of 2. Zig is like that.)
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -85,12 +90,12 @@ const Burrow = struct {
 
     /// Gus saw his shadow.
     pub fn onTrue(self: Burrow) zml.Tensor {
-        return self.temps.addConstant(-10);
+        return ???;
     }
 
     /// No shadow.
     pub fn onFalse(self: Burrow) zml.Tensor {
-        return self.temps.addConstant(5);
+        return ???;
     }
 };
 
@@ -119,7 +124,7 @@ pub fn main(init: std.process.Init) !void {
 
     var exe = try platform.compileFn(gpa, io, prediction, .{ sunshine, temps }, .{});
     defer exe.deinit();
-    var exe2 = try platform.compileFn(gpa, io, prediction2, .{ sunshine, temps }, .{});
+    var exe2 = ???;
     defer exe2.deinit();
 
     var temps_buffer: zml.Buffer = try .fromBytes(io, platform, temps.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 3, 10 }));
@@ -132,7 +137,7 @@ pub fn main(init: std.process.Init) !void {
 
         var result: zml.Buffer = try exe.eval(gpa, io, .{ sunshine_buffer, temps_buffer });
         defer result.deinit();
-        var result2: zml.Buffer = try exe2.eval(gpa, io, .{ sunshine_buffer, temps_buffer });
+        var result2: zml.Buffer = ???;
         defer result2.deinit();
 
         try stdout.print("{d} minutes of sun. Gus says {any}, and Gus's lawyer says {any}.\n", .{

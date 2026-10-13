@@ -68,11 +68,31 @@
 //         turns 8 bytes into an integer
 //
 // Denise hands you the key to locker number one. "Somebody put
-// the plates away in there. Tell me what we've got."
+// the plates away in there. Tell me what we've got. And while
+// you're in there, read me the combination of locker 3, I've
+// lost the sticky note again."
+//
+// Four steps, each standing on the previous one:
+//
+//  1. the length of the header, from the first eight bytes;
+//  2. the header itself. It starts right after those eight
+//     bytes. It gets printed, so that you can READ it: the next
+//     steps are written in there;
+//  3. `dataOffset`: where a `data_offsets` position really is,
+//     counted from the start of the file. Then the plates;
+//  4. the combination, all yours: find its entry in the header
+//     you printed, declare the right array for its dtype and
+//     shape, and read it the way the plates were read.
 //
 const std = @import("std");
 
 const weights_path = "zmling/14_heavy_lifting/gym.safetensors";
+
+/// Where byte `begin` of the tensor data sits, counted from the
+/// start of the file.
+fn dataOffset(header_length: usize, begin: usize) usize {
+    return ???;
+}
 
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
@@ -85,29 +105,30 @@ pub fn main(init: std.process.Init) !void {
     defer file.close(io);
 
     // 1. The first eight bytes are the length of the header.
-    var length_bytes: [8]u8 = undefined;
-    _ = try file.readPositionalAll(io, &length_bytes, 0);
-    const header_length: usize = @intCast(std.mem.readInt(u64, &length_bytes, ???));
+    // TODO: `header_length`, a usize. Read the eight bytes, then
+    // turn them into an integer (`@intCast` makes a usize of a u64).
 
     // 2. The header comes right after them.
     var header_bytes: [2048]u8 = undefined;
     const header = header_bytes[0..header_length];
-    _ = try file.readPositionalAll(io, header, 8);
+    _ = try file.readPositionalAll(io, header, ???);
 
     try stdout.print("The header is {d} bytes of JSON:\n", .{header.len});
     // (Writers pad the header with spaces. Nobody needs to see those.)
     try stdout.print("{s}\n", .{std.mem.trimEnd(u8, header, " ")});
 
     // 3. The header says: "plates" is 4 F32, data_offsets [0, 16].
-    //    Where is byte 0 of the data in the file?
-    const plates_offset = 0;
-
-    // Read the 16 bytes straight into four floats: the file holds
-    // exactly the bytes an [4]f32 is made of. (On a little-endian
-    // machine, which is to say: on yours.)
+    //    Read the 16 bytes straight into four floats: the file holds
+    //    exactly the bytes an [4]f32 is made of. (On a little-endian
+    //    machine, which is to say: on yours.)
     var plates: [4]f32 = undefined;
-    _ = try file.readPositionalAll(io, std.mem.asBytes(&plates), plates_offset);
+    _ = try file.readPositionalAll(io, std.mem.asBytes(&plates), 0);
 
     try stdout.print("\nThe plates, in kg: {any}\n", .{plates});
+
+    // 4. The combination of locker 3 is in here too.
+    // TODO: `combination`, read from the file.
+
+    try stdout.print("The combination of locker 3: {any}\n", .{combination});
     try stdout.flush();
 }

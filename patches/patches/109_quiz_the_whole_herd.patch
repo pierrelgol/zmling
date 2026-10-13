@@ -1,6 +1,26 @@
 --- exercises/15_pay_attention/109_quiz_the_whole_herd.zig
 +++ answers/15_pay_attention/109_quiz_the_whole_herd.zig
-@@ -64,7 +64,21 @@
+@@ -78,18 +78,36 @@
+ /// The causal mask {.q = len, .k = len}, f32: 0 where the listener may
+ /// hear the speaker, -inf elsewhere. Yours, from exercise 104.
+ fn causalMask(len: i64) zml.Tensor {
+-    return ???;
++    const table: zml.Shape = .init(.{ .q = len, .k = len }, .i32);
++    const listener = zml.Tensor.arange(.{ .end = len }, .i32).withTags(.{.q}).broad(table);
++    const speaker = zml.Tensor.arange(.{ .end = len }, .i32).withTags(.{.k}).broad(table);
++    return speaker.cmp(.LE, listener).select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
+ }
+ 
+ /// One layer of causal self-attention, with RoPE and a residual.
+ const SelfAttention = struct {
+-    // Four Linear layers, `q_proj`, `k_proj`, `v_proj`, `o_proj`,
+-    // and `heads`, a plain number.
+-    ???,
++    q_proj: zml.nn.Linear,
++    k_proj: zml.nn.Linear,
++    v_proj: zml.nn.Linear,
++    o_proj: zml.nn.Linear,
++    heads: u32,
  
      /// x: {.s, .d} -> {.s, .d}
      pub fn forward(self: SelfAttention, x: zml.Tensor) zml.Tensor {
@@ -10,12 +30,11 @@
 +        const k = self.k_proj.forward(x, x.dtype()).splitAxis(.dout, split);
 +        const v = self.v_proj.forward(x, x.dtype()).splitAxis(.dout, split);
 +
-+        const mask = zml.nn.causalAttnMask(.{ .q = x.dim(.s), .k = x.dim(.s) }, x.dtype(), null);
 +        const heard = zml.nn.sdpa(
 +            zml.nn.rope(q, null, .{}).rename(.{ .s = .q }),
 +            zml.nn.rope(k, null, .{}).rename(.{ .s = .k }),
 +            v.rename(.{ .s = .k }),
-+            .{ .attn_mask = mask },
++            .{ .attn_mask = causalMask(x.dim(.s)) },
 +        );
 +
 +        const merged = heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
@@ -23,12 +42,52 @@
      }
  };
  
-@@ -93,7 +107,7 @@
-     // Four llamas, four numbers each.
-     const x: zml.Tensor = .init(.{ .s = 4, .d = 4 }, .f32);
+@@ -157,9 +175,45 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
  
--    var exe = ???;
+-    // The model, the placeholder, the Exe, the Buffers, and three
+-    // rounds of gossip, with a `printHerd` after each.
+-    ???;
++    const layer: SelfAttention = .{
++        .q_proj = .init(.init(.{ .dout = 4, .d = 4 }, .f32), null, .d),
++        .k_proj = .init(.init(.{ .dout = 4, .d = 4 }, .f32), null, .d),
++        .v_proj = .init(.init(.{ .dout = 4, .d = 4 }, .f32), null, .d),
++        .o_proj = .init(.init(.{ .dout = 4, .d = 4 }, .f32), null, .d),
++        .heads = 2,
++    };
++    const x: zml.Tensor = .init(.{ .s = 4, .d = 4 }, .f32);
++
 +    var exe = try platform.compile(gpa, io, layer, .forward, .{x}, .{});
-     defer exe.deinit();
++    defer exe.deinit();
++
++    var q_buffer: zml.Buffer = try .fromBytes(io, platform, layer.q_proj.weight.shape(), std.mem.sliceAsBytes(&q_weight));
++    defer q_buffer.deinit();
++    var k_buffer: zml.Buffer = try .fromBytes(io, platform, layer.k_proj.weight.shape(), std.mem.sliceAsBytes(&k_weight));
++    defer k_buffer.deinit();
++    var v_buffer: zml.Buffer = try .fromBytes(io, platform, layer.v_proj.weight.shape(), std.mem.sliceAsBytes(&v_weight));
++    defer v_buffer.deinit();
++    var o_buffer: zml.Buffer = try .fromBytes(io, platform, layer.o_proj.weight.shape(), std.mem.sliceAsBytes(&o_weight));
++    defer o_buffer.deinit();
++
++    // Only the Tensors: `heads` and the tags stayed in the Exe.
++    const layer_buffers: zml.Bufferized(SelfAttention) = .{
++        .q_proj = .{ .weight = q_buffer, .quantization = null },
++        .k_proj = .{ .weight = k_buffer, .quantization = null },
++        .v_proj = .{ .weight = v_buffer, .quantization = null },
++        .o_proj = .{ .weight = o_buffer, .quantization = null },
++    };
++
++    // `herd_buffer` always holds the herd as it is now.
++    var herd_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&herd));
++    defer herd_buffer.deinit();
++
++    for (1..4) |round| {
++        const after: zml.Buffer = try exe.eval(gpa, io, .{ layer_buffers, herd_buffer });
++        herd_buffer.deinit();
++        herd_buffer = after;
  
-     // "I want to hear about what I am": the identity.
++        try printHerd(stdout, round, herd_buffer.shape(), try herd_buffer.getValue([4][4]f32, io));
++    }
+     try stdout.flush();
+ }

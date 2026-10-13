@@ -36,6 +36,11 @@
 // is an ordinary runtime value. ZML can't know at Zig's compile
 // time which tags it will carry.)
 //
+// One thing first. There are two blanks below, and the compiler
+// insists on those before anything runs: a question for the
+// fridge, and a freezer that nobody wrote up at all. Fill them
+// in, THEN run it and meet the panic.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -57,6 +62,16 @@ pub fn main(init: std.process.Init) !void {
         eggs_per_shelf,
         shelves_axis,
         fridge.tag(1),
+    });
+
+    // The freezer: 3 drawers of 4 pizzas each, counted in bytes
+    // like the eggs. Tag the axes .drawers and .pizzas.
+    const freezer = ???;
+
+    try stdout.print("{f}: {d} pizzas, and the last axis is called '{s}'.\n", .{
+        freezer,
+        freezer.count(),
+        freezer.tag(-1),
     });
     try stdout.flush();
 }

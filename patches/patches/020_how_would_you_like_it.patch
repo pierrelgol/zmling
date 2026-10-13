@@ -1,19 +1,41 @@
 --- exercises/03_arithmetic_diner/020_how_would_you_like_it.zig
 +++ answers/03_arithmetic_diner/020_how_would_you_like_it.zig
-@@ -96,14 +96,12 @@
+@@ -85,7 +85,7 @@
+ }
+ 
+ fn leaky(x: zml.Tensor) zml.Tensor {
+-    return x.leakyReLU(0.01);
++    return x.leakyReLU(0.1);
+ }
+ 
+ fn sigmoid(x: zml.Tensor) zml.Tensor {
+@@ -106,17 +106,17 @@
  
  /// Leaky relu with a slope of 0.1, without calling `leakyReLU`.
  fn leakyByHand(x: zml.Tensor) zml.Tensor {
--    // TODO
--    return x;
+-    return ???;
 +    return x.maximum(x.scale(0.1));
+ }
+ 
+ /// 1 / (1 + e^-x), without calling `sigmoid`.
+ fn sigmoidByHand(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    return x.negate().exp().addConstant(1).powByConst(-1);
  }
  
  /// silu, without calling `silu`.
  fn siluByHand(x: zml.Tensor) zml.Tensor {
--    // TODO
--    return x;
+-    return ???;
 +    return x.mul(x.sigmoid());
  }
  
  /// Compiles `recipe` for five f32, runs it on the steaks.
+@@ -129,6 +129,8 @@
+     const x: zml.Tensor = .init(.{ .steaks = 5 }, .f32);
+ 
+     // Compile `recipe` for `x`.
++    var exe = try platform.compileFn(gpa, io, recipe, .{x}, .{});
++    defer exe.deinit();
+ 
+     var input: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&steaks));
+     defer input.deinit();

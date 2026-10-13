@@ -66,21 +66,29 @@
 // {anchor=3,segment=4,f32}". Notice WHY it could tell, though:
 // 3 is not 4. Hold that thought until exercise 037.)
 //
+// Nobody has started `payTable`: it is yours, all of it. The
+// comments inside say what each step must produce, in order.
+// `main` is nearly done, but one placeholder is missing, and
+// whoever wrote the last lines was thinking about the cat:
+// the panic you'll get is an old friend from exercise 015.
+//
 const std = @import("std");
 const zml = @import("zml");
 
 fn payTable(fees: zml.Tensor, minutes: zml.Tensor) zml.Tensor {
-    // You've built Shapes from numbers before. `dim` returns a
-    // number. So you can build a Shape from other shapes' sizes.
-    const table = zml.Shape.init(.{ .anchor = fees.dim(.anchor), .segment = minutes.dim(.segment) }, .f32);
+    // 1. The Shape of the full table: {anchor=3,segment=4,f32}.
+    //    Don't write 3 and 4! You've built Shapes from numbers
+    //    before, and `x.dim(.tag)` returns a number: build this
+    //    one from the sizes of the two inputs.
 
-    // {anchor=3} -> {anchor=3,segment=1}
-    const column = fees.appendAxes(???);
+    // 2. A column out of the fees:
+    //    {anchor=3} -> {anchor=3,segment=1}
 
-    // {segment=4} -> {anchor=1,segment=4}
-    const row = minutes.insertAxes(???, ???);
+    // 3. A row out of the minutes:
+    //    {segment=4} -> {anchor=1,segment=4}
 
-    return column.broad(table).mul(row.broad(table));
+    // 4. Stretch both to the full table, and multiply.
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -95,7 +103,7 @@ pub fn main(init: std.process.Init) !void {
     defer platform.deinit(gpa, io);
 
     const fees: zml.Tensor = .init(.{ .anchor = 3 }, .f32);
-    const minutes: zml.Tensor = .init(.{ .segment = 4 }, .f32);
+    const minutes: zml.Tensor = ???;
 
     var exe = try platform.compileFn(gpa, io, payTable, .{ fees, minutes }, .{});
     defer exe.deinit();
@@ -110,7 +118,7 @@ pub fn main(init: std.process.Init) !void {
     var minutes_buffer: zml.Buffer = try .fromBytes(io, platform, minutes.shape(), std.mem.sliceAsBytes(&[_]f32{ 12, 3, 5, 2 }));
     defer minutes_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ fees_buffer, minutes_buffer });
+    var result: zml.Buffer = try exe.eval(gpa, io, .{ minutes_buffer, fees_buffer });
     defer result.deinit();
 
     const pay = try result.getValue([3][4]f32, io);

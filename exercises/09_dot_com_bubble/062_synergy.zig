@@ -58,6 +58,14 @@
 // Chad wrote both. One of them panics, with a message worth
 // reading. The other one runs fine, which is worse.
 //
+// And a third report, for Chad's eyes only: which day was the
+// BEST day, in dollars? That is the first report followed by
+// something you did in the kitchen (exercise 42). It returns
+// one number, 0, 1 or 2: a position along .days, with no axis
+// left around it. Chad didn't write that one, and he didn't
+// compile it or run it either: `main` has a hole where
+// `best_exe` and the Buffer `best` should be.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -69,6 +77,11 @@ fn dailyRevenue(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
 /// For each day, how many of each part the warehouse must ship.
 fn partsNeeded(orders: zml.Tensor, recipes: zml.Tensor) zml.Tensor {
     return recipes.dot(orders, .products);
+}
+
+/// The position along .days of the day with the most dollars. Rank 0.
+fn bestDay(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -90,6 +103,8 @@ pub fn main(init: std.process.Init) !void {
     defer revenue_exe.deinit();
     var parts_exe = try platform.compileFn(gpa, io, partsNeeded, .{ orders, recipes }, .{});
     defer parts_exe.deinit();
+
+    // Nobody compiled the third report: `bestDay`, into `best_exe`.
 
     // Units ordered: Pet Rock, Deluxe Rock, Family Pack, Enterprise Rock.
     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[3][4]f32{
@@ -114,10 +129,13 @@ pub fn main(init: std.process.Init) !void {
     var parts: zml.Buffer = try parts_exe.eval(gpa, io, .{ orders_buffer, recipes_buffer });
     defer parts.deinit();
 
+    // ...and nobody ran it. The last print reads a Buffer called `best`.
+
     try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([3]f32, io) });
     try stdout.print("parts {f}:\n", .{parts.shape()});
     for (try parts.getValue([3][2]f32, io), 1..) |day, i| {
         try stdout.print("  day {d}: {d} rocks, {d} googly eyes\n", .{ i, day[0], day[1] });
     }
+    try stdout.print("best day: day {d}. Chad was on holiday.\n", .{try best.getValue(i32, io) + 1});
     try stdout.flush();
 }

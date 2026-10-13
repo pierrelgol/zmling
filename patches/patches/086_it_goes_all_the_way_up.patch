@@ -1,10 +1,53 @@
 --- exercises/12_the_exe_files/086_it_goes_all_the_way_up.zig
 +++ answers/12_the_exe_files/086_it_goes_all_the_way_up.zig
-@@ -140,12 +140,14 @@
+@@ -94,16 +94,21 @@
+ const zml = @import("zml");
+ 
+ const Layer = struct {
+-    // TODO: the two fields, and
+-    //     pub fn forward(self: Layer, x: zml.Tensor) zml.Tensor
+-    // which hands the next layer an axis called .d
++    weight: zml.Tensor,
++    bias: zml.Tensor,
++
++    pub fn forward(self: Layer, x: zml.Tensor) zml.Tensor {
++        return self.weight.dot(x, .d).add(self.bias).relu().withTags(.{.d});
++    }
+ };
+ 
+ const Network = struct {
+     layers: []const Layer,
+ 
+     pub fn forward(self: Network, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        var h = x;
++        for (self.layers) |layer| h = layer.forward(h);
++        return h;
+     }
+ };
+ 
+@@ -124,11 +129,14 @@
+     // Every layer needs its OWN placeholders: a placeholder may
+     // only be used for one input.
+     var layers: [3]Layer = undefined;
+-    for (&layers) |*layer| layer.* = ???;
++    for (&layers) |*layer| layer.* = .{
++        .weight = .fromShape(weight_shape),
++        .bias = .fromShape(bias_shape),
++    };
+     const network: Network = .{ .layers = &layers };
+     const x: zml.Tensor = .init(.{ .d = 2 }, .f32);
+ 
+-    var exe = ???;
++    var exe = try platform.compile(gpa, io, network, .forward, .{x}, .{});
+     defer exe.deinit();
+ 
+     try stdout.print("{d} layers, {d} inputs.\n", .{ network.layers.len, exe.input_shapes.len });
+@@ -147,12 +155,14 @@
  
      var layer_buffers: [3]zml.Bufferized(Layer) = undefined;
      for (&layer_buffers, &weight_data, &bias_data) |*layer_buffer, *w, *b| {
--        // TODO: this layer's two Buffers, made from `w` and `b`.
+-        // This layer's two Buffers, made from `w` and `b`.
 -        layer_buffer.* = ???;
 +        layer_buffer.* = .{
 +            .weight = try .fromBytes(io, platform, weight_shape, std.mem.sliceAsBytes(w)),

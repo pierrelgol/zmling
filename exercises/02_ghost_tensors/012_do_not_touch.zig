@@ -16,8 +16,8 @@
 //     }
 //
 // compiles perfectly well as Zig (it's just a method call!) and
-// then blows up when it runs. Run this exercise as-is and look
-// at the panic. The top of the stack trace says something like
+// then blows up when it runs. This exercise has that panic in
+// store for you. The top of the stack trace says something like
 //
 //     ... Compiler.zig ... in current
 //     ... tensor.zig   ... in add
@@ -42,18 +42,27 @@
 //                                 it calls.
 //
 // The apprentice wanted the sum of two chills, minus a third.
-// (`a.sub(b)` is the element-wise difference.) Please move the
-// ghost-touching to where it belongs.
+// (`a.sub(b)` is the element-wise difference.) Three things
+// went wrong:
+//
+//   - The ritual was never written. Write it.
+//
+//   - Once that compiles, run it. The apprentice calls the
+//     ritual by hand, in the hallway! Nobody but `compileFn`
+//     may call a ritual. Meet the panic, then remove the
+//     offence.
+//
+//   - Then look at the numbers. `eval` wants one Buffer per
+//     placeholder, IN THE SAME ORDER. When all the shapes are
+//     alike, nothing can check that for you: no error, no
+//     panic, just the wrong chill.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 /// cold + colder - warm
 fn haunt(cold: zml.Tensor, colder: zml.Tensor, warm: zml.Tensor) zml.Tensor {
-    // TODO: this is where the ghost-touching should happen.
-    _ = colder;
-    _ = warm;
-    return cold;
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -72,7 +81,7 @@ pub fn main(init: std.process.Init) !void {
     const warm: zml.Tensor = .init(.{3}, .f32);
 
     // The apprentice's attempt. In the hallway!
-    const chill = cold.add(colder).sub(warm);
+    const chill = haunt(cold, colder, warm);
     _ = chill;
 
     var exe = try platform.compileFn(gpa, io, haunt, .{ cold, colder, warm }, .{});
@@ -85,8 +94,9 @@ pub fn main(init: std.process.Init) !void {
     var warm_buffer: zml.Buffer = try .fromBytes(io, platform, warm.shape(), std.mem.sliceAsBytes(&[_]f32{ 4, 4, 4 }));
     defer warm_buffer.deinit();
 
-    // One Buffer per placeholder, in the same order.
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ cold_buffer, colder_buffer, warm_buffer });
+    // One Buffer per placeholder, in the same order as in the
+    // `compileFn` call above.
+    var result: zml.Buffer = try exe.eval(gpa, io, .{ warm_buffer, colder_buffer, cold_buffer });
     defer result.deinit();
 
     try stdout.print("A chill runs down your spine: {any}\n", .{try result.getValue([3]f32, io)});

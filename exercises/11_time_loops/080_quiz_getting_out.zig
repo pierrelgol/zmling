@@ -27,8 +27,27 @@
 //   - `patience` is trace-time, and gets baked in. `main`
 //     compiles two Phils.
 //
-// Write the While struct and its use. Go around while n is not
-// 1 AND steps is below patience. Your tools, all seen before:
+// Part 1. Write `Escape`, the While struct: its setting, its
+// State, `cond` and `body`. Then `stepsToFreedom(start,
+// patience)`, which returns the number of steps taken, an i32
+// scalar. Go around while n is not 1 AND steps is below
+// patience.
+//
+// Part 2. The same walk, driven from Zig, the way you drove the
+// piano in exercise 078. `nextNumber(n)` is ONE step and no
+// loop. `main` compiles it once and calls it again and again,
+// starting from 27, each result becoming the next input. This
+// time Zig has to LOOK at every result, for two reasons: to know
+// when to stop (the number is 1), and to remember the highest
+// number met on the way. That is the price and the point of a
+// host loop: one call per step, but Zig sees everything.
+//
+// A step is a step: `Escape.body` has no business spelling out
+// the even/odd rule a second time.
+//
+// Below the imports there is nothing but the data and the
+// `print` lines, which tell you the names they expect. Your
+// tools, all seen before:
 //
 //     zml.ops.@"while"(While, context, initial_state)
 //     a.cmp(.NE, b)    .EQ  .LT  ...        a.remainder(b)
@@ -44,28 +63,11 @@
 const std = @import("std");
 const zml = @import("zml");
 
-const Escape = struct {
-    patience: i32,
+// TODO, part 2: `fn nextNumber(n: zml.Tensor) zml.Tensor`.
+// One step, no loop: the number that comes after n.
 
-    pub const State = struct {
-        n: zml.Tensor,
-        steps: zml.Tensor,
-    };
-
-    pub fn cond(self: Escape, state: State) zml.Tensor {
-        return ???;
-    }
-
-    pub fn body(self: Escape, state: State) State {
-        _ = self;
-        return ???;
-    }
-};
-
-/// The number of steps taken from `start`, at most `patience`.
-fn stepsToFreedom(start: zml.Tensor, patience: i32) zml.Tensor {
-    return ???;
-}
+// TODO, part 1: `const Escape = struct { ... };` and
+// `fn stepsToFreedom(start: zml.Tensor, patience: i32) zml.Tensor`.
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -78,22 +80,13 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const start: zml.Tensor = .init(.{}, .i32);
-
-    // Phil on a good day will try 1000 steps. Phil before coffee: 20.
-    var calm_exe = try platform.compileFn(gpa, io, stepsToFreedom, ???, .{});
-    defer calm_exe.deinit();
-    var grumpy_exe = try platform.compileFn(gpa, io, stepsToFreedom, ???, .{});
-    defer grumpy_exe.deinit();
+    // TODO: a placeholder for the starting number, and two Phils.
+    // `calm_exe` will try 1000 steps. `grumpy_exe`, Phil before
+    // coffee, 20.
 
     for ([_]i32{ 1, 6, 7, 27, 97 }) |n| {
-        var start_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
-        defer start_buffer.deinit();
-
-        var calm: zml.Buffer = try calm_exe.eval(gpa, io, .{start_buffer});
-        defer calm.deinit();
-        var grumpy: zml.Buffer = try grumpy_exe.eval(gpa, io, .{start_buffer});
-        defer grumpy.deinit();
+        // TODO: `n` goes through both Exes. The results are
+        // `calm` and `grumpy`.
 
         try stdout.print("Starting from {d}: free after {d} steps. Before coffee, Phil stops at {d}.\n", .{
             n,
@@ -101,5 +94,13 @@ pub fn main(init: std.process.Init) !void {
             try grumpy.getValue(i32, io),
         });
     }
+
+    // Part 2: one call per step, and Zig watches every number go by.
+    //
+    // TODO: compile `nextNumber`, then walk from 27 down to 1,
+    // one call at a time. `calls` counts the calls, `highest` is
+    // the highest number met on the way (27 counts).
+
+    try stdout.print("By hand from 27: {d} calls to the Exe, and the highest number on the way was {d}.\n", .{ calls, highest });
     try stdout.flush();
 }

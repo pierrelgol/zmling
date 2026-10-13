@@ -63,12 +63,29 @@
 // sides and you get every quarry's orders against every
 // quarry's recipes, a rank 4 tensor.
 //
+// Gravel.net's function is below, with the pairs as they left
+// them. The second function is how legacy code is brought home:
+// `partsPerQuarry` takes that anonymous {2,3,2}, gives its axes
+// their names (.quarry, .days, .parts: chapter 4, all three in
+// one call), and adds up the days, so that the rest of the
+// company gets a {quarry=2,parts=2} and no souvenir.
+//
+// Gravel.net never got round to running anything, either. The
+// placeholders and the Buffers are in `main`, the prints are
+// there, and what goes in between is on you: two Exes, and two
+// results named `result` and `per_quarry`.
+//
 const std = @import("std");
 const zml = @import("zml");
 
 /// For each quarry and each day, the parts to ship. No tags allowed.
 fn partsNeeded(orders: zml.Tensor, recipes: zml.Tensor) zml.Tensor {
     return orders.dotGeneral(recipes, &.{.{ 2, 2 }}, &.{});
+}
+
+/// The same report with its tags on, days added up: {quarry,parts}.
+fn partsPerQuarry(orders: zml.Tensor, recipes: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -87,9 +104,6 @@ pub fn main(init: std.process.Init) !void {
     // quarry, products, parts
     const recipes: zml.Tensor = .init(.{ 2, 4, 2 }, .f32);
 
-    var exe = try platform.compileFn(gpa, io, partsNeeded, .{ orders, recipes }, .{});
-    defer exe.deinit();
-
     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[2][3][4]f32{
         .{ .{ 10, 2, 0, 0 }, .{ 20, 5, 1, 0 }, .{ 40, 10, 2, 1 } },
         .{ .{ 1, 0, 0, 0 }, .{ 0, 0, 0, 0 }, .{ 3, 1, 0, 0 } },
@@ -102,9 +116,11 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer recipes_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ orders_buffer, recipes_buffer });
-    defer result.deinit();
+    // Gravel.net stopped here. Compile the two functions, then run
+    // them: `partsNeeded` into a Buffer called `result`, and
+    // `partsPerQuarry` into one called `per_quarry`.
 
+    try stdout.print("per quarry {f}: {any}\n", .{ per_quarry.shape(), try per_quarry.getValue([2][2]f32, io) });
     try stdout.print("parts {f}:\n", .{result.shape()});
     try stdout.flush();
 

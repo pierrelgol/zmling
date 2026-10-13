@@ -1,6 +1,6 @@
 --- exercises/05_broadcast_news/034_stage_left.zig
 +++ answers/05_broadcast_news/034_stage_left.zig
-@@ -82,13 +82,13 @@
+@@ -94,19 +94,19 @@
      const table = viewers.shape();
  
      // One price per show: shows are the first axis.
@@ -12,8 +12,26 @@
 +    const season_table = season.broadcastLeft(table);
  
      // One sponsor per show, the do-it-yourself way.
--    const sponsor_table = sponsor.broadcast(table, &.{???});
+-    const sponsor_table = sponsor.broadcast(table, &.{1});
 +    const sponsor_table = sponsor.broadcast(table, &.{0});
  
-     return viewers.mul(price_table).mul(season_table).add(sponsor_table);
+     const dollars = viewers.mul(price_table).mul(season_table).add(sponsor_table);
+ 
+     // Kevin's tables have no tags, so neither has this one. Label
+     // it for Linda: shows, then weeks.
+-    return dollars;
++    return dollars.withTags(.{ .show, .week });
  }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -123,8 +123,8 @@
+     // One placeholder per parameter of `revenue`. No tags: Kevin.
+     const viewers: zml.Tensor = .init(.{ 3, 4 }, .f32);
+     const price: zml.Tensor = .init(.{3}, .f32);
+-    const season: zml.Tensor = ???;
+-    const sponsor: zml.Tensor = ???;
++    const season: zml.Tensor = .init(.{4}, .f32);
++    const sponsor: zml.Tensor = .init(.{3}, .f32);
+ 
+     var exe = try platform.compileFn(gpa, io, revenue, .{ viewers, price, season, sponsor }, .{});
+     defer exe.deinit();

@@ -13,17 +13,36 @@
 //      up the parties for the two islands chosen, best island
 //      first.
 //
+//   4. Add those two parties up: how many diggers and how many
+//      lookouts leave the ship, in all.
+//
 // The tensors:
 //
 //     gold     {island=6,i32}
 //     sharks   {island=6,i32}
 //     parties  {island=6,role=2,i32}
 //
-// `plan` does steps 1 and 2 and returns the pair of tensors you
-// get from `topK`, with the new axis named .best. The small
-// functions under it each return ONE tensor, so that plain old
-// `exe.eval` is enough. Two of them are already written; step 3
-// is yours.
+// Three functions, and none of them is written:
+//
+//     plan(gold, sharks)                     zml.Tensor.SortRes
+//         Steps 1 and 2: the pair of tensors you get from
+//         `topK`, with the new axis named .best.
+//
+//     landingParties(gold, sharks, parties)  {best=2,role=2}
+//         Step 3. It calls `plan`.
+//
+//     crew(gold, sharks, parties)            {role=2}
+//         Step 4. It calls `landingParties`.
+//
+// `plan` has two outputs: it needs the runner of the previous
+// exercise, and a `zml.Bufferized(zml.Tensor.SortRes)` called
+// `res`. The other two return one tensor each, and plain old
+// `exe.eval` is enough: call their results `landing` and
+// `party_total`.
+//
+// `main` knows the numbers and what to print. Everything in
+// between is yours: placeholders, Exes, Buffers, the runner,
+// and something to free each of them.
 //
 // Your tools:
 //
@@ -43,18 +62,7 @@ fn plan(gold: zml.Tensor, sharks: zml.Tensor) zml.Tensor.SortRes {
     return ???;
 }
 
-fn howMuch(gold: zml.Tensor, sharks: zml.Tensor) zml.Tensor {
-    return plan(gold, sharks).values;
-}
-
-fn where(gold: zml.Tensor, sharks: zml.Tensor) zml.Tensor {
-    return plan(gold, sharks).indices;
-}
-
-/// Step 3: {best=2,role=2}, the landing party for each chosen island.
-fn landingParties(gold: zml.Tensor, sharks: zml.Tensor, parties: zml.Tensor) zml.Tensor {
-    return ???;
-}
+// `landingParties` and `crew` go here.
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -67,47 +75,31 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const gold: zml.Tensor = .init(.{ .island = 6 }, .i32);
-    const sharks: zml.Tensor = .init(.{ .island = 6 }, .i32);
-    const parties: zml.Tensor = ???;
-
-    var how_much_exe = try platform.compileFn(gpa, io, howMuch, .{ gold, sharks }, .{});
-    defer how_much_exe.deinit();
-    var where_exe = try platform.compileFn(gpa, io, where, .{ gold, sharks }, .{});
-    defer where_exe.deinit();
-    var parties_exe = try platform.compileFn(gpa, io, landingParties, .{ gold, sharks, parties }, .{});
-    defer parties_exe.deinit();
-
-    var gold_buffer: zml.Buffer = try .fromBytes(io, platform, gold.shape(), std.mem.sliceAsBytes(&[_]i32{ 40, 90, 15, 70, 85, 99 }));
-    defer gold_buffer.deinit();
-    var sharks_buffer: zml.Buffer = try .fromBytes(io, platform, sharks.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 7, 0, 3, 2, 9 }));
-    defer sharks_buffer.deinit();
+    const gold_data = [_]i32{ 40, 90, 15, 70, 85, 99 };
+    const sharks_data = [_]i32{ 1, 7, 0, 3, 2, 9 };
     // For each island: diggers, lookouts.
-    var parties_buffer: zml.Buffer = try .fromBytes(io, platform, parties.shape(), std.mem.sliceAsBytes(&[6][2]i32{
+    const parties_data = [6][2]i32{
         .{ 2, 1 },
         .{ 9, 4 },
         .{ 1, 1 },
         .{ 5, 2 },
         .{ 6, 3 },
         .{ 8, 8 },
-    }));
-    defer parties_buffer.deinit();
+    };
 
-    var how_much: zml.Buffer = try how_much_exe.eval(gpa, io, .{ gold_buffer, sharks_buffer });
-    defer how_much.deinit();
-    var islands: zml.Buffer = try where_exe.eval(gpa, io, .{ gold_buffer, sharks_buffer });
-    defer islands.deinit();
-    var landing: zml.Buffer = try parties_exe.eval(gpa, io, .{ gold_buffer, sharks_buffer, parties_buffer });
-    defer landing.deinit();
+    // Your code goes here. It ends with `res` (filled in by a
+    // runner), `landing` and `party_total`.
 
     try stdout.print("landing parties: {f}\n", .{landing.shape()});
     try stdout.flush();
 
-    const doubloons = try how_much.getValue([2]i32, io);
-    const which = try islands.getValue([2]i32, io);
+    const doubloons = try res.values.getValue([2]i32, io);
+    const which = try res.indices.getValue([2]i32, io);
     const party = try landing.getValue([2][2]i32, io);
     for (doubloons, which, party) |d, i, p| {
         try stdout.print("Island {d}: {d} doubloons. Send {d} diggers and {d} lookouts.\n", .{ i, d, p[0], p[1] });
     }
+    const total = try party_total.getValue([2]i32, io);
+    try stdout.print("That makes {d} diggers and {d} lookouts. Polly stays on the ship.\n", .{ total[0], total[1] });
     try stdout.flush();
 }

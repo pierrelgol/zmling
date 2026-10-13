@@ -54,7 +54,9 @@
 //
 // On the desk: the manifest of unclaimed luggage, one row per
 // flight, and for each bag its weight and its size. Brenda is
-// at lunch. Kevin has been at the label maker.
+// at lunch. Kevin has been at the label maker: four relabelings,
+// four problems. Two panic. One is a blank. One runs, and is the
+// worst of the four.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -85,5 +87,13 @@ pub fn main(init: std.process.Init) !void {
     // then do it the careful way.
     const archive = complete.renameTag(.departures, .items);
     try stdout.print("Archive:  {f}, {d} items per flight.\n", .{ archive, archive.dim(.items) });
+
+    // Transfers: how many bags go from each of 3 flights to each
+    // of 5 others. For the trip back, the two labels trade
+    // places. Kevin asked the careful method for a swap; the
+    // lesson says what it thinks of that, and what to use.
+    const transfers = zml.Tensor.init(.{ .from = 3, .to = 5 }, .f32);
+    const returns = transfers.rename(.{ .from = .to, .to = .from });
+    try stdout.print("Returns:  {f}, back to {d} flights.\n", .{ returns, returns.dim(.to) });
     try stdout.flush();
 }

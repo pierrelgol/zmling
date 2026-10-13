@@ -1,6 +1,6 @@
 --- exercises/01_shape_shifters/002_piano_dims.zig
 +++ answers/01_shape_shifters/002_piano_dims.zig
-@@ -50,11 +50,11 @@
+@@ -53,15 +53,15 @@
      const piano = zml.Shape.init(.{ 3, 88, 2 }, .i16);
  
      // The number of keys, please. Not the number of octave-blocks.
@@ -12,5 +12,10 @@
 -    const hammers = piano.dim(3);
 +    const hammers = piano.dim(-1);
  
+     // For the customs form: how many parts are in the crate in
+     // total? You met the method for that in exercise 001.
+-    const parts = piano.???;
++    const parts = piano.count();
+ 
      try stdout.print("{d} keys, {d} hammers each. Full manifest: {any}\n", .{ keys, hammers, piano.dims() });
-     try stdout.flush();
+     try stdout.print("{d} parts in the crate, {d} bytes.\n", .{ parts, piano.byteSize() });

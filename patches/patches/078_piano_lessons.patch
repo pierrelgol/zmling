@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/078_piano_lessons.zig
 +++ answers/11_time_loops/078_piano_lessons.zig
-@@ -85,14 +85,14 @@
+@@ -118,23 +118,29 @@
      /// Keep going as long as there are days left.
      pub fn cond(self: Practice, state: State) zml.Tensor {
          _ = self;
@@ -10,10 +10,69 @@
  
      pub fn body(self: Practice, state: State) State {
          _ = self;
-         return .{
-             .day = state.day.addConstant(-1),
--            .minutes = ???,
+-        return ???;
++        return .{
++            .day = state.day.addConstant(-1),
 +            .minutes = state.minutes.add(state.day),
-         };
++        };
      }
  };
+ 
+ fn totalPractice(days: zml.Tensor) zml.Tensor {
+-    // Start the loop: all the days still to go, no minutes yet.
+-    return ???;
++    const end = zml.ops.@"while"(Practice, .{}, .{
++        .day = days,
++        .minutes = zml.Tensor.scalar(0, .i32),
++    });
++    return end.minutes;
+ }
+ 
+ /// Part 2. One trip, no loop: the total, `day` minutes later.
+ fn practiceDay(minutes: zml.Tensor, day: zml.Tensor) zml.Tensor {
+-    return ???;
++    return minutes.add(day);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -158,19 +164,33 @@
+         var days_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
+         defer days_buffer.deinit();
+ 
+-        var result: zml.Buffer = ???;
++        var result: zml.Buffer = try exe.eval(gpa, io, .{days_buffer});
+         defer result.deinit();
+ 
+         try stdout.print("After {d} days, Phil has practiced {d} minutes.\n", .{ n, try result.getValue(i32, io) });
+     }
+ 
+     // Part 2: the loop is in Zig, and the Exe does one day per call.
+-    //
+-    // TODO: two placeholders and `day_exe`, compiled from `practiceDay`.
+-    //
+-    // TODO: `total`, a Buffer that starts at 0, and `calls`. Then
+-    // the days 100, 99, ... 1, each one as a Buffer, through
+-    // `day_exe`. What comes out is the next `total`.
++    const minutes: zml.Tensor = .init(.{}, .i32);
++    const day: zml.Tensor = .init(.{}, .i32);
++
++    var day_exe = try platform.compileFn(gpa, io, practiceDay, .{ minutes, day }, .{});
++    defer day_exe.deinit();
++
++    var total: zml.Buffer = try .scalar(io, platform, 0, .i32);
++    defer total.deinit();
++
++    var calls: usize = 0;
++    var d: i32 = 100;
++    while (d > 0) : (d -= 1) {
++        var day_buffer: zml.Buffer = try .scalar(io, platform, d, .i32);
++        defer day_buffer.deinit();
++
++        const next = try day_exe.eval(gpa, io, .{ total, day_buffer });
++        total.deinit();
++        total = next;
++        calls += 1;
++    }
+ 
+     try stdout.print("By hand, 100 days: {d} minutes, in {d} calls. The loop Exe needs 1.\n", .{ try total.getValue(i32, io), calls });
+     try stdout.flush();

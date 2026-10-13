@@ -1,13 +1,25 @@
 --- exercises/04_luggage_tags/032_quiz_flight_zg404.zig
 +++ answers/04_luggage_tags/032_quiz_flight_zg404.zig
-@@ -44,14 +44,14 @@
+@@ -67,24 +67,24 @@
+ /// The airline's table, in the office's tags and layout:
+ /// {flights, bags}.
+ fn toOfficeLayout(limits: zml.Tensor) zml.Tensor {
+-    return ???;
++    return limits.rename(.{ .planes = .flights, .items = .bags }).transpose(.{ .flights, .bags });
+ }
+ 
+ /// Weight minus limit, never negative.
+ fn excess(weights: zml.Tensor, limits: zml.Tensor) zml.Tensor {
+-    return ???;
++    return weights.sub(limits).relu();
+ }
  
  fn excessReport(weights: zml.Tensor, limits: zml.Tensor) zml.Tensor {
      // 1.
--    const w = weights.???;
--    const l = limits.???;
+-    const w = ???;
+-    const l = ???;
 +    const w = weights.withTags(.{ .flights, .bags });
-+    const l = limits.rename(.{ .planes = .flights, .items = .bags });
++    const l = toOfficeLayout(limits);
  
      // 2.
 -    std.debug.assert(???);
@@ -15,11 +27,31 @@
  
      // 3. and 4.
 -    return ???;
-+    return w.sub(l).relu().divByConst(w.dim(.bags));
++    return excess(w, l).divByConst(w.dim(.bags));
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -87,10 +87,10 @@
+@@ -99,8 +99,8 @@
+     defer platform.deinit(gpa, io);
+ 
+     // The two tables, as they arrive at the office.
+-    const weights: zml.Tensor = ???;
+-    const limits: zml.Tensor = ???;
++    const weights: zml.Tensor = .init(.{ 2, 3 }, .f32);
++    const limits: zml.Tensor = .init(.{ .items = 3, .planes = 2 }, .f32);
+ 
+     var exe = try platform.compileFn(gpa, io, excessReport, .{ weights, limits }, .{});
+     defer exe.deinit();
+@@ -109,16 +109,18 @@
+     defer weights_buffer.deinit();
+ 
+     // The airline's limits.
++    var limits_buffer: zml.Buffer = try .fromBytes(io, platform, limits.shape(), std.mem.sliceAsBytes(&limits_data));
++    defer limits_buffer.deinit();
+ 
+     // The run.
+-    var result: zml.Buffer = ???;
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ weights_buffer, limits_buffer });
      defer result.deinit();
  
      // 5.

@@ -1,7 +1,13 @@
 --- exercises/10_treasure_maps/069_the_ledger.zig
 +++ answers/10_treasure_maps/069_the_ledger.zig
-@@ -59,11 +59,10 @@
-     const capped = loot.clamp(.scalar(5, .i32), .scalar(50, .i32));
+@@ -63,20 +63,19 @@
+ 
+ /// What each chest adds to the crew's purse.
+ fn payout(loot: zml.Tensor, cursed: zml.Tensor, found: zml.Tensor) zml.Tensor {
+-    // Article 1 is missing: `capped` is the loot, never less than
+-    // 5 and never more than 50.
++    // Article 1.
++    const capped = loot.clamp(.scalar(5, .i32), .scalar(50, .i32));
  
      // Article 2: -13 where the chest is cursed, `capped` elsewhere.
 -    const paid = ???;
@@ -13,4 +19,32 @@
 +    return paid.mask(found, 0);
  }
  
+ /// The sum of the ledger: one .i32, no axis.
+ fn purse(loot: zml.Tensor, cursed: zml.Tensor, found: zml.Tensor) zml.Tensor {
+-    return ???;
++    return payout(loot, cursed, found).sum(.chest).squeeze(.chest);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -96,8 +95,8 @@
+ 
+     var exe = try platform.compileFn(gpa, io, payout, .{ loot, cursed, found }, .{});
+     defer exe.deinit();
+-
+-    // The purse needs an Exe as well.
++    var purse_exe = try platform.compileFn(gpa, io, purse, .{ loot, cursed, found }, .{});
++    defer purse_exe.deinit();
+ 
+     var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
+     defer loot_buffer.deinit();
+@@ -108,8 +107,8 @@
+ 
+     var result: zml.Buffer = try exe.eval(gpa, io, .{ loot_buffer, cursed_buffer, found_buffer });
+     defer result.deinit();
+-
+-    // Run it into a Buffer called `total`.
++    var total: zml.Buffer = try purse_exe.eval(gpa, io, .{ loot_buffer, cursed_buffer, found_buffer });
++    defer total.deinit();
+ 
+     try stdout.print("The ledger: {any}\n", .{try result.getValue([6]i32, io)});
+     try stdout.print("The crew's purse: {d} doubloons.\n", .{try total.getValue(i32, io)});

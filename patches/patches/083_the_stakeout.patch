@@ -1,6 +1,23 @@
 --- exercises/12_the_exe_files/083_the_stakeout.zig
 +++ answers/12_the_exe_files/083_the_stakeout.zig
-@@ -104,7 +104,7 @@
+@@ -81,7 +81,10 @@
+ };
+ 
+ fn listen(tape: zml.Tensor, threshold: zml.Tensor) Report {
+-    return ???;
++    return .{
++        .peak = tape.max(.seconds).squeeze(.seconds),
++        .alarms = tape.cmp(.GT, threshold).convert(.i32).sum(.seconds).squeeze(.seconds),
++    };
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -101,11 +104,11 @@
+     var exe = try platform.compileFn(gpa, io, listen, .{ tape, threshold }, .{});
+     defer exe.deinit();
+ 
+-    var threshold_buffer: zml.Buffer = ???;
++    var threshold_buffer: zml.Buffer = try .scalar(io, platform, 5, .f32);
      defer threshold_buffer.deinit();
  
      // One runner for the whole stakeout.
@@ -9,12 +26,17 @@
      defer runner.deinit(gpa);
  
      const nights = [3][6]f32{
-@@ -118,7 +118,7 @@
+@@ -119,10 +122,9 @@
          defer tape_buffer.deinit();
  
          var report: zml.Bufferized(Report) = undefined;
 -        runner.run(io, ???, ???, ???);
+-        // What the call put in `report` is yours now.
+-        defer ???;
+-        defer ???;
 +        runner.run(io, .{ tape_buffer, threshold_buffer }, .{&report}, .{ .wait = true });
-         defer report.peak.deinit();
-         defer report.alarms.deinit();
++        defer report.peak.deinit();
++        defer report.alarms.deinit();
  
+         try stdout.print("Night {d}: peak {d}, {d} seconds over the threshold.\n", .{
+             n,

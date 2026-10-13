@@ -1,16 +1,67 @@
 --- exercises/03_arithmetic_diner/024_quiz_the_dinner_rush.zig
 +++ answers/03_arithmetic_diner/024_quiz_the_dinner_rush.zig
-@@ -40,7 +40,12 @@
- const zml = @import("zml");
- 
- fn register(plates: zml.Tensor, price: zml.Tensor, mood: zml.Tensor) zml.Tensor {
+@@ -64,17 +64,19 @@
+ /// Rules 1 and 2: plates * price - coupon, never below zero.
+ /// Dollars and cents.
+ fn bill(plates: zml.Tensor, price: zml.Tensor, coupon: zml.Tensor) zml.Tensor {
 -    return ???;
-+    const bill = plates.convert(.f32).mul(price);
-+    const after_coupon = bill.subConstant(10).relu();
-+    const tip_factor = mood.sigmoid().scale(0.5).addConstant(1);
-+    const whole = after_coupon.mul(tip_factor).ceil().convert(.i32);
++    return plates.convert(.f32).mul(price).sub(coupon).relu();
+ }
+ 
+ /// Rule 3: 1 + 0.5 * sigmoid(mood)
+ fn tipFactor(mood: zml.Tensor) zml.Tensor {
+-    return ???;
++    return mood.sigmoid().scale(0.5).addConstant(1);
+ }
+ 
+ /// All five rules. Whole dollars, as integers.
+ fn register(plates: zml.Tensor, price: zml.Tensor, mood: zml.Tensor, coupon: zml.Tensor) zml.Tensor {
+-    return ???;
++    const whole = bill(plates, price, coupon).mul(tipFactor(mood)).ceil().convert(.i32);
 +    const table_number = zml.Tensor.arange(.{ .start = 1, .end = 5 }, .i32);
 +    return whole.add(table_number);
  }
  
  pub fn main(init: std.process.Init) !void {
+@@ -90,24 +92,36 @@
+ 
+     // Four placeholders: three of four elements tagged .tables,
+     // and the coupon.
+-    const plates: zml.Tensor = ???;
+-    const price: zml.Tensor = ???;
+-    const mood: zml.Tensor = ???;
+-    const coupon: zml.Tensor = ???;
++    const plates: zml.Tensor = .init(.{ .tables = 4 }, .i32);
++    const price: zml.Tensor = .init(.{ .tables = 4 }, .f32);
++    const mood: zml.Tensor = .init(.{ .tables = 4 }, .f32);
++    const coupon: zml.Tensor = .init(.{}, .f32);
+ 
+     // The register, compiled once.
++    var exe = try platform.compileFn(gpa, io, register, .{ plates, price, mood, coupon }, .{});
++    defer exe.deinit();
+ 
+     try stdout.print("The register rings up {f}\n", .{exe.output_shapes[0]});
+ 
+     var plates_buffer: zml.Buffer = try .fromBytes(io, platform, plates.shape(), std.mem.sliceAsBytes(&plates_data));
+     defer plates_buffer.deinit();
+     // The prices and the moods.
++    var price_buffer: zml.Buffer = try .fromBytes(io, platform, price.shape(), std.mem.sliceAsBytes(&price_data));
++    defer price_buffer.deinit();
++    var mood_buffer: zml.Buffer = try .fromBytes(io, platform, mood.shape(), std.mem.sliceAsBytes(&mood_data));
++    defer mood_buffer.deinit();
+ 
+     // Dinner rush, then the rest of the evening.
+     for ([_]f32{ 10, 0 }) |dollars_off| {
+         // The coupon, the run, and the four totals back on the
+         // host.
+-        const totals = ???;
++        var coupon_buffer: zml.Buffer = try .scalar(io, platform, dollars_off, .f32);
++        defer coupon_buffer.deinit();
++
++        var result: zml.Buffer = try exe.eval(gpa, io, .{ plates_buffer, price_buffer, mood_buffer, coupon_buffer });
++        defer result.deinit();
++
++        const totals = try result.getValue([4]i32, io);
+ 
+         try stdout.print("coupon {d}: {any}\n", .{ dollars_off, totals });
+     }

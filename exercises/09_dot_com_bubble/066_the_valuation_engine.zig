@@ -36,8 +36,8 @@
 // axis in front, where everybody expects it.
 //
 // Then the bias. `y.add(bias)` is {startup=2,d_out=2} plus
-// {d_out=2}, and you know what ZML thinks of that: the ranks
-// differ, so nothing gets stretched for you. It is one bias per
+// {d_out=2}, and you know what ZML thinks of that: only rank 0
+// tensors are broadcast automatically. It is one bias per
 // OUTPUT, repeated for every startup, and you have to say so:
 //
 //     y.add(bias.broad(y.shape()))
@@ -47,7 +47,21 @@
 // you'll meet in a later chapter, has the same two lines in its
 // `forward`, plus a few dtype conversions.
 //
-// Chad typed the formula straight from the whiteboard.
+// Chad typed the formula straight from the whiteboard, and it
+// panics.
+//
+// The VCs' second question is the one that matters in 1999: how
+// long until the money runs out? `runway` is the valuation
+// divided by the monthly burn, one number per startup. Both
+// numbers are in the output of the layer, side by side along
+// .d_out, and you know how to take one of them and lose the
+// axis (the pizzeria, exercise 55).
+//
+// As for `main`: Brenda left the data and the prints, and went
+// to lunch. There are no placeholders (the three shapes are in
+// the table above; the Buffers are waiting for them), no Exes
+// and no results. The prints call the results `result` and
+// `months`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -55,6 +69,11 @@ const zml = @import("zml");
 /// y = W x + b, for every startup at once.
 fn valuation(x: zml.Tensor, w: zml.Tensor, bias: zml.Tensor) zml.Tensor {
     return x.dot(w, .d_in).add(bias);
+}
+
+/// Months of money left, valuation / burn: {startup}.
+fn runway(x: zml.Tensor, w: zml.Tensor, bias: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -68,12 +87,8 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const x: zml.Tensor = .init(.{ .startup = 2, .d_in = 3 }, .f32);
-    const w: zml.Tensor = .init(.{ .d_out = 2, .d_in = 3 }, .f32);
-    const bias: zml.Tensor = .init(.{ .d_out = 2 }, .f32);
-
-    var exe = try platform.compileFn(gpa, io, valuation, .{ x, w, bias }, .{});
-    defer exe.deinit();
+    // Three placeholders, `x`, `w` and `bias`, and one Exe for each
+    // of the two functions.
 
     // Employees, foosball tables, mentions of "synergy".
     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[2][3]f32{
@@ -90,12 +105,11 @@ pub fn main(init: std.process.Init) !void {
     var bias_buffer: zml.Buffer = try .fromBytes(io, platform, bias.shape(), std.mem.sliceAsBytes(&[_]f32{ 10, 0.5 }));
     defer bias_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, w_buffer, bias_buffer });
-    defer result.deinit();
+    // Run both: `result` for the valuation, `months` for the runway.
 
-    try stdout.print("output {f}\n", .{result.shape()});
-    for (try result.getValue([2][2]f32, io), [_][]const u8{ "PetRocks.com", "Boring Inc." }) |y, name| {
-        try stdout.print("{s}: valued at ${d:.2}M, burning ${d:.2}M a month\n", .{ name, y[0], y[1] });
+    try stdout.print("output {f}, runway {f}\n", .{ result.shape(), months.shape() });
+    for (try result.getValue([2][2]f32, io), try months.getValue([2]f32, io), [_][]const u8{ "PetRocks.com", "Boring Inc." }) |y, left, name| {
+        try stdout.print("{s}: valued at ${d:.2}M, burning ${d:.2}M a month, {d:.1} months to live\n", .{ name, y[0], y[1], left });
     }
     try stdout.flush();
 }

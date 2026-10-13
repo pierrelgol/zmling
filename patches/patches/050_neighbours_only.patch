@@ -1,6 +1,6 @@
 --- exercises/07_origami_club/050_neighbours_only.zig
 +++ answers/07_origami_club/050_neighbours_only.zig
-@@ -69,7 +69,7 @@
+@@ -84,17 +84,17 @@
  const zml = @import("zml");
  
  fn longStrips(pile: zml.Tensor) zml.Tensor {
@@ -8,4 +8,25 @@
 +    return pile.contiguous(.{ .layers, .cols }).merge(.{ .strip = .{ .layers, .cols } });
  }
  
+ /// One strip per column, rows first, then layers: {cols=4,strip=6}.
+ fn columnStrips(pile: zml.Tensor) zml.Tensor {
+-    return ???;
++    return pile.mergeTranspose(.{ .rows, .layers }, .strip);
+ }
+ 
+ /// The sum of each long strip: {rows=3}.
+ fn weights(pile: zml.Tensor) zml.Tensor {
+-    return longStrips(pile).sum(.strip);
++    return longStrips(pile).sum(.strip).squeeze(.strip);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -122,7 +122,7 @@
+         defer exe.deinit();
+ 
+         // Run it on the pile.
+-        var result: zml.Buffer = ???;
++        var result: zml.Buffer = try exe.eval(gpa, io, .{pile_buffer});
+         defer result.deinit();
+ 
+         const strips: zml.Slice = try result.toSliceAlloc(gpa, io);

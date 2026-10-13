@@ -48,15 +48,23 @@
 // has dtype .bool, and the Buffer is made from an array of Zig
 // `bool`.
 //
-// The cabin boy kept the ledger. He read `mask` backwards.
+// The cabin boy kept the ledger. He skipped Article 1 because
+// it was boring, left Article 2 for later, and read `mask`
+// backwards.
+//
+// Once the ledger is right, the crew wants its total: the
+// PURSE, one number. The program used to add it up in a Zig
+// `for` loop after the fact; the Captain wants it in the graph
+// (chapter 6). `purse` is yours to write, and to compile, and
+// to run: the last print reads a Buffer called `total`.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 /// What each chest adds to the crew's purse.
 fn payout(loot: zml.Tensor, cursed: zml.Tensor, found: zml.Tensor) zml.Tensor {
-    // Article 1.
-    const capped = loot.clamp(.scalar(5, .i32), .scalar(50, .i32));
+    // Article 1 is missing: `capped` is the loot, never less than
+    // 5 and never more than 50.
 
     // Article 2: -13 where the chest is cursed, `capped` elsewhere.
     const paid = ???;
@@ -64,6 +72,11 @@ fn payout(loot: zml.Tensor, cursed: zml.Tensor, found: zml.Tensor) zml.Tensor {
     // Article 3: chests that were not found count for 0.
     const lost = found.not();
     return paid.mask(lost, 0);
+}
+
+/// The sum of the ledger: one .i32, no axis.
+fn purse(loot: zml.Tensor, cursed: zml.Tensor, found: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -84,6 +97,8 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compileFn(gpa, io, payout, .{ loot, cursed, found }, .{});
     defer exe.deinit();
 
+    // The purse needs an Exe as well.
+
     var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
     defer loot_buffer.deinit();
     var cursed_buffer: zml.Buffer = try .fromBytes(io, platform, cursed.shape(), std.mem.sliceAsBytes(&[_]bool{ false, false, true, false, false, true }));
@@ -94,11 +109,9 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{ loot_buffer, cursed_buffer, found_buffer });
     defer result.deinit();
 
-    const ledger = try result.getValue([6]i32, io);
-    var purse: i32 = 0;
-    for (ledger) |doubloons| purse += doubloons;
+    // Run it into a Buffer called `total`.
 
-    try stdout.print("The ledger: {any}\n", .{ledger});
-    try stdout.print("The crew's purse: {d} doubloons.\n", .{purse});
+    try stdout.print("The ledger: {any}\n", .{try result.getValue([6]i32, io)});
+    try stdout.print("The crew's purse: {d} doubloons.\n", .{try total.getValue(i32, io)});
     try stdout.flush();
 }

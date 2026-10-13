@@ -35,7 +35,8 @@
 //
 // You will meet both rules again soon. For now, the nephew filed
 // the lonely sock as "a box of socks", and the customer is
-// confused about where the box went.
+// confused about where the box went. He also left two blanks
+// on the form for you to write.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -48,14 +49,22 @@ pub fn main(init: std.process.Init) !void {
     // One sock. No box. Rank 0.
     const sock = zml.Shape.init(.{1}, .u8);
 
+    // One sock in one box: the vector of length one from the
+    // lesson. Same dtype as the others. Write the whole Shape.
+    const boxed_sock = ???;
+
     // One sock, in a box, in a crate, in a container. Rank 3.
-    const paranoid_sock = zml.Shape.init(.{}, .u8);
+    const paranoid_sock = zml.Shape.init(.{ 1, 1, 1 }, .u8);
 
     try stdout.print("sock:          rank {d}, count {d}, dims {any}\n", .{ sock.rank(), sock.count(), sock.dims() });
+    try stdout.print("boxed sock:    rank {d}, count {d}, dims {any}\n", .{ boxed_sock.rank(), boxed_sock.count(), boxed_sock.dims() });
     try stdout.print("paranoid sock: rank {d}, count {d}, dims {any}\n", .{ paranoid_sock.rank(), paranoid_sock.count(), paranoid_sock.dims() });
 
     // Shapes compare with `eql`: same dims and same dtype.
     try stdout.print("Same thing? {}\n", .{sock.eql(paranoid_sock)});
-    try stdout.print("Is the sock a scalar? {}\n", .{sock.eql(zml.Shape.scalar(.u8))});
+
+    // Compare the sock with a scalar shape of the same dtype,
+    // built with the shortcut from the lesson.
+    try stdout.print("Is the sock a scalar? {}\n", .{sock.eql(???)});
     try stdout.flush();
 }

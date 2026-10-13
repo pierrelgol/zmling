@@ -1,6 +1,6 @@
 --- exercises/06_reduction_kitchen/045_quiz_saturday_night.zig
 +++ answers/06_reduction_kitchen/045_quiz_saturday_night.zig
-@@ -46,22 +46,23 @@
+@@ -56,27 +56,28 @@
  
  /// 1. What each table owes: {table=3}.
  fn bills(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
@@ -27,4 +27,48 @@
 +    return money.div(money.sum(.dish)).squeeze(.table);
  }
  
+ /// 5. Each bill, divided by the average bill: {table=3}.
+ fn againstAverage(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return ???;
++    return bills(orders, prices).div(averageBill(orders, prices));
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -91,8 +92,8 @@
+     defer platform.deinit(gpa, io);
+ 
+     // The two placeholders. Shapes and dtypes are in the lesson.
+-    const orders: zml.Tensor = ???;
+-    const prices: zml.Tensor = ???;
++    const orders: zml.Tensor = .init(.{ .table = 3, .dish = 4 }, .f32);
++    const prices: zml.Tensor = .init(.{ .dish = 4 }, .f32);
+ 
+     var bills_exe = try platform.compileFn(gpa, io, bills, .{ orders, prices }, .{});
+     defer bills_exe.deinit();
+@@ -104,6 +105,8 @@
+     defer shares_exe.deinit();
+ 
+     // The fifth Exe, `against_exe`, for `againstAverage`.
++    var against_exe = try platform.compileFn(gpa, io, againstAverage, .{ orders, prices }, .{});
++    defer against_exe.deinit();
+ 
+     const dishes = [_][]const u8{ "soup", "duck", "risotto", "tart" };
+ 
+@@ -115,6 +118,8 @@
+     defer orders_buffer.deinit();
+ 
+     // The menu: soup 8, duck 26, risotto 18, tart 9.
++    var prices_buffer: zml.Buffer = try .fromBytes(io, platform, prices.shape(), std.mem.sliceAsBytes(&[_]f32{ 8, 26, 18, 9 }));
++    defer prices_buffer.deinit();
+ 
+     var bills_result: zml.Buffer = try bills_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
+     defer bills_result.deinit();
+@@ -126,6 +131,8 @@
+     defer shares_result.deinit();
+ 
+     // Run the fifth Exe: its result is `against_result`.
++    var against_result: zml.Buffer = try against_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
++    defer against_result.deinit();
+ 
+     try stdout.print("bills {f}: {any}\n", .{ bills_result.shape(), try bills_result.getValue([3]f32, io) });
+     try stdout.print("average bill {f}: {d:.2}\n", .{ average_result.shape(), try average_result.getValue(f32, io) });

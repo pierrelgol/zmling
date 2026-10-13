@@ -50,7 +50,9 @@
 //
 // Notice we've said nothing about actual candle flames yet. A
 // model is compiled for SHAPES, before any data exists. That
-// comes next. For now, complete the ritual and the séance.
+// comes next. For now, complete the ritual and the séance. Then
+// read what the Exe says about itself: the apprentice set the
+// table for the wrong number of candles.
 //
 // (Curious about what ZML recorded? Add this line below the
 // imports:
@@ -84,8 +86,8 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    // One placeholder per parameter of the ritual.
-    const candles: zml.Tensor = .init(.{ .candles = 7 }, .f32);
+    // One placeholder per parameter of the ritual. Seven candles.
+    const candles: zml.Tensor = .init(.{ .candles = 13 }, .f32);
 
     var exe = try platform.compileFn(gpa, io, flicker, .{???}, .{});
     defer exe.deinit();

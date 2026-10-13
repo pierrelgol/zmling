@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/054_just_a_slice.zig
 +++ answers/08_slice_of_life/054_just_a_slice.zig
-@@ -85,17 +85,17 @@
+@@ -91,22 +91,22 @@
  
  /// The last two slices of the pizza.
  fn lastTwo(pizza: zml.Tensor) zml.Tensor {
@@ -10,7 +10,7 @@
  
  /// Everything except the first two and the last two.
  fn middle(pizza: zml.Tensor) zml.Tensor {
--    return pizza.slice(.slices, .{ .start = 3, .end = -2 });
+-    return pizza.slice(.slices, ???);
 +    return pizza.slice(.slices, .{ .start = 2, .end = -2 });
  }
  
@@ -18,6 +18,12 @@
  fn everyOther(pizza: zml.Tensor) zml.Tensor {
 -    return pizza.slice(.slices, .{ .step = 2 });
 +    return pizza.slice(.slices, .{ .start = 1, .step = 2 });
+ }
+ 
+ /// The last three slices, last one first.
+ fn leftovers(pizza: zml.Tensor) zml.Tensor {
+-    return ???;
++    return pizza.slice(.slices, .{ .start = -3 }).reverse(.{.slices});
  }
  
  pub fn main(init: std.process.Init) !void {

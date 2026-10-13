@@ -1,6 +1,6 @@
 --- exercises/10_treasure_maps/073_the_three_best.zig
 +++ answers/10_treasure_maps/073_the_three_best.zig
-@@ -69,7 +69,7 @@
+@@ -90,12 +90,16 @@
  
  /// The three richest chests: their values, and where they are.
  fn threeBest(loot: zml.Tensor) zml.Tensor.SortRes {
@@ -8,4 +8,44 @@
 +    return loot.topK(.{ .best = .chest }, 3, .{});
  }
  
+ /// The share of the bets that are among the three best chests: one .f32.
+ fn topThreeAccuracy(loot: zml.Tensor, bets: zml.Tensor) zml.Tensor {
+-    return ???;
++    const best = threeBest(loot).indices;
++    const grid: zml.Shape = .init(.{ .pirate = bets.dim(.pirate), .best = best.dim(.best) }, .i32);
++    const hit = bets.broad(grid).cmp(.EQ, best.broad(grid));
++    const right = hit.convert(.f32).sum(.best).squeeze(.best);
++    return right.mean(.pirate).squeeze(.pirate);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -114,8 +118,8 @@
+ 
+     var exe = try platform.compileFn(gpa, io, threeBest, .{loot}, .{});
+     defer exe.deinit();
+-
+-    // The quartermaster's number needs an Exe as well.
++    var accuracy_exe = try platform.compileFn(gpa, io, topThreeAccuracy, .{ loot, bets }, .{});
++    defer accuracy_exe.deinit();
+ 
+     var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 95, 1 }));
+     defer loot_buffer.deinit();
+@@ -123,10 +127,15 @@
+     var bets_buffer: zml.Buffer = try .fromBytes(io, platform, bets.shape(), std.mem.sliceAsBytes(&[_]i32{ 4, 1, 0, 3 }));
+     defer bets_buffer.deinit();
+ 
+-    // The runner goes here: `exe` has two outputs, and both of them
+-    // end up in `res`. Its two Buffers are yours to free.
++    var res: zml.Bufferized(zml.Tensor.SortRes) = undefined;
++    var runner = try exe.runner(gpa);
++    defer runner.deinit(gpa);
++    runner.run(io, .{loot_buffer}, .{&res}, .{ .wait = true });
++    defer res.values.deinit();
++    defer res.indices.deinit();
+ 
+-    // Then the bets, with plain `eval`, into a Buffer called `accuracy`.
++    var accuracy: zml.Buffer = try accuracy_exe.eval(gpa, io, .{ loot_buffer, bets_buffer });
++    defer accuracy.deinit();
+ 
+     try stdout.print("The Exe has {d} outputs: {f} and {f}.\n", .{ exe.output_shapes.len, exe.output_shapes[0], exe.output_shapes[1] });
+     const values = try res.values.getValue([3]i32, io);

@@ -1,6 +1,6 @@
 --- exercises/10_treasure_maps/068_the_parrot.zig
 +++ answers/10_treasure_maps/068_the_parrot.zig
-@@ -56,8 +56,8 @@
+@@ -66,14 +66,14 @@
  
  /// For each chest: more than 10 doubloons, and a curse level of exactly 0?
  fn worthDigging(doubloons: zml.Tensor, curses: zml.Tensor) zml.Tensor {
@@ -11,3 +11,32 @@
      return rich.logical(.AND, safe);
  }
  
+ /// How many chests are worth digging up: one .i32, no axis.
+ fn holesToDig(doubloons: zml.Tensor, curses: zml.Tensor) zml.Tensor {
+-    return ???;
++    return worthDigging(doubloons, curses).convert(.i32).sum(.chest).squeeze(.chest);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -92,8 +92,8 @@
+ 
+     var exe = try platform.compileFn(gpa, io, worthDigging, .{ doubloons, curses }, .{});
+     defer exe.deinit();
+-
+-    // The Captain's number needs an Exe as well.
++    var holes_exe = try platform.compileFn(gpa, io, holesToDig, .{ doubloons, curses }, .{});
++    defer holes_exe.deinit();
+ 
+     var doubloons_buffer: zml.Buffer = try .fromBytes(io, platform, doubloons.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
+     defer doubloons_buffer.deinit();
+@@ -103,8 +103,8 @@
+ 
+     var result: zml.Buffer = try exe.eval(gpa, io, .{ doubloons_buffer, curses_buffer });
+     defer result.deinit();
+-
+-    // Run it into a Buffer called `holes`.
++    var holes: zml.Buffer = try holes_exe.eval(gpa, io, .{ doubloons_buffer, curses_buffer });
++    defer holes.deinit();
+ 
+     try stdout.print("Polly answers with a {f}.\n", .{result.shape()});
+     try stdout.print("Worth the shovel: {any}\n", .{try result.getValue([6]bool, io)});

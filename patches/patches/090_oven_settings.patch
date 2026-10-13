@@ -1,16 +1,30 @@
 --- exercises/13_layer_cake/090_oven_settings.zig
 +++ answers/13_layer_cake/090_oven_settings.zig
-@@ -74,7 +74,7 @@
+@@ -79,11 +79,12 @@
+ const zml = @import("zml");
+ 
+ const Tier = struct {
+-    // TODO: two fields. `batter`, a Linear, and `oven`, an Activation.
++    batter: zml.nn.Linear,
++    oven: zml.nn.Activation,
  
      /// The batter, then the oven.
      pub fn forward(self: Tier, x: zml.Tensor) zml.Tensor {
--        return self.batter.forward(x, x.dtype());
+-        return ???;
 +        return self.oven.forward(self.batter.forward(x, x.dtype()));
      }
  };
  
-@@ -109,7 +109,7 @@
-     };
+@@ -112,17 +113,21 @@
+     var cake_buffer: zml.Buffer = try .fromBytes(io, platform, cake.shape(), std.mem.sliceAsBytes(&[2]f32{ 1, 2 }));
+     defer cake_buffer.deinit();
+ 
+-    // The Buffers of a Tier. The batter has no bias.
+-    const tier_buffers: zml.Bufferized(Tier) = ???;
++    // No bias, so `.bias` keeps its default (null). And no `.oven`.
++    const tier_buffers: zml.Bufferized(Tier) = .{
++        .batter = .{ .weight = weight_buffer, .quantization = null },
++    };
  
      // relu, leaky relu with a slope of 0.1, tanh, sigmoid.
 -    const settings = [_]zml.nn.Activation{ .relu, ???, .tanh, .sigmoid };
@@ -18,3 +32,13 @@
  
      for (settings) |setting| {
          // An ordinary run-time loop: the model is an ordinary
+         // value, and each setting traces a different graph.
+-        // TODO: `tier`, a Tier with this setting and a batter that
+-        // has a weight, no bias, and contracts `.d`. Then `exe`.
++        const tier: Tier = .{ .batter = .init(weight, null, .d), .oven = setting };
++
++        var exe = try platform.compile(gpa, io, tier, .forward, .{cake}, .{});
++        defer exe.deinit();
+ 
+         var result: zml.Buffer = try exe.eval(gpa, io, .{ tier_buffers, cake_buffer });
+         defer result.deinit();

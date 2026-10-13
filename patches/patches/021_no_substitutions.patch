@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/021_no_substitutions.zig
 +++ answers/03_arithmetic_diner/021_no_substitutions.zig
-@@ -65,7 +65,7 @@
+@@ -77,12 +77,12 @@
  
  /// trunc(hours * 1.5 * wage) + bonus, as whole dollars.
  fn payday(hours: zml.Tensor, wage: zml.Tensor, bonus: zml.Tensor) zml.Tensor {
@@ -8,4 +8,27 @@
 +    return hours.convert(.f32).scale(1.5).mul(wage).convert(.i32).add(bonus);
  }
  
+ /// pay / hours, in dollars and cents.
+ fn hourly(pay: zml.Tensor, hours: zml.Tensor) zml.Tensor {
+-    return ???;
++    return pay.convert(.f32).div(hours.convert(.f32));
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -121,14 +121,14 @@
+ 
+     // Per hour. A placeholder for the envelopes, as `payday`
+     // returns them.
+-    const pay: zml.Tensor = ???;
++    const pay: zml.Tensor = .init(.{ .cooks = 3 }, .i32);
+ 
+     var hourly_exe = try platform.compileFn(gpa, io, hourly, .{ pay, hours }, .{});
+     defer hourly_exe.deinit();
+ 
+     // Run it on the envelopes and the hours. Both are on the
+     // device already.
+-    var hourly_result: zml.Buffer = ???;
++    var hourly_result: zml.Buffer = try hourly_exe.eval(gpa, io, .{ result, hours_buffer });
+     defer hourly_result.deinit();
+ 
+     try stdout.print("Per hour, as {f}:", .{hourly_exe.output_shapes[0]});

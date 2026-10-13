@@ -47,12 +47,26 @@
 //     `select`   decides at run time, per element, from tensor
 //                values. Both branches are in the Exe.
 //
-// The task. Wind chill in Loopsville is simple: any temperature
-// below zero feels twice as cold, the others feel like what
-// they are. Fix `feelsLike` so that it decides at run time.
-// The pessimist switch is fine as it is: it stays a Zig `if`,
-// and `main` compiles the function twice, once per kind of
-// weatherman.
+// The task, in two parts.
+//
+// 1. Wind chill in Loopsville is simple: any temperature below
+//    zero feels twice as cold, the others feel like what they
+//    are. And a pessimist reads every thermometer 5 degrees low
+//    before the wind even starts. Phil's draft of `feelsLike`
+//    is below. The pessimist switch is fine as it is, a Zig
+//    `if`. The wind chill has to decide at run time.
+//
+// 2. `frostbiteHours` counts the hours that feel colder than
+//    -5, as an i32 scalar. It must not repeat the wind chill:
+//    it CALLS `feelsLike`. A helper function is a stamp
+//    (exercise 075): calling it while tracing stamps its
+//    operations into the graph of the caller. The counting is
+//    old news: bools become i32 (exercise 021), get summed over
+//    .hours, and the axis is squeezed away (chapter 06).
+//
+// `main` compiles each function twice, once per kind of
+// weatherman. The optimist is taken care of. The pessimist's
+// two Exes, and their two results, are yours.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -67,6 +81,11 @@ fn feelsLike(temps: zml.Tensor, pessimist: bool) zml.Tensor {
     const zero = zml.Tensor.scalar(0, .i32);
     if (t.cmp(.LT, zero)) t = t.scale(2);
     return t;
+}
+
+/// How many hours feel colder than -5? An i32 scalar.
+fn frostbiteHours(temps: zml.Tensor, pessimist: bool) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -84,8 +103,13 @@ pub fn main(init: std.process.Init) !void {
 
     var optimist_exe = try platform.compileFn(gpa, io, feelsLike, .{ temps, false }, .{});
     defer optimist_exe.deinit();
-    var pessimist_exe = try platform.compileFn(gpa, io, feelsLike, .{ temps, true }, .{});
+    var pessimist_exe = ???;
     defer pessimist_exe.deinit();
+
+    var optimist_count_exe = try platform.compileFn(gpa, io, frostbiteHours, .{ temps, false }, .{});
+    defer optimist_count_exe.deinit();
+    var pessimist_count_exe = ???;
+    defer pessimist_count_exe.deinit();
 
     const thermometers = [_]i32{ -4, 0, 3, 7 };
     var temps_buffer: zml.Buffer = try .fromBytes(io, platform, temps.shape(), std.mem.sliceAsBytes(&thermometers));
@@ -93,11 +117,20 @@ pub fn main(init: std.process.Init) !void {
 
     var optimist: zml.Buffer = try optimist_exe.eval(gpa, io, .{temps_buffer});
     defer optimist.deinit();
-    var pessimist: zml.Buffer = try pessimist_exe.eval(gpa, io, .{temps_buffer});
+    var pessimist: zml.Buffer = ???;
     defer pessimist.deinit();
+
+    var optimist_count: zml.Buffer = try optimist_count_exe.eval(gpa, io, .{temps_buffer});
+    defer optimist_count.deinit();
+    var pessimist_count: zml.Buffer = ???;
+    defer pessimist_count.deinit();
 
     try stdout.print("The thermometers say   {any}\n", .{thermometers});
     try stdout.print("An optimist feels      {any}\n", .{try optimist.getValue([4]i32, io)});
     try stdout.print("A pessimist feels      {any}\n", .{try pessimist.getValue([4]i32, io)});
+    try stdout.print("Hours of frostbite: {d} for the optimist, {d} for the pessimist.\n", .{
+        try optimist_count.getValue(i32, io),
+        try pessimist_count.getValue(i32, io),
+    });
     try stdout.flush();
 }

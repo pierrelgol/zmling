@@ -48,11 +48,22 @@
 // wants the level after each of the 8 hours, and then the one
 // number that tells her if the kitchen ever ran out.
 //
+// And then she wants to know WHEN: after which hour (0 to 7) was
+// the stock at its lowest? That is a question for `argMax`... if
+// only it looked for the smallest value. ZML has no `argMin`.
+// It doesn't need one: Gus's griddle (exercise 019) had a way of
+// turning a tensor upside down, after which the lowest point is
+// the highest. `worstHour` is yours to write: one number, a true
+// scalar, and an integer. `main` runs it, but stops short of
+// reading the answer: it needs the right Zig type. Start with
+// these two, nothing builds without them.
+//
 // The commis before you (he works at a TV station now) confused
-// a few things. The first one earns you a panic from `getValue`,
-// which counts bytes and doesn't like what it finds. The second
-// one is quieter: the program runs, and tells Chef Odile that
-// everything went fine. It did not go fine.
+// a few things in the other two rituals. The first one earns you
+// a panic from `getValue`, which counts bytes and doesn't like
+// what it finds. The second one is quieter: the program runs,
+// and tells Chef Odile that everything went fine. It did not go
+// fine.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -68,6 +79,11 @@ fn stock(log: zml.Tensor) zml.Tensor {
 fn lowest(log: zml.Tensor) zml.Tensor {
     // A ritual is a Zig function. It can call other functions.
     return stock(log).max(.hour).squeeze(.hour);
+}
+
+/// The hour after which the stock was lowest: an integer scalar.
+fn worstHour(log: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -89,6 +105,9 @@ pub fn main(init: std.process.Init) !void {
     var lowest_exe = try platform.compileFn(gpa, io, lowest, .{log}, .{});
     defer lowest_exe.deinit();
 
+    var worst_exe = try platform.compileFn(gpa, io, worstHour, .{log}, .{});
+    defer worst_exe.deinit();
+
     // Deliveries came at 1 pm and at 5 pm.
     var log_buffer: zml.Buffer = try .fromBytes(io, platform, log.shape(), std.mem.sliceAsBytes(&[_]f32{ -3, -4.5, 8, -5, -6, -2, 10, -4 }));
     defer log_buffer.deinit();
@@ -99,13 +118,18 @@ pub fn main(init: std.process.Init) !void {
     var low: zml.Buffer = try lowest_exe.eval(gpa, io, .{log_buffer});
     defer low.deinit();
 
+    var worst: zml.Buffer = try worst_exe.eval(gpa, io, .{log_buffer});
+    defer worst.deinit();
+
     try stdout.print("Butter:", .{});
     for (try levels.getValue([8]f32, io)) |kg| try stdout.print(" {d:.1}", .{kg});
     try stdout.print("\n", .{});
 
     const lowest_kg = try low.getValue(f32, io);
-    try stdout.print("Lowest point: {d:.1} kg. {s}\n", .{
+    const worst_hour = try worst.getValue(???, io);
+    try stdout.print("Lowest point: {d:.1} kg, after hour {d}. {s}\n", .{
         lowest_kg,
+        worst_hour,
         if (lowest_kg < 0) "We ran out. Nobody tell Chef Odile." else "Everything went fine.",
     });
     try stdout.flush();

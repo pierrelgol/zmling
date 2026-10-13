@@ -62,19 +62,28 @@
 // the four values -2, -0.5, 0.5 and 2. Then each oven setting
 // gets its own Exe, because each one is a different graph.
 //
-// Two things are wrong, and you'll notice the second one when
-// all four ovens return the same, suspiciously raw cake.
+// From this exercise on, the model is yours to write. Chef
+// Babette left notes where things go:
+//
+//  - the `Tier` struct: its two fields and its `forward`;
+//  - the four oven settings (one of them carries a payload);
+//  - the Buffers of a Tier. Ask yourself what an oven is made
+//    of before you type `.oven`;
+//  - in the loop: the Tier of this setting, and its Exe. You
+//    compiled a model with a `forward` all through chapter 12.
+//
+// If all four ovens return the same, suspiciously raw cake:
+// somebody mixed the batter and forgot to bake it.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 const Tier = struct {
-    batter: zml.nn.Linear,
-    oven: zml.nn.Activation,
+    // TODO: two fields. `batter`, a Linear, and `oven`, an Activation.
 
     /// The batter, then the oven.
     pub fn forward(self: Tier, x: zml.Tensor) zml.Tensor {
-        return self.batter.forward(x, x.dtype());
+        return ???;
     }
 };
 
@@ -103,10 +112,8 @@ pub fn main(init: std.process.Init) !void {
     var cake_buffer: zml.Buffer = try .fromBytes(io, platform, cake.shape(), std.mem.sliceAsBytes(&[2]f32{ 1, 2 }));
     defer cake_buffer.deinit();
 
-    // No bias, so `.bias` keeps its default (null). And no `.oven`.
-    const tier_buffers: zml.Bufferized(Tier) = .{
-        .batter = .{ .weight = weight_buffer, .quantization = null },
-    };
+    // The Buffers of a Tier. The batter has no bias.
+    const tier_buffers: zml.Bufferized(Tier) = ???;
 
     // relu, leaky relu with a slope of 0.1, tanh, sigmoid.
     const settings = [_]zml.nn.Activation{ .relu, ???, .tanh, .sigmoid };
@@ -114,10 +121,8 @@ pub fn main(init: std.process.Init) !void {
     for (settings) |setting| {
         // An ordinary run-time loop: the model is an ordinary
         // value, and each setting traces a different graph.
-        const tier: Tier = .{ .batter = .init(weight, null, .d), .oven = setting };
-
-        var exe = try platform.compile(gpa, io, tier, .forward, .{cake}, .{});
-        defer exe.deinit();
+        // TODO: `tier`, a Tier with this setting and a batter that
+        // has a weight, no bias, and contracts `.d`. Then `exe`.
 
         var result: zml.Buffer = try exe.eval(gpa, io, .{ tier_buffers, cake_buffer });
         defer result.deinit();

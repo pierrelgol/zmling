@@ -61,7 +61,25 @@ This is the authoring guide. Read `exercises/01_shape_shifters/` and
   idea. When you need something not yet taught, explain it in a sentence where it is used.
 - Ways to break an exercise, from gentle to hard: a `???` placeholder; a wrong argument or value;
   a missing line; code that panics inside ZML (the learner must read ZML's message); a function
-  body to write; a whole program to write. Vary them. One to three broken spots, more in quizzes.
+  body to write; a whole program to write. Vary them, and follow the difficulty curve below.
+- Difficulty curve. The amount the learner writes grows with the chapter number, and inside a
+  chapter with the exercise number. An exercise is never "one fix in one place" after chapter 02:
+  - Ch 01-02: two or three broken spots. Quizzes: a few lines written by hand.
+  - Ch 03-08: two to four broken spots, of different kinds. At least two exercises per chapter ask
+    for a whole function body, and the quiz asks for one or more whole helpers.
+  - Ch 09-12: writing function bodies is the normal task. The plumbing taught in chapter 02
+    (placeholders, compile, Buffers, eval, read back) is progressively left to the learner:
+    by chapter 12 they write it from memory. Quizzes are mostly blank below the lesson.
+  - Ch 13-16: the learner writes struct fields, `init` and `forward` methods and most of `main`.
+    The last quizzes are close to a whole program written by hand.
+- Build on earlier work. From chapter 03 on, at least a third of the exercises must need
+  something from an *earlier chapter* that this exercise does not re-explain (say where it was
+  taught: "you wrote this in exercise 44, bring it back"). Longer exercises have several parts,
+  each using the previous one.
+- What stays given: the lesson prose, the data (Buffer contents, expected numbers), and the
+  `stdout.print` format strings, so that the expected output is unambiguous.
+- A blanked function body is `return ???;` (a parse error), never an empty body or `_ = x;`
+  stubs: Zig's "unused parameter" error must not get there before the lesson does.
 - Comments next to a broken spot say what is wanted, not how to write it.
 - The last exercise of a chapter is a quiz named `NNN_quiz_*.zig`: it combines the chapter with
   much less hand-holding.

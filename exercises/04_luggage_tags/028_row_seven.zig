@@ -56,12 +56,26 @@
 // those. Another reason to prefer real tags.)
 //
 // Brenda needs the paperwork for the week of X-ray scans filled
-// in. Kevin left one blank, which for once was the right call.
-// He should have left two more.
+// in. Kevin left one line blank, which for once was the right
+// call. He should have left three more: a tag that isn't there
+// (the small print above), a position that is off, and a "no
+// tag" where a position was wanted.
+//
+// The last line of the report is the total number of
+// measurements in the week, and it goes through `total`: every
+// axis by name, no numbers, so that it still works when the
+// machine upstairs changes its layout. Write it. It is not a
+// recipe: no tensor operation in it, just `dim` (an i64, like in
+// exercise 002) and Zig arithmetic.
 //
 const std = @import("std");
 const zml = @import("zml");
 
+/// Number of measurements in a fully tagged week of scans:
+/// days * sides * bags * cm, whatever the order of the axes.
+fn total(scans: zml.Tensor) i64 {
+    return ???;
+}
 pub fn main(init: std.process.Init) !void {
     var buffer: [4096]u8 = undefined;
     var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
@@ -71,11 +85,11 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("{f}\n", .{week});
 
     // How many bags? Ask by tag.
-    try stdout.print("Bags per scan: {d}\n", .{week.dim(???)});
+    try stdout.print("Bags per scan: {d}\n", .{week.dim(.bag)});
 
     // At which position is the .cm axis? And which position is
     // "second from the end"? Let ZML do the counting.
-    try stdout.print("cm is axis {d}; second from the end is axis {d}\n", .{ week.axis(.cm), week.axis(-2) });
+    try stdout.print("cm is axis {d}; second from the end is axis {d}\n", .{ week.axis(???), week.axis(???) });
 
     // The size of the axis nobody named, by positional literal.
     try stdout.print("The mystery axis has size {d}\n", .{week.dim(._2)});
@@ -86,7 +100,11 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("{f}: fully tagged? {}\n", .{ solved, solved.shape().isFullyTagged() });
 
     // Total number of measurements in a week, from tags only.
-    const total = solved.dim(.days) * solved.dim(.sides) * solved.dim(.bags) * solved.dim(.cm);
-    try stdout.print("{d} measurements, and count() agrees: {}\n", .{ total, total == solved.count() });
+    const measurements = total(solved);
+    try stdout.print("{d} measurements, and count() agrees: {}\n", .{ measurements, measurements == solved.count() });
+
+    // The new machine will put the sides last. Same total.
+    const new_layout = zml.Tensor.init(.{ .days = 7, .bags = 5, .cm = 3, .sides = 2 }, .f32);
+    try stdout.print("{f}: still {d}\n", .{ new_layout, total(new_layout) });
     try stdout.flush();
 }

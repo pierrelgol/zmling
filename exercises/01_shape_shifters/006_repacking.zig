@@ -25,6 +25,12 @@
 // If the numbers don't divide evenly, ZML panics rather than
 // smashing a plate to make it fit.
 //
+// `reshape` accepts everything `Shape.init` accepts, so the new
+// axes can carry tags (exercise 005), and `.auto` still works:
+//
+//     plates.reshape(.{ .stacks = .auto, .plates = 8 })
+//                                     -> {stacks=15,plates=8,u16}
+//
 // By the way, reshaping the Shape of a real tensor never moves
 // any data around: the numbers stay in the same order in memory
 // (row by row, last axis fastest) and only the bookkeeping
@@ -53,5 +59,12 @@ pub fn main(init: std.process.Init) !void {
     const insurance = plates.reshape(.{ 10, 12 });
 
     try stdout.print("cupboard {f}, dishwasher {f}, insurance {f}\n", .{ cupboard, dishwasher, insurance });
+
+    // Moving day: everything goes into 5 crates. Write the
+    // reshape yourself: two tagged axes, .crates and .plates, and
+    // let ZML work out how many plates end up in each crate.
+    const crates = ???;
+
+    try stdout.print("moving {f}: {d} plates per crate\n", .{ crates, crates.dim(.plates) });
     try stdout.flush();
 }

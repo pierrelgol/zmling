@@ -1,6 +1,6 @@
 --- exercises/06_reduction_kitchen/041_the_critics.zig
 +++ answers/06_reduction_kitchen/041_the_critics.zig
-@@ -62,12 +62,12 @@
+@@ -95,20 +95,22 @@
      const total = scores.sum(.critic);
  
      // The best and the worst score of each dish.
@@ -11,8 +11,20 @@
  
      // How many scores are left, once those two are out? Don't
      // write 3: ask the tensor.
--    const judges = ???;
+-    const judges = scores.dim(.critic);
 +    const judges = scores.dim(.critic) - 2;
  
-     return total.sub(best).sub(worst).divByConst(judges).squeeze(.critic);
+-    return total.sub(best).sub(worst).divByConst(judges).squeeze(.dish);
++    return total.sub(best).sub(worst).divByConst(judges).squeeze(.critic);
  }
+ 
+ /// Each score, standardized among the scores of the same dish:
+ /// {dish=3,critic=5}.
+ fn zScores(scores: zml.Tensor) zml.Tensor {
+-    return ???;
++    const centered = scores.sub(scores.mean(.critic));
++    const variance = centered.mul(centered).mean(.critic);
++    return centered.div(variance.sqrt());
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

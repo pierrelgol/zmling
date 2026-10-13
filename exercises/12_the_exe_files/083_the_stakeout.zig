@@ -61,10 +61,14 @@
 // runs thousands of times, keep ONE runner outside the loop.
 //
 // The task. `listen` reports on a tape: the loudest second, and
-// how many seconds were louder than a threshold. The threshold
-// is an input, but the same one for all three nights: its Buffer
-// is made once, outside the loop. Make the runner, and make the
-// call.
+// how many seconds were louder than a threshold. The second one
+// is a count, an i32: you counted frostbite the same way in
+// Loopsville. Both are scalars. Write it.
+//
+// Then `main`. The threshold is an input, but the same one for
+// all three nights: its Buffer (5, an f32 scalar) is made once,
+// outside the loop. So is the runner. Inside the loop: the call,
+// and the cleanup of what the call gave you.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -77,10 +81,7 @@ const Report = struct {
 };
 
 fn listen(tape: zml.Tensor, threshold: zml.Tensor) Report {
-    return .{
-        .peak = tape.max(.seconds).squeeze(.seconds),
-        .alarms = tape.cmp(.GT, threshold).convert(.i32).sum(.seconds).squeeze(.seconds),
-    };
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -100,7 +101,7 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compileFn(gpa, io, listen, .{ tape, threshold }, .{});
     defer exe.deinit();
 
-    var threshold_buffer: zml.Buffer = try .scalar(io, platform, 5, .f32);
+    var threshold_buffer: zml.Buffer = ???;
     defer threshold_buffer.deinit();
 
     // One runner for the whole stakeout.
@@ -119,8 +120,9 @@ pub fn main(init: std.process.Init) !void {
 
         var report: zml.Bufferized(Report) = undefined;
         runner.run(io, ???, ???, ???);
-        defer report.peak.deinit();
-        defer report.alarms.deinit();
+        // What the call put in `report` is yours now.
+        defer ???;
+        defer ???;
 
         try stdout.print("Night {d}: peak {d}, {d} seconds over the threshold.\n", .{
             n,

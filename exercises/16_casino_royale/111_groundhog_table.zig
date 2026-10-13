@@ -71,9 +71,18 @@
 // threads exactly three things through each call: the last
 // token, the cache of the attention layers, and the Rng.
 //
-// Table 7, then. The function deals a round and throws the new
-// state away. `main` uses `eval` and hopes for the best. Fix
-// both halves and let those poor people go home.
+// Table 7, then. To do:
+//
+//  1. `dealRound` promises a single Tensor. That is half of
+//     the problem: fix what it returns, then write it. Five
+//     cards, 1 to 13, like Monte's in the previous exercise.
+//
+//  2. In `main`: one state for the whole night, from the seed
+//     1234 (and freed at the end of the night), a runner, and
+//     three rounds, each one dealt from what the previous one
+//     left. The cards of a round go into `round.*`.
+//
+// And let those poor people go home.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -82,8 +91,7 @@ const zml = @import("zml");
 /// state to deal the next round from.
 fn dealRound(rng: zml.Tensor.Rng) zml.Tensor {
     const hand: zml.Shape = .init(.{ .card = 5 }, .f32);
-    _, const cards = rng.uniform(hand, .{ .min = 1, .max = 14 });
-    return cards.floor().convert(.i32);
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -102,16 +110,13 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compileFn(gpa, io, dealRound, .{rng}, .{});
     defer exe.deinit();
 
-    // One seed for the whole night.
-    var rng_buffer = try rng.initBuffer(io, platform, 1234);
-    defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
+    // One seed for the whole night, and a runner.
+    ???;
 
     var rounds: [3][5]i32 = undefined;
     for (&rounds) |*round| {
-        var hand: zml.Buffer = try exe.eval(gpa, io, .{rng_buffer});
-        defer hand.deinit();
-
-        round.* = try hand.getValue([5]i32, io);
+        // Deal one round into `round.*`. State in, state out.
+        ???;
     }
 
     try stdout.print("Round 2 is round 1 all over again: {}\n", .{std.mem.eql(i32, &rounds[0], &rounds[1])});

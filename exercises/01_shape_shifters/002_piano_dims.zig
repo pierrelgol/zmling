@@ -37,7 +37,10 @@
 //
 // Old Shifty's nephew wanted the number of keys and the number
 // of hammers per key. He got one of them wrong, and the other one
-// REALLY wrong. Run the program first and look at how it fails!
+// REALLY wrong. He also left a blank at the bottom, which the
+// compiler will point out before anything else: fill it in, it
+// is exercise 001 all over again. THEN run the program and look
+// at how it fails!
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -56,6 +59,11 @@ pub fn main(init: std.process.Init) !void {
     // somebody adds another axis in front, so use a negative axis.
     const hammers = piano.dim(3);
 
+    // For the customs form: how many parts are in the crate in
+    // total? You met the method for that in exercise 001.
+    const parts = piano.???;
+
     try stdout.print("{d} keys, {d} hammers each. Full manifest: {any}\n", .{ keys, hammers, piano.dims() });
+    try stdout.print("{d} parts in the crate, {d} bytes.\n", .{ parts, piano.byteSize() });
     try stdout.flush();
 }

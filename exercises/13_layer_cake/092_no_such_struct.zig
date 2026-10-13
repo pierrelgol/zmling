@@ -29,17 +29,10 @@
 //
 // But every real model has a learned weight on its RMS norm!
 // Indeed. And every real model in ZML's examples simply writes
-// the six lines itself. From the Llama example, lightly trimmed:
-//
-//     const RmsNorm = struct {
-//         weight: zml.Tensor,
-//         eps: f32,
-//
-//         pub fn forward(self: RmsNorm, x: zml.Tensor) zml.Tensor {
-//             const normalized = zml.nn.rmsNorm(x, .d, self.eps);
-//             return normalized.mul(self.weight.broad(x.shape()));
-//         }
-//     };
+// the six lines itself. The Llama example has a struct with two
+// fields, the learned `weight` and an `eps`, and a `forward`
+// that calls `zml.nn.rmsNorm` on the `.d` axis and multiplies
+// the result by the weight, broadcast to the shape of x.
 //
 // This is the real lesson of the exercise. `zml.nn` is a
 // pantry, not a franchise contract. A layer is just a struct
@@ -63,19 +56,27 @@
 // two: one is the other, ten times bigger. A normalization worth
 // its salt cannot tell them apart.
 //
-// To do: finish `RmsNorm.forward` (each CAKE is leveled on its
-// own, then multiplied by the weight), and write `unitLength`.
+// To do, and it is most of the program:
+//
+//  - the `RmsNorm` struct: the two fields described above (the
+//    weight is a Tensor, eps is not) and its `forward`. Each
+//    CAKE is leveled on its own: mind which axis that is;
+//  - `unitLength`, a plain function;
+//  - one Exe for each: one is a model with a `forward`, the
+//    other a function. Chapter 12 taught you both calls;
+//  - the Buffers of YOUR struct. `zml.Bufferized` works on it
+//    like on any other: what survives in there?
+//  - the two runs.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 const RmsNorm = struct {
-    weight: zml.Tensor,
-    eps: f32,
+    // TODO: two fields, `weight` and `eps`.
 
+    /// x: {.cake, .d}. Every cake leveled on its own, times the weight.
     pub fn forward(self: RmsNorm, x: zml.Tensor) zml.Tensor {
-        const normalized = zml.nn.rmsNorm(x, .cake, self.eps);
-        return normalized;
+        return ???;
     }
 };
 
@@ -98,11 +99,8 @@ pub fn main(init: std.process.Init) !void {
     const level: RmsNorm = .{ .weight = .init(.{ .d = 2 }, .f32), .eps = 1e-6 };
     const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 2 }, .f32);
 
-    var rms_exe = try platform.compile(gpa, io, level, .forward, .{cakes}, .{});
-    defer rms_exe.deinit();
-
-    var unit_exe = try platform.compileFn(gpa, io, unitLength, .{cakes}, .{});
-    defer unit_exe.deinit();
+    // TODO: `rms_exe`, the model `level` compiled for `cakes`, and
+    // `unit_exe`, the function `unitLength` compiled for `cakes`.
 
     // The learned weight: double the first number, keep the second.
     var weight_buffer: zml.Buffer = try .fromBytes(io, platform, level.weight.shape(), std.mem.sliceAsBytes(&[2]f32{ 2, 1 }));
@@ -116,13 +114,14 @@ pub fn main(init: std.process.Init) !void {
     var cakes_buffer: zml.Buffer = try .fromBytes(io, platform, cakes.shape(), std.mem.sliceAsBytes(&recipes));
     defer cakes_buffer.deinit();
 
-    // Our own struct, our own Bufferized: one Tensor, one Buffer.
-    const level_buffers: zml.Bufferized(RmsNorm) = .{ .weight = weight_buffer };
+    // Our own struct, our own Bufferized.
+    const level_buffers: zml.Bufferized(RmsNorm) = ???;
 
-    var rms: zml.Buffer = try rms_exe.eval(gpa, io, .{ level_buffers, cakes_buffer });
+    // The two runs. A model wants its Buffers first.
+    var rms: zml.Buffer = ???;
     defer rms.deinit();
 
-    var unit: zml.Buffer = try unit_exe.eval(gpa, io, .{cakes_buffer});
+    var unit: zml.Buffer = ???;
     defer unit.deinit();
 
     const rms_values = try rms.getValue([3][2]f32, io);

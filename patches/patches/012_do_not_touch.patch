@@ -1,25 +1,31 @@
 --- exercises/02_ghost_tensors/012_do_not_touch.zig
 +++ answers/02_ghost_tensors/012_do_not_touch.zig
-@@ -50,10 +50,7 @@
+@@ -62,7 +62,7 @@
  
  /// cold + colder - warm
  fn haunt(cold: zml.Tensor, colder: zml.Tensor, warm: zml.Tensor) zml.Tensor {
--    // TODO: this is where the ghost-touching should happen.
--    _ = colder;
--    _ = warm;
--    return cold;
+-    return ???;
 +    return cold.add(colder).sub(warm);
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -71,10 +68,6 @@
+@@ -80,10 +80,6 @@
      const colder: zml.Tensor = .init(.{3}, .f32);
      const warm: zml.Tensor = .init(.{3}, .f32);
  
 -    // The apprentice's attempt. In the hallway!
--    const chill = cold.add(colder).sub(warm);
+-    const chill = haunt(cold, colder, warm);
 -    _ = chill;
 -
      var exe = try platform.compileFn(gpa, io, haunt, .{ cold, colder, warm }, .{});
      defer exe.deinit();
  
+@@ -96,7 +92,7 @@
+ 
+     // One Buffer per placeholder, in the same order as in the
+     // `compileFn` call above.
+-    var result: zml.Buffer = try exe.eval(gpa, io, .{ warm_buffer, colder_buffer, cold_buffer });
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ cold_buffer, colder_buffer, warm_buffer });
+     defer result.deinit();
+ 
+     try stdout.print("A chill runs down your spine: {any}\n", .{try result.getValue([3]f32, io)});

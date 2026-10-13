@@ -16,7 +16,7 @@
 //         bias: zml.Tensor,
 //
 //         pub fn forward(self: Detector, x: zml.Tensor) zml.Tensor {
-//             return self.weight.dot(x, .d).add(self.bias);
+//             ...operations on self.weight, self.bias and x...
 //         }
 //     };
 //
@@ -41,6 +41,12 @@
 // tuple with the remaining arguments (everything after `self`).
 // It is exactly `compileFn(gpa, io, Detector.forward, .{ model, x }, .{})`
 // with less typing. (Declare the method `pub`.)
+//
+// The name `forward` is a habit, not a keyword. A struct may
+// have several methods, and `.verdict` in that call compiles the
+// method `verdict` just as well. Methods may call each other:
+// like any helper, the callee is stamped into the caller's
+// graph.
 //
 // So this Exe has three inputs: weight, bias, x. At run time it
 // wants three Buffers. Two of them are the model's. For those,
@@ -78,9 +84,25 @@
 //
 //     score = weight . x + bias
 //
-// The compile call is missing something, and whoever wrote the
-// call at the bottom got a panic for it. Its message talks about
-// "argument 0". Count the slots.
+// The autopsy, step by step:
+//
+// 1. Write `forward`. You wrote this layer in exercise 067, and
+//    this one is simpler: one sighting, no batch.
+//
+// 2. Write `verdict`: the INDEX of the higher of the two scores,
+//    an i32 scalar (0 is alien, 1 is weather balloon). It calls
+//    `forward`; finding where the maximum sits is from chapter
+//    06.
+//
+// 3. The compile call for `forward` is missing something. The
+//    one for `verdict` is missing entirely.
+//
+// 4. The model, as numbers: build the `zml.Bufferized(Detector)`
+//    from the two arrays.
+//
+// 5. Whoever wrote the call at the bottom got a panic for it.
+//    Its message talks about "argument 0". Count the slots. Then
+//    ask for the verdict: one output, so `eval` will do.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -90,7 +112,12 @@ const Detector = struct {
     bias: zml.Tensor,
 
     pub fn forward(self: Detector, x: zml.Tensor) zml.Tensor {
-        return self.weight.dot(x, .d).add(self.bias);
+        return ???;
+    }
+
+    /// The index of the higher score: 0 alien, 1 weather balloon.
+    pub fn verdict(self: Detector, x: zml.Tensor) zml.Tensor {
+        return ???;
     }
 };
 
@@ -114,6 +141,8 @@ pub fn main(init: std.process.Init) !void {
 
     var exe = try platform.compile(gpa, io, model, ???, .{x}, .{});
     defer exe.deinit();
+    var verdict_exe = ???;
+    defer verdict_exe.deinit();
 
     try stdout.print("The Exe has {d} inputs: {f}, {f} and {f}.\n", .{
         exe.input_shapes.len,
@@ -130,10 +159,7 @@ pub fn main(init: std.process.Init) !void {
     };
     const bias_data = [2]f32{ 0.5, -1 };
 
-    var weights: zml.Bufferized(Detector) = .{
-        .weight = try .fromBytes(io, platform, model.weight.shape(), std.mem.sliceAsBytes(&weight_data)),
-        .bias = try .fromBytes(io, platform, model.bias.shape(), std.mem.sliceAsBytes(&bias_data)),
-    };
+    var weights: zml.Bufferized(Detector) = ???;
     defer weights.weight.deinit();
     defer weights.bias.deinit();
 
@@ -154,5 +180,11 @@ pub fn main(init: std.process.Init) !void {
 
     const s = try scores.getValue([2]f32, io);
     try stdout.print("alien: {d}, weather balloon: {d}\n", .{ s[0], s[1] });
+
+    var verdict: zml.Buffer = ???;
+    defer verdict.deinit();
+
+    const names = [_][]const u8{ "alien", "weather balloon" };
+    try stdout.print("The detector's verdict: {s}.\n", .{names[@intCast(try verdict.getValue(i32, io))]});
     try stdout.flush();
 }

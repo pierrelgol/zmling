@@ -1,13 +1,14 @@
 --- exercises/08_slice_of_life/058_fair_shares.zig
 +++ answers/08_slice_of_life/058_fair_shares.zig
-@@ -70,13 +70,13 @@
+@@ -80,20 +80,26 @@
  
  fn bigFirst(pizza: zml.Tensor) zml.Tensor {
      // Toddler, brother, cousin.
 -    const shares = pizza.split(.slices, &.{ 1, 3, 3 });
 +    const shares = pizza.split(.slices, &.{ 1, 3, 4 });
  
-     return zml.Tensor.concatenate(&.{ shares[2], shares[1], shares[0] }, .slices);
+-    return zml.Tensor.concatenate(&.{ shares[0], shares[1], shares[2] }, .slices);
++    return zml.Tensor.concatenate(&.{ shares[2], shares[1], shares[0] }, .slices);
  }
  
  fn twins(pizza: zml.Tensor) zml.Tensor {
@@ -16,3 +17,26 @@
  
      return first.sub(second);
  }
+ 
+ /// Olives per child: toddler, brother, cousin. Result: {slices=3}.
+ fn tally(pizza: zml.Tensor) zml.Tensor {
+-    return ???;
++    const shares = pizza.split(.slices, &.{ 1, 3, 4 });
++
++    return zml.Tensor.concatenate(&.{
++        shares[0].sum(.slices),
++        shares[1].sum(.slices),
++        shares[2].sum(.slices),
++    }, .slices);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -119,7 +125,7 @@
+         defer exe.deinit();
+ 
+         // Run it on the pizza.
+-        var result: zml.Buffer = ???;
++        var result: zml.Buffer = try exe.eval(gpa, io, .{pizza_buffer});
+         defer result.deinit();
+ 
+         const plate: zml.Slice = try result.toSliceAlloc(gpa, io);

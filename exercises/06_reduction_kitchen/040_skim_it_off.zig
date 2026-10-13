@@ -55,6 +55,11 @@
 // each table is getting (he carries them). Chef Odile asks for
 // ONE number: how many plates leave her kitchen tonight.
 //
+// Jean-Luc's ritual is written, and skims the wrong axis: you'll
+// get the stingy panic. Chef Odile's ritual is empty, its Exe
+// was never compiled, and the last line of `main` doesn't know
+// which Zig type a true scalar of this dtype is read into.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -84,8 +89,7 @@ pub fn main(init: std.process.Init) !void {
     var per_table_exe = try platform.compileFn(gpa, io, platesPerTable, .{orders}, .{});
     defer per_table_exe.deinit();
 
-    var tonight_exe = try platform.compileFn(gpa, io, platesTonight, .{orders}, .{});
-    defer tonight_exe.deinit();
+    // The second Exe, for `platesTonight`: `tonight_exe`.
 
     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[3][4]i32{
         .{ 2, 1, 0, 2 },
@@ -101,6 +105,6 @@ pub fn main(init: std.process.Init) !void {
     defer tonight.deinit();
 
     try stdout.print("Jean-Luc carries {f}: {any}\n", .{ per_table.shape(), try per_table.getValue([3]i32, io) });
-    try stdout.print("Chef Odile gets {f}: {d} plates\n", .{ tonight.shape(), try tonight.getValue(i32, io) });
+    try stdout.print("Chef Odile gets {f}: {d} plates\n", .{ tonight.shape(), try tonight.getValue(???, io) });
     try stdout.flush();
 }

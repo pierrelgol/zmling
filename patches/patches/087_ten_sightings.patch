@@ -1,6 +1,34 @@
 --- exercises/12_the_exe_files/087_ten_sightings.zig
 +++ answers/12_the_exe_files/087_ten_sightings.zig
-@@ -120,9 +120,11 @@
+@@ -83,7 +83,8 @@
+ 
+     /// {b,d} -> {b,d_out}
+     pub fn forward(self: Detector, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        const scores = x.dot(self.weight, .d);
++        return scores.add(self.bias.broad(scores.shape()));
+     }
+ };
+ 
+@@ -114,11 +115,13 @@
+     };
+     const bias_data = [2]f32{ 0.5, -1 };
+ 
+-    // Uploaded once. And freed, all of them, in one line.
+-    var weights: zml.Bufferized(Detector) = ???;
+-    defer ???;
++    var weights: zml.Bufferized(Detector) = .{
++        .weight = try .fromBytes(io, platform, model.weight.shape(), std.mem.sliceAsBytes(&weight_data)),
++        .bias = try .fromBytes(io, platform, model.bias.shape(), std.mem.sliceAsBytes(&bias_data)),
++    };
++    defer zml.Buffer.deinitAll(Detector, &weights);
+ 
+-    var runner = ???;
++    var runner = try exe.runner(gpa);
+     defer runner.deinit(gpa);
+ 
+     // glow, hum, speed
+@@ -132,9 +135,11 @@
      while (first < sightings.len) : (first += batch_size) {
          const batch = sightings[first..@min(first + batch_size, sightings.len)];
  

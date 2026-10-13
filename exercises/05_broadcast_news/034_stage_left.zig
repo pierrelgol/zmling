@@ -73,7 +73,19 @@
 // where `sponsor` {3} is a flat weekly amount per show (the
 // Morning Zoo is "brought to you by Big Al's Mattress Barn").
 // Doug, who doesn't trust shortcuts, asked that the sponsor be
-// done with the primitive.
+// done with the primitive. Somebody tried, and you are about to
+// receive the long panic for it. Calmly.
+//
+// That's not all Kevin left undone:
+//
+//   - two of the four placeholders in `main` are missing. Their
+//     shapes are in Kevin's list above.
+//
+//   - Linda refuses to read a table without labels on air.
+//     Before the revenue leaves `revenue`, give its axes the
+//     tags .show and .week, the way you labelled the unclaimed
+//     baggage in exercise 025. The first line of the output is
+//     the shape of the result: it must say {show=3,week=4,f32}.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -88,9 +100,13 @@ fn revenue(viewers: zml.Tensor, price: zml.Tensor, season: zml.Tensor, sponsor: 
     const season_table = season.???(table);
 
     // One sponsor per show, the do-it-yourself way.
-    const sponsor_table = sponsor.broadcast(table, &.{???});
+    const sponsor_table = sponsor.broadcast(table, &.{1});
 
-    return viewers.mul(price_table).mul(season_table).add(sponsor_table);
+    const dollars = viewers.mul(price_table).mul(season_table).add(sponsor_table);
+
+    // Kevin's tables have no tags, so neither has this one. Label
+    // it for Linda: shows, then weeks.
+    return dollars;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -104,10 +120,11 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
+    // One placeholder per parameter of `revenue`. No tags: Kevin.
     const viewers: zml.Tensor = .init(.{ 3, 4 }, .f32);
     const price: zml.Tensor = .init(.{3}, .f32);
-    const season: zml.Tensor = .init(.{4}, .f32);
-    const sponsor: zml.Tensor = .init(.{3}, .f32);
+    const season: zml.Tensor = ???;
+    const sponsor: zml.Tensor = ???;
 
     var exe = try platform.compileFn(gpa, io, revenue, .{ viewers, price, season, sponsor }, .{});
     defer exe.deinit();
@@ -135,6 +152,7 @@ pub fn main(init: std.process.Init) !void {
 
     const dollars = try result.getValue([3][4]f32, io);
 
+    try stdout.print("{f}\n", .{result.shape()});
     for (shows, dollars) |show, row| {
         try stdout.print("{s:<12}", .{show});
         for (row) |d| try stdout.print(" {d:>4}", .{d});

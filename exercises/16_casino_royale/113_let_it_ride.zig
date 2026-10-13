@@ -59,11 +59,36 @@
 //     logit    0.5   3.0  -1.0   2.0   2.5   0.0
 //
 // Pocket 1 is the favorite, then 4, then 3. The House wants
-// four tables, each with its own character, and a thousand
-// test spins of each. The strategies are for you to set. (The
-// thousand spins are what makes the report trustworthy: any
-// single spin proves nothing. That is how you test a random
-// thing.)
+// four tables, each with its own character, and for each of
+// them two reports.
+//
+// THE ODDS, computed. Before any die is rolled, the chances of
+// each candidate are a plain function of the logits, and you
+// can write it with what you have: the `topK` of chapter 10
+// (exercise 73) keeps the k best scores and remembers which
+// pockets they came from, a `scale` applies the temperature,
+// and the `softmax` of chapter 6 turns what is left into
+// chances. Mind the axis: after a top-k, `.voc` is gone, and
+// the candidates live on the new axis you named. Name it
+// `.topk`, like ZML does.
+//
+// THE SPINS, observed. A thousand of them per table, with
+// `sampleTokens`, and facts about the outcome. (The thousand
+// spins are what makes the report trustworthy: any single spin
+// proves nothing. That is how you test a random thing.)
+//
+// To do:
+//
+//  1. Write `odds`.
+//
+//  2. Set the four strategies. The comment above each table is
+//     its character; the nephew got every one of them wrong.
+//
+//  3. In the loop, each table needs two Exes and two runners
+//     (both functions return two things), one run for the odds,
+//     and a run per spin. `sampleTokens` is a function of
+//     Tensors and one plain struct: it can be compiled as it
+//     is, no wrapper needed.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -74,6 +99,13 @@ const Table = struct {
 };
 
 const spins = 1000;
+
+/// The candidates of a strategy, best first, as two tensors
+/// {.topk = strategy.topk}: which pockets they are (i32), and the
+/// chances of each one (f32, they sum to 1).
+fn odds(logits: zml.Tensor, strategy: zml.nn.SamplingStrategy) struct { zml.Tensor, zml.Tensor } {
+    return ???;
+}
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -111,22 +143,39 @@ pub fn main(init: std.process.Init) !void {
     defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
 
     for (tables) |table| {
-        // `sampleTokens` is a function of Tensors (and one plain
-        // struct): it can be compiled as it is.
-        var exe = try platform.compileFn(gpa, io, zml.nn.sampleTokens, .{ logits, table.strategy, rng }, .{});
-        defer exe.deinit();
+        try stdout.print("{s}\n", .{table.name});
 
-        var runner = try exe.runner(gpa);
-        defer runner.deinit(gpa);
+        // The odds, computed.
+        {
+            // The Exe of `odds` for this table, a runner, one run:
+            // `pockets` and `chances` are its two results.
+            ???;
+
+            // The number of candidates depends on the table: slices.
+            const pocket_slice = try pockets.toSliceAlloc(gpa, io);
+            defer pocket_slice.free(gpa);
+            const chance_slice = try chances.toSliceAlloc(gpa, io);
+            defer chance_slice.free(gpa);
+
+            try stdout.print("  the odds:", .{});
+            for (pocket_slice.items(i32), chance_slice.items(f32)) |pocket, chance| {
+                try stdout.print(" pocket {d} {d:.3}", .{ pocket, chance });
+            }
+            try stdout.print("\n", .{});
+        }
+
+        // The spins, observed.
+        // The Exe of `sampleTokens` for this table, and its runner.
+        ???;
 
         const state_before = try rng_buffer._state.getValue(u128, io);
 
         // How many times each pocket came up.
         var counts: [6]u32 = @splat(0);
         for (0..spins) |_| {
-            var pocket: zml.Buffer = undefined;
-            runner.run(io, ???, ???, .{ .wait = true });
-            defer pocket.deinit();
+            // One spin: `pocket` is where the ball landed. And
+            // the dice must not be the same at the next spin.
+            ???;
 
             counts[@intCast(try pocket.getValue(i32, io))] += 1;
         }
@@ -135,7 +184,6 @@ pub fn main(init: std.process.Init) !void {
 
         // Facts that hold whatever the seed (give or take a
         // miracle). This is what testing a random thing looks like.
-        try stdout.print("{s}\n", .{table.name});
         try stdout.print("  dice were rolled: {}\n", .{state_after != state_before});
         try stdout.print("  an outsider (pocket 0, 2 or 5) came up: {}\n", .{counts[0] + counts[2] + counts[5] > 0});
         try stdout.print("  the favorite came up every single time: {}\n", .{counts[1] == spins});

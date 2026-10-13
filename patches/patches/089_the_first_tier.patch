@@ -1,6 +1,16 @@
 --- exercises/13_layer_cake/089_the_first_tier.zig
 +++ answers/13_layer_cake/089_the_first_tier.zig
-@@ -117,10 +117,10 @@
+@@ -126,7 +126,8 @@
+ /// The tier, by hand: {.cake, .d} through {.dout, .d}, plus the
+ /// bias {.dout}. Returns {.cake, .dout}.
+ fn byHand(x: zml.Tensor, weight: zml.Tensor, bias: zml.Tensor) zml.Tensor {
+-    return ???;
++    const y = x.dot(weight, .d);
++    return y.add(bias.broad(y.shape()));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -144,16 +145,18 @@
      // axis that `forward` will contract.
      const weight: zml.Tensor = .init(.{ .dout = 2, .d = 3 }, .f32);
      const bias: zml.Tensor = .init(.{ .dout = 2 }, .f32);
@@ -11,5 +21,32 @@
 -    const cakes: zml.Tensor = .init(.{ 3, 3 }, .f32);
 +    const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 3 }, .f32);
  
-     var exe = try platform.compile(gpa, io, tier, .forward, .{ cakes, .f32 }, .{});
-     defer exe.deinit();
+     var hand_exe = try platform.compileFn(gpa, io, byHand, .{ cakes, weight, bias }, .{});
+     defer hand_exe.deinit();
+ 
+-    // TODO: `exe`, the pantry tier, compiled: a model, its method,
+-    // and the arguments of that method.
++    // The pantry tier: a model, its method, and the arguments of
++    // that method.
++    var exe = try platform.compile(gpa, io, tier, .forward, .{ cakes, .f32 }, .{});
++    defer exe.deinit();
+ 
+     var weight_buffer: zml.Buffer = try .fromBytes(io, platform, weight.shape(), std.mem.sliceAsBytes(&[2][3]f32{
+         .{ 0, 2, 0.5 }, // sweetness: sugar counts double, butter helps
+@@ -168,6 +171,7 @@
+     const tier_buffers: zml.Bufferized(zml.nn.Linear) = .{
+         .weight = weight_buffer,
+         .bias = bias_buffer,
++        .quantization = null,
+     };
+ 
+     var cakes_buffer: zml.Buffer = try .fromBytes(io, platform, cakes.shape(), std.mem.sliceAsBytes(&[3][3]f32{
+@@ -181,7 +185,7 @@
+     defer result.deinit();
+ 
+     // The hand-made tier takes its three Buffers one by one.
+-    var by_hand: zml.Buffer = ???;
++    var by_hand: zml.Buffer = try hand_exe.eval(gpa, io, .{ cakes_buffer, weight_buffer, bias_buffer });
+     defer by_hand.deinit();
+ 
+     try stdout.print("scores {f}\n", .{result.shape()});

@@ -1,6 +1,6 @@
 --- exercises/08_slice_of_life/056_no_crust_please.zig
 +++ answers/08_slice_of_life/056_no_crust_please.zig
-@@ -65,12 +65,15 @@
+@@ -75,17 +75,20 @@
  
  /// Everything but the border: {rows=2,cols=4}.
  fn noCrust(pan: zml.Tensor) zml.Tensor {
@@ -17,4 +17,19 @@
 +    return pan.slices(.{ .cols, .rows }, &.{ .single(0), .{ .step = 2 } });
  }
  
+ /// The four corners: {rows=2,cols=2}.
+ fn corners(pan: zml.Tensor) zml.Tensor {
+-    return ???;
++    return pan.slices(.{ .rows, .cols }, &.{ .{ .step = 3 }, .{ .step = 5 } });
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -110,7 +113,7 @@
+ 
+     inline for (.{ noCrust, leftEdge, corners }, .{ "noCrust", "leftEdge", "corners" }) |order, name| {
+         // Compile `order` for the pan.
+-        var exe = ???;
++        var exe = try platform.compileFn(gpa, io, order, .{pan}, .{});
+         defer exe.deinit();
+ 
+         var result: zml.Buffer = try exe.eval(gpa, io, .{pan_buffer});

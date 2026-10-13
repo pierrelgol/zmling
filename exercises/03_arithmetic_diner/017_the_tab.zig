@@ -39,7 +39,6 @@
 //   - same dtype on both sides, or ZML panics while tracing;
 //   - same shape on both sides, or ZML panics while tracing;
 //   - except that a rank 0 tensor (a scalar) goes with anything.
-//     (A later chapter, "Broadcast News", has the fine print.)
 //
 // One detail about `div`: on integer tensors it is an integer
 // division, and it truncates toward zero, like Zig's `@divTrunc`.
@@ -55,6 +54,15 @@
 //   - The regulars came in groups, and the tab is split evenly
 //     between the `guests` who ran it up.
 //   - Flo has a heart: nobody ever pays more than the `cap`.
+//
+// The dishwasher started typing it in, and then his break started:
+//
+//   - `settle` has three holes where an operation should be;
+//   - the cap is ONE number for everybody, and its placeholder is
+//     missing. You made one just like it in exercise 014;
+//   - five inputs, four Buffers. Flo's notebook says the groups
+//     were of 2, 1, 4 and 2 guests. Exercise 010 taught you what
+//     to do with that.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -82,8 +90,8 @@ pub fn main(init: std.process.Init) !void {
     const interest: zml.Tensor = .fromShape(regulars);
     const weeks: zml.Tensor = .fromShape(regulars);
     const guests: zml.Tensor = .fromShape(regulars);
-    // One number for everybody: a scalar.
-    const cap: zml.Tensor = .init(.{}, .f32);
+    // One number for everybody.
+    const cap: zml.Tensor = ???;
 
     var exe = try platform.compileFn(gpa, io, settle, .{ tab, interest, weeks, guests, cap }, .{});
     defer exe.deinit();
@@ -95,8 +103,7 @@ pub fn main(init: std.process.Init) !void {
     defer interest_buffer.deinit();
     var weeks_buffer: zml.Buffer = try .fromBytes(io, platform, regulars, std.mem.sliceAsBytes(&[_]f32{ 3, 2, 9, 1 }));
     defer weeks_buffer.deinit();
-    var guests_buffer: zml.Buffer = try .fromBytes(io, platform, regulars, std.mem.sliceAsBytes(&[_]f32{ 2, 1, 4, 2 }));
-    defer guests_buffer.deinit();
+
     var cap_buffer: zml.Buffer = try .scalar(io, platform, 42, .f32);
     defer cap_buffer.deinit();
 

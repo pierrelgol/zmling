@@ -23,45 +23,63 @@
 // Here they have two numbers each: (grass, drama). Tina's query
 // is (1, 0): she wants grass news, and no drama, thank you.
 //
-// The whole mechanism is three steps. You know every op.
+// The whole mechanism is three steps, and there is not a single
+// new op in them. Which is why, today, nobody writes them for
+// you.
 //
 // STEP 1: SCORES. How well does each listener's query match
 // each speaker's key? "How well do two vectors match" is a dot
-// product. Tag the listeners `.q`, the speakers `.k`, and the
-// two numbers `.hd` (it stands for "head dimension", you'll see
-// why in a few exercises):
+// product, the `dot` of chapter 9 (exercise 61). Tag the
+// listeners `.q`, the speakers `.k`, and the two numbers `.hd`
+// (it stands for "head dimension", you'll see why in a few
+// exercises):
 //
-//     q: {.q, .hd}    k: {.k, .hd}
+//     q: {.q, .hd}    k: {.k, .hd}    ->    scores: {.q, .k}
 //
-//     scores = q.dot(k, .hd)                 -> {.q, .k}
-//
-// `.hd` is contracted, and since `.q` and `.k` are different
+// One axis is contracted, and since `.q` and `.k` are different
 // tags, we get the full table: one score for every (listener,
 // speaker) pair. That's why the SAME herd gets two different
 // tags. Had both been tagged `.llama`, `dot` would have seen a
-// batching axis and compared each llama with herself only.
+// batching axis (exercise 63) and compared each llama with
+// herself only.
 //
 // These scores get divided by sqrt(hd). The longer the vectors,
 // the larger their dot products tend to be, and large scores
 // make the next step far too decisive. Hence "scaled dot
-// product attention", the name of this whole recipe.
+// product attention", the name of this whole recipe. `hd` is
+// not data, it is a size: plain Zig arithmetic on `q.dim(.hd)`,
+// then a `scale`.
 //
 // STEP 2: WEIGHTS. A listener has only so much attention: 100%.
-// Turn each ROW of scores into shares that sum to 1. That is a
-// softmax, along the speakers:
+// Turn each ROW of scores into shares that sum to 1. Turning
+// scores into shares is the `softmax` of chapter 6 (exercise
+// 44). Along which axis? Each LISTENER has 100% to hand out.
 //
-//     weights = scores.softmax(.k)           -> {.q, .k}
+//     scores: {.q, .k}    ->    weights: {.q, .k}
 //
 // STEP 3: LISTEN. Each llama hears a blend of all the values,
 // mixed according to her weights. A weighted sum over the
 // speakers... is a dot product again:
 //
-//     v: {.k, .hd}
-//
-//     heard = weights.dot(v, .k)             -> {.q, .hd}
+//     weights: {.q, .k}    v: {.k, .hd}    ->    heard: {.q, .hd}
 //
 // That's it. That is attention: dot, softmax, dot. The rest of
 // this chapter is refinements.
+//
+// To do:
+//
+//  1. Write `attentionWeights` (steps 1 and 2) and `gossip`
+//     (step 3, on top of `attentionWeights`).
+//
+//  2. `main` has the herd's Buffers and the printing. What
+//     goes in between is the routine of chapter 2, and from
+//     this chapter on it is yours: compile both functions, run
+//     both.
+//
+//  3. Once all of that is written, ZML has one more complaint.
+//     Somebody declared the placeholders in a hurry, and one of
+//     the three stands in the wrong herd. The panic names the
+//     tag it was looking for.
 //
 // Predict before you run: Tina wants grass. Kuzco is the one
 // whose key says grass. Who will Tina mostly listen to? And
@@ -74,14 +92,12 @@ const zml = @import("zml");
 /// How much attention each listener gives to each speaker: {.q, .k}.
 /// Every listener has exactly 100% to give.
 fn attentionWeights(q: zml.Tensor, k: zml.Tensor) zml.Tensor {
-    const hd: f32 = @floatFromInt(q.dim(.hd));
-    const scores = q.dot(k, ???).scale(1.0 / @sqrt(hd));
-    return scores.softmax(.q);
+    return ???;
 }
 
 /// What each listener ends up hearing: {.q, .hd}.
 fn gossip(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor) zml.Tensor {
-    return attentionWeights(q, k).dot(v, ???);
+    return ???;
 }
 
 const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
@@ -99,13 +115,10 @@ pub fn main(init: std.process.Init) !void {
 
     const q: zml.Tensor = .init(.{ .q = 4, .hd = 2 }, .f32);
     const k: zml.Tensor = .init(.{ .k = 4, .hd = 2 }, .f32);
-    const v: zml.Tensor = .init(.{ .k = 4, .hd = 2 }, .f32);
+    const v: zml.Tensor = .init(.{ .q = 4, .hd = 2 }, .f32);
 
-    var weights_exe = try platform.compileFn(gpa, io, attentionWeights, .{ q, k }, .{});
-    defer weights_exe.deinit();
-
-    var gossip_exe = try platform.compileFn(gpa, io, gossip, .{ q, k, v }, .{});
-    defer gossip_exe.deinit();
+    // Two Exes: one for `attentionWeights`, one for `gossip`.
+    ???;
 
     //                                        (grass, drama)
     var q_buffer: zml.Buffer = try .fromBytes(io, platform, q.shape(), std.mem.sliceAsBytes(&[4][2]f32{
@@ -132,11 +145,8 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer v_buffer.deinit();
 
-    var weights: zml.Buffer = try weights_exe.eval(gpa, io, .{ q_buffer, k_buffer });
-    defer weights.deinit();
-
-    var heard: zml.Buffer = try gossip_exe.eval(gpa, io, .{ q_buffer, k_buffer, v_buffer });
-    defer heard.deinit();
+    // Run them: `weights` and `heard` are the two Buffers printed below.
+    ???;
 
     try stdout.print("weights {f}, each row is a listener:\n", .{weights.shape()});
     try stdout.print("        Tina  Kuzco Paca  Dolly\n", .{});

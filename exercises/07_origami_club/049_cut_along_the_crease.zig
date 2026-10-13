@@ -62,18 +62,46 @@
 // `.folds` axis of size 1 behind, and `squeeze(.folds)` drops
 // it.
 //
+// That is three functions, each one built on the previous:
+//
+//   - `craneScores` cuts and scores: {members=3,cranes=2}.
+//     Somebody miscounted the cranes.
+//
+//   - `judge` lines the crane scores up on one axis, .entries.
+//     It is yours to write.
+//
+//   - `shares` says how much each crane weighs in its MEMBER's
+//     total: Ingrid's two cranes scored 37 and 37, so each is
+//     0.5 of her total. A share is a fraction, so the scores
+//     are converted to f32 first (exercise 021). The division
+//     is the trick you learned in exercise 036: divide a table
+//     by its own sum along an axis, and the size-1 axis the sum
+//     left behind is stretched for you. It only works if you
+//     sum along the right axis. Somebody didn't.
+//
+// And `shares` has an Exe in `main`, but nobody runs it.
+//
 const std = @import("std");
 const zml = @import("zml");
 
-fn judge(strips: zml.Tensor) zml.Tensor {
+/// The score of every crane: {members=3,cranes=2}.
+fn craneScores(strips: zml.Tensor) zml.Tensor {
     // Tear each strip into cranes of 4 squares.
     const cranes = strips.splitAxis(.squares, .{ .cranes = 3, .folds = .auto });
 
-    const scores = cranes.sum(.folds).squeeze(.folds);
+    return cranes.sum(.folds).squeeze(.folds);
+}
 
-    // The judges want every crane of every member on a single
-    // axis called .entries.
-    return scores;
+/// Every crane of every member on a single axis: {entries=6}.
+fn judge(strips: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+/// Each crane's share of its member's total: {members=3,cranes=2}, f32.
+fn shares(strips: zml.Tensor) zml.Tensor {
+    const scores = craneScores(strips).convert(.f32);
+
+    return scores.div(scores.sum(.members));
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -107,5 +135,16 @@ pub fn main(init: std.process.Init) !void {
     defer entries.free(gpa);
 
     try stdout.print("{f} {any}\n", .{ entries.shape, entries.constItems(i32) });
+
+    var shares_exe = try platform.compileFn(gpa, io, shares, .{strips}, .{});
+    defer shares_exe.deinit();
+
+    // Run `shares_exe` on the same strips, and read the answer
+    // back as a nested array called `share`: one row per member.
+
+    try stdout.print("shares {f}\n", .{shares_exe.output_shapes[0]});
+    for ([_][]const u8{ "Ingrid", "Coach's nephew", "Timmy" }, share) |member, row| {
+        try stdout.print("  {s}: {d:.3} {d:.3}\n", .{ member, row[0], row[1] });
+    }
     try stdout.flush();
 }

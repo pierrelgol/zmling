@@ -55,13 +55,27 @@
 // measurements of each (length, width, height, in centimeters).
 // The rest is anybody's guess.
 //
-// Kevin filled in the paperwork from memory. His memory has
-// three holes in it; the last two each come with a panic you
+// That is the job of `labelScan`, and nobody wrote it: one
+// function that labels what the manual says, on ANY scan, however
+// many axes come in front.
+//
+// Kevin filled in the rest of the paperwork from memory. His
+// memory has two holes in it, and each comes with a panic you
 // have just read about.
+//
+// To finish, three more deliveries go through the same
+// `labelScan`: a single scan, a pair, and a month of weeks. For
+// each one the report says where the bags ended up. Kevin typed
+// the axis number he remembered from upstairs. The report should
+// ask the scan instead, by name (exercise 025).
 //
 const std = @import("std");
 const zml = @import("zml");
 
+/// Labels the last two axes of any scan: .bags, then .cm.
+fn labelScan(scan: zml.Tensor) zml.Tensor {
+    return ???;
+}
 pub fn main(init: std.process.Init) !void {
     var buffer: [4096]u8 = undefined;
     var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
@@ -69,8 +83,8 @@ pub fn main(init: std.process.Init) !void {
 
     const xray: zml.Tensor = .init(.{ 7, 2, 5, 3 }, .f32);
 
-    // Label what the manual still says: .bags, then .cm.
-    const scans = xray.???(.{ .bags, .cm });
+    // Label what the manual still says.
+    const scans = labelScan(xray);
     try stdout.print("{f}: fully tagged? {}\n", .{ scans, scans.shape().isFullyTagged() });
 
     // Is there a .bags axis? A .days axis?
@@ -91,5 +105,13 @@ pub fn main(init: std.process.Init) !void {
         week.dim(._),
         week.shape().tag(1),
     });
+
+    // Same function, whatever comes in front. (`inline for`: the
+    // three tuples don't have the same length, so each turn of
+    // the loop is compiled separately, like in exercise 020.)
+    inline for (.{ .{ 5, 3 }, .{ 2, 5, 3 }, .{ 4, 7, 2, 5, 3 } }) |dims| {
+        const labeled = labelScan(zml.Tensor.init(dims, .f32));
+        try stdout.print("{f}: bags on axis {d}\n", .{ labeled, 2 });
+    }
     try stdout.flush();
 }

@@ -70,10 +70,20 @@
 //    like in the model), and a `quantization` to ignore.
 //
 // Coach Magnus is ready to judge. The apprentice who wired him
-// up has never seen the logbook, and it shows: three mistakes.
-// One doesn't compile. One panics. And the last one runs just
-// fine, and tells a beginner that his 0.4 bench press is LIGHT
-// WEIGHT, BABY. Flattery is not coaching.
+// up never got around to the Coach himself:
+//
+//  - `Coach.init`: the two layers, each from a narrower view;
+//  - `Coach.forward`: the network described above. It ends like
+//    the Taster of exercise 095 ended, minus the confidence:
+//    Coach Magnus has never needed a number to be sure;
+//  - `Coach.load`: you wrote it for the rack in exercise 100;
+//  - in `main`: the Exe and the run.
+//
+// What he DID write, he wrote without ever seeing the logbook,
+// and it shows: three mistakes. One doesn't compile. One
+// panics. And the last one runs just fine, and tells a beginner
+// that his 0.4 bench press is LIGHT WEIGHT, BABY. Flattery is
+// not coaching.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -96,17 +106,12 @@ const Coach = struct {
 
     /// `view` must stand on the coach: its layers are "0" and "1".
     pub fn init(view: zml.io.TensorStore.View) Coach {
-        return .{
-            .hunches = linear(view.withLayer(0)),
-            .verdict = linear(view.withLayer(1)),
-        };
+        return ???;
     }
 
     /// lifts: {.lifter, .d} -> {.lifter} index of the verdict
     pub fn forward(self: Coach, lifts: zml.Tensor) zml.Tensor {
-        const hunches = self.hunches.forward(lifts, .f32).relu().rename(.{ .dout = .d });
-        const scores = self.verdict.forward(hunches, .f32);
-        return scores.argMax(.dout).indices.squeeze(.dout);
+        return ???;
     }
 
     pub fn load(
@@ -116,15 +121,7 @@ const Coach = struct {
         platform: *const zml.Platform,
         store: *const zml.io.TensorStore,
     ) !zml.Bufferized(Coach) {
-        var buffers = try zml.mem.bufferize(gpa, Coach, self);
-
-        var loader: zml.io.Loader = try .init(gpa, platform, .default);
-        defer loader.deinit();
-
-        try loader.load(io, Coach, self, &buffers, store, .{});
-        try loader.await(io);
-
-        return buffers;
+        return ???;
     }
 
     pub fn unload(buffers: *zml.Bufferized(Coach)) void {
@@ -162,8 +159,7 @@ pub fn main(init: std.process.Init) !void {
     const lifts: zml.Tensor = .init(.{ .lifter = 3, .d = 3 }, .f32);
 
     // Shapes are enough to compile...
-    var exe = try platform.compile(gpa, io, coach, .forward, .{lifts}, .{});
-    defer exe.deinit();
+    // TODO: `exe`.
 
     // ...numbers are needed to run.
     var coach_buffers = try coach.load(gpa, io, platform, &store);
@@ -178,7 +174,7 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer lifts_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ coach_buffers, lifts_buffer });
+    var result: zml.Buffer = ???;
     defer result.deinit();
 
     const verdicts = [_][]const u8{

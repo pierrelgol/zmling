@@ -58,9 +58,24 @@
 // the recipe ("pretend this is repeated"), and the compiler
 // nearly always arranges for the copy never to exist in memory.
 //
-// Gail goes on air in two minutes. Run this first, and look at
-// the panic: it names the operation and both shapes. Then say
-// what you mean.
+// Gail goes on air in two minutes, and the intern who wired
+// this up has left for the day. Four things are wrong. Three of
+// them are panics that you will meet one at a time, so run this
+// after every fix and READ the message: each one names what it
+// got and what it wanted.
+//
+//   1. `forecast` adds two tensors of different shapes. Say what
+//      you mean.
+//
+//   2. The intern typed one of the placeholders from memory.
+//      Once `add` is happy, `broad` will tell you which.
+//
+//   3. The Exe is run with the wrong Buffers. You broke this
+//      house rule on purpose in exercise 015.
+//
+//   4. ...and that is because the Buffer for Gail's corrections
+//      was never made. You have been making Buffers since
+//      exercise 011: make this one, and release it when done.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -82,7 +97,7 @@ pub fn main(init: std.process.Init) !void {
     defer platform.deinit(gpa, io);
 
     const feed: zml.Tensor = .init(.{ .city = 3, .day = 4 }, .f32);
-    const correction: zml.Tensor = .init(.{ .city = 3 }, .f32);
+    const correction: zml.Tensor = .init(.{ .town = 3 }, .f32);
 
     var exe = try platform.compileFn(gpa, io, forecast, .{ feed, correction }, .{});
     defer exe.deinit();
@@ -96,10 +111,10 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer feed_buffer.deinit();
 
-    var correction_buffer: zml.Buffer = try .fromBytes(io, platform, correction.shape(), std.mem.sliceAsBytes(&[_]f32{ -4, 1.5, 0 }));
-    defer correction_buffer.deinit();
+    // Gail's corrections, one per city: -4, 1.5 and 0.
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ feed_buffer, correction_buffer });
+    // One Buffer per parameter of `forecast`, in the same order.
+    var result: zml.Buffer = try exe.eval(gpa, io, .{ feed_buffer, feed_buffer });
     defer result.deinit();
 
     const temps = try result.getValue([3][4]f32, io);

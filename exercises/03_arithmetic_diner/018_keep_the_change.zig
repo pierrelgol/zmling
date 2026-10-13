@@ -57,12 +57,27 @@
 // There are two problems: the compiler will find one for you.
 // Only Flo will find the other.
 //
+// Then the register. Everybody pays with a twenty, and the change
+// is 20 - price: a constant on the LEFT, see above. That recipe,
+// `change`, is yours to write.
+//
+// Look at how main() feeds it. The prices never come back to the
+// host: the `result` of the first Exe is a Buffer like any other,
+// so it goes straight into the second Exe. What main() lost is
+// the line (well, two) that turns `change` into an Exe. Exercise
+// 010 taught those; they have not changed.
+//
 const std = @import("std");
 const zml = @import("zml");
 
 /// Flo's pancake formula: ((d^2 * 0.25) - 1) / 2 + 0.5
 fn pancakePrice(diameters: zml.Tensor) zml.Tensor {
     return diameters.scale(0.25).powByConst(2).subConstant(1).???(2).addConstant(0.5);
+}
+
+/// Change from a twenty: 20 - price.
+fn change(prices: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -89,5 +104,16 @@ pub fn main(init: std.process.Init) !void {
     defer result.deinit();
 
     try stdout.print("Pancake prices: {any}\n", .{try result.getValue([4]f32, io)});
+
+    // The register. Its input has the shape of the prices.
+    const prices: zml.Tensor = .init(.{ .pancakes = 4 }, .f32);
+
+    // Compile `change` for `prices`, and clean up after yourself.
+
+    // No Buffer to build: the prices are on the device already.
+    var change_result: zml.Buffer = try change_exe.eval(gpa, io, .{result});
+    defer change_result.deinit();
+
+    try stdout.print("Change from a twenty: {any}\n", .{try change_result.getValue([4]f32, io)});
     try stdout.flush();
 }

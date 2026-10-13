@@ -1,6 +1,6 @@
 --- exercises/05_broadcast_news/033_dead_air.zig
 +++ answers/05_broadcast_news/033_dead_air.zig
-@@ -67,7 +67,7 @@
+@@ -82,7 +82,7 @@
  
  /// The national feed, corrected by somebody who has been outside.
  fn forecast(feed: zml.Tensor, correction: zml.Tensor) zml.Tensor {
@@ -9,3 +9,25 @@
  }
  
  pub fn main(init: std.process.Init) !void {
+@@ -97,7 +97,7 @@
+     defer platform.deinit(gpa, io);
+ 
+     const feed: zml.Tensor = .init(.{ .city = 3, .day = 4 }, .f32);
+-    const correction: zml.Tensor = .init(.{ .town = 3 }, .f32);
++    const correction: zml.Tensor = .init(.{ .city = 3 }, .f32);
+ 
+     var exe = try platform.compileFn(gpa, io, forecast, .{ feed, correction }, .{});
+     defer exe.deinit();
+@@ -112,9 +112,11 @@
+     defer feed_buffer.deinit();
+ 
+     // Gail's corrections, one per city: -4, 1.5 and 0.
++    var correction_buffer: zml.Buffer = try .fromBytes(io, platform, correction.shape(), std.mem.sliceAsBytes(&[_]f32{ -4, 1.5, 0 }));
++    defer correction_buffer.deinit();
+ 
+     // One Buffer per parameter of `forecast`, in the same order.
+-    var result: zml.Buffer = try exe.eval(gpa, io, .{ feed_buffer, feed_buffer });
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ feed_buffer, correction_buffer });
+     defer result.deinit();
+ 
+     const temps = try result.getValue([3][4]f32, io);

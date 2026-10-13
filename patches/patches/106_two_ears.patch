@@ -1,22 +1,40 @@
 --- exercises/15_pay_attention/106_two_ears.zig
 +++ answers/15_pay_attention/106_two_ears.zig
-@@ -66,8 +66,8 @@
+@@ -72,7 +72,19 @@
+ /// Self-attention with `heads` heads. x, v: {.s, .d} -> {.s, .d}
  /// x is used for the queries and for the keys, v for the values.
  fn listen(x: zml.Tensor, v: zml.Tensor, heads: u32) zml.Tensor {
-     // {.s, .d} -> {.s, .h, .hd}
--    const x_heads = x.splitAxis(.d, ???);
--    const v_heads = v.splitAxis(.d, ???);
+-    return ???;
++    // {.s, .d} -> {.s, .h, .hd}
 +    const x_heads = x.splitAxis(.d, .{ .h = heads, .hd = .auto });
 +    const v_heads = v.splitAxis(.d, .{ .h = heads, .hd = .auto });
- 
-     const heard = zml.nn.sdpa(
-         x_heads.rename(.{ .s = .q }),
-@@ -77,7 +77,7 @@
-     );
- 
-     // {.q, .h, .hd} -> {.s, .d}
--    return heard.merge(???).rename(.{ .q = .s });
++
++    const heard = zml.nn.sdpa(
++        x_heads.rename(.{ .s = .q }),
++        x_heads.rename(.{ .s = .k }),
++        v_heads.rename(.{ .s = .k }),
++        .{},
++    );
++
++    // {.q, .h, .hd} -> {.s, .d}
 +    return heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
+@@ -109,10 +121,12 @@
+     }));
+     defer v_buffer.deinit();
+ 
+-    for ([_]u32{ 1, 3 }) |heads| {
+-        // Compile `listen` for this many heads, and run it:
+-        // `heard` is what gets printed.
+-        ???;
++    for ([_]u32{ 1, 2 }) |heads| {
++        var exe = try platform.compileFn(gpa, io, listen, .{ x, v, heads }, .{});
++        defer exe.deinit();
++
++        var heard: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, v_buffer });
++        defer heard.deinit();
+ 
+         try stdout.print("{d} head(s), heard {f}:\n", .{ heads, heard.shape() });
+         try stdout.print("         Tina  Kuzco | Tina  Kuzco\n", .{});

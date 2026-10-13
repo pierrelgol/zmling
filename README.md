@@ -5,7 +5,9 @@ Learn [ZML](https://github.com/zml/zml) by fixing tiny broken programs.
 zmling is to ZML what [Ziglings](https://codeberg.org/ziglings/exercises) is to Zig, and
 [Rustlings](https://github.com/rust-lang/rustlings) to Rust: a hundred-odd small programs, each
 one broken on purpose, each one teaching one thing. You read the comments, fix the program, and
-move on to the next. By the end you can write, compile, load and run a neural network with ZML
+move on to the next. The first ones need a word or two. Then the gaps grow: a function body, the
+code that compiles and runs it, a model struct, and in the last chapters most of the program,
+each exercise leaning on what you wrote in the earlier ones. By the end you can write, compile, load and run a neural network with ZML
 without looking anything up.
 
 You should already know Zig. You don't need to know machine learning: the exercises explain the

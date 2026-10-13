@@ -59,6 +59,17 @@
 // incident report below, using the only comparison he knows,
 // and the only order of addition he believes in.
 //
+// Brenda has since looked into it. Each of the four flights lost
+// exactly one bag today, so fee number i really is the fee of bag
+// number i, and the sum is legitimate. But in this office you
+// SAY so: `checkedSum` relabels the fees per bag (the careful
+// method of exercise 027), checks the labels, and only then adds.
+// Kevin "simplified" its first line. Run it, and find out what a
+// failed assert looks like when it happens inside a compile call.
+//
+// Last, somebody took the line that runs Kevin's Exe (two lines,
+// with the cleanup). Exercise 010. The Buffers are waiting.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -70,6 +81,14 @@ fn weightsPlusFees(weights: zml.Tensor, fees: zml.Tensor) zml.Tensor {
 /// fees + weights, in that order. (Kevin: "same thing.")
 fn feesPlusWeights(weights: zml.Tensor, fees: zml.Tensor) zml.Tensor {
     return weights.add(fees);
+}
+
+/// Brenda's sum: fees relabeled per bag, labels checked, then
+/// fees + weights.
+fn checkedSum(weights: zml.Tensor, fees: zml.Tensor) zml.Tensor {
+    const per_bag = fees;
+    std.debug.assert(weights.shape().eqlWithTags(per_bag.shape()));
+    return per_bag.add(weights);
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -111,6 +130,12 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("weights + fees is {f}\n", .{kevin.output_shapes[0]});
     try stdout.print("fees + weights is {f}\n", .{nivek.output_shapes[0]});
 
+    // Brenda's sum has the fees on the left as well. Look at
+    // what it prints once the check passes.
+    var brenda = try platform.compileFn(gpa, io, checkedSum, .{ weights, fees }, .{});
+    defer brenda.deinit();
+    try stdout.print("checked sum is    {f}\n", .{brenda.output_shapes[0]});
+
     // It even runs. The Buffers below are built from the WRONG
     // placeholders on purpose (weights data labeled as fees, and
     // the other way around): at run time, nobody reads labels.
@@ -119,8 +144,7 @@ pub fn main(init: std.process.Init) !void {
     var fees_buffer: zml.Buffer = try .fromBytes(io, platform, weights.shape(), std.mem.sliceAsBytes(&[_]f32{ 50, 50, 75, 120 }));
     defer fees_buffer.deinit();
 
-    var result: zml.Buffer = try kevin.eval(gpa, io, .{ weights_buffer, fees_buffer });
-    defer result.deinit();
+    // Run Kevin's Exe on the two Buffers.
 
     try stdout.print("Kilograms plus dollars: {any}. Unit: unknown.\n", .{try result.getValue([4]f32, io)});
     try stdout.flush();

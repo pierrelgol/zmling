@@ -1,17 +1,53 @@
 --- exercises/07_origami_club/053_quiz_a_thousand_cranes.zig
 +++ answers/07_origami_club/053_quiz_a_thousand_cranes.zig
-@@ -53,8 +53,12 @@
- const zml = @import("zml");
+@@ -77,18 +77,21 @@
  
- fn relay(sheet: zml.Tensor) zml.Tensor {
--    // Timmy's proposal. Replace it with Ingrid's napkin.
--    return sheet.reshape(.{ .patches = 4, .squares = 4 });
+ /// The four 2x2 patches in reading order: {patches=4,squares=4}.
+ fn patchify(sheet: zml.Tensor) zml.Tensor {
+-    // Ingrid's napkin, steps 1 to 4.
+-    return ???;
 +    return sheet
 +        .splitAxis(.rows, .{ .patch_row = 2, .row = 2 })
 +        .splitAxis(.cols, .{ .patch_col = 2, .col = 2 })
 +        .transpose(.{ .patch_row, .patch_col, .row, .col })
-+        .merge(.{ .patches = .{ .patch_row, .patch_col }, .squares = .{ .row, .col } })
-+        .reverse(.{.patches});
++        .merge(.{ .patches = .{ .patch_row, .patch_col }, .squares = .{ .row, .col } });
+ }
+ 
+ /// The patches, last one first.
+ fn relay(sheet: zml.Tensor) zml.Tensor {
+-    return ???;
++    return patchify(sheet).reverse(.{.patches});
+ }
+ 
+ /// The average of every patch, laid out like the patches: {rows=2,cols=2}, f32.
+ fn pool(sheet: zml.Tensor) zml.Tensor {
+-    return ???;
++    return patchify(sheet).convert(.f32).mean(.squares).reshape(.{ .rows = 2, .cols = 2 });
  }
  
  pub fn main(init: std.process.Init) !void {
+@@ -111,6 +114,24 @@
+     //     patches    a zml.Slice, the result of `relay`
+     //     pool_exe   the Exe compiled from `pool`
+     //     pooled     a [2][2]f32, the result of `pool`
++    const sheet: zml.Tensor = .init(.{ .rows = 4, .cols = 4 }, .i32);
++
++    var relay_exe = try platform.compileFn(gpa, io, relay, .{sheet}, .{});
++    defer relay_exe.deinit();
++    var pool_exe = try platform.compileFn(gpa, io, pool, .{sheet}, .{});
++    defer pool_exe.deinit();
++
++    var sheet_buffer: zml.Buffer = try .fromBytes(io, platform, sheet.shape(), std.mem.sliceAsBytes(&squares));
++    defer sheet_buffer.deinit();
++
++    var relay_result: zml.Buffer = try relay_exe.eval(gpa, io, .{sheet_buffer});
++    defer relay_result.deinit();
++    var pool_result: zml.Buffer = try pool_exe.eval(gpa, io, .{sheet_buffer});
++    defer pool_result.deinit();
++
++    const patches: zml.Slice = try relay_result.toSliceAlloc(gpa, io);
++    defer patches.free(gpa);
++    const pooled = try pool_result.getValue([2][2]f32, io);
+ 
+     try stdout.print("{f}\n", .{patches.shape});
+ 

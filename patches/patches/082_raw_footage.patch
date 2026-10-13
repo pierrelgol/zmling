@@ -1,6 +1,18 @@
 --- exercises/12_the_exe_files/082_raw_footage.zig
 +++ answers/12_the_exe_files/082_raw_footage.zig
-@@ -125,11 +125,15 @@
+@@ -110,7 +110,10 @@
+ };
+ 
+ fn analyze(photo: zml.Tensor) Report {
+-    return ???;
++    return .{
++        .brightest = photo.max(.pixels).squeeze(.pixels),
++        .glow = photo.sum(.pixels).squeeze(.pixels),
++    };
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -137,11 +140,15 @@
      }));
      defer photo_buffer.deinit();
  
@@ -20,4 +32,20 @@
 +    var report = results.get(zml.Bufferized(Report));
      defer report.brightest.deinit();
      defer report.glow.deinit();
+ 
+@@ -153,11 +160,10 @@
+     }));
+     defer second_buffer.deinit();
+ 
+-    // Molder again. This time: no new tables, the ones from above.
+-    var second: zml.Bufferized(Report) = .{
+-        .brightest = try exe.eval(gpa, io, .{second_buffer}),
+-        .glow = try exe.eval(gpa, io, .{second_buffer}),
+-    };
++    args.set(.{second_buffer});
++    exe.call(io, args, &results, .{ .wait = true });
++
++    var second = results.get(zml.Bufferized(Report));
+     defer second.brightest.deinit();
+     defer second.glow.deinit();
  

@@ -1,11 +1,16 @@
 --- exercises/13_layer_cake/092_no_such_struct.zig
 +++ answers/13_layer_cake/092_no_such_struct.zig
-@@ -74,14 +74,14 @@
-     eps: f32,
+@@ -72,17 +72,18 @@
+ const zml = @import("zml");
  
+ const RmsNorm = struct {
+-    // TODO: two fields, `weight` and `eps`.
++    weight: zml.Tensor,
++    eps: f32,
+ 
+-    /// x: {.cake, .d}. Every cake leveled on its own, times the weight.
      pub fn forward(self: RmsNorm, x: zml.Tensor) zml.Tensor {
--        const normalized = zml.nn.rmsNorm(x, .cake, self.eps);
--        return normalized;
+-        return ???;
 +        const normalized = zml.nn.rmsNorm(x, .d, self.eps);
 +        return normalized.mul(self.weight.broad(x.shape()));
      }
@@ -18,3 +23,36 @@
  }
  
  pub fn main(init: std.process.Init) !void {
+@@ -99,8 +100,11 @@
+     const level: RmsNorm = .{ .weight = .init(.{ .d = 2 }, .f32), .eps = 1e-6 };
+     const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 2 }, .f32);
+ 
+-    // TODO: `rms_exe`, the model `level` compiled for `cakes`, and
+-    // `unit_exe`, the function `unitLength` compiled for `cakes`.
++    var rms_exe = try platform.compile(gpa, io, level, .forward, .{cakes}, .{});
++    defer rms_exe.deinit();
++
++    var unit_exe = try platform.compileFn(gpa, io, unitLength, .{cakes}, .{});
++    defer unit_exe.deinit();
+ 
+     // The learned weight: double the first number, keep the second.
+     var weight_buffer: zml.Buffer = try .fromBytes(io, platform, level.weight.shape(), std.mem.sliceAsBytes(&[2]f32{ 2, 1 }));
+@@ -114,14 +118,13 @@
+     var cakes_buffer: zml.Buffer = try .fromBytes(io, platform, cakes.shape(), std.mem.sliceAsBytes(&recipes));
+     defer cakes_buffer.deinit();
+ 
+-    // Our own struct, our own Bufferized.
+-    const level_buffers: zml.Bufferized(RmsNorm) = ???;
++    // Our own struct, our own Bufferized: one Tensor, one Buffer.
++    const level_buffers: zml.Bufferized(RmsNorm) = .{ .weight = weight_buffer };
+ 
+-    // The two runs. A model wants its Buffers first.
+-    var rms: zml.Buffer = ???;
++    var rms: zml.Buffer = try rms_exe.eval(gpa, io, .{ level_buffers, cakes_buffer });
+     defer rms.deinit();
+ 
+-    var unit: zml.Buffer = ???;
++    var unit: zml.Buffer = try unit_exe.eval(gpa, io, .{cakes_buffer});
+     defer unit.deinit();
+ 
+     const rms_values = try rms.getValue([3][2]f32, io);

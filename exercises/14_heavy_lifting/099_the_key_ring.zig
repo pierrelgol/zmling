@@ -93,7 +93,19 @@
 //
 // Coach Magnus wants the keys to his two layers. "WEIGHT. BIAS.
 // BOTH LAYERS. GO." You have looked at the logbook; he has not.
-// This panics twice. Read each message: it names its culprit.
+//
+// Top to bottom:
+//
+//  - the registry: exercise 098, from memory, quirk included;
+//  - the key cabinet, on top of the registry;
+//  - how many entries are under "coach";
+//  - the key of the plates. It is there, and it panics;
+//  - for each layer of the coach: the view that stands in front
+//    of it, the key of its weight (a matrix: outputs first, then
+//    inputs, with the tags of the bakery), and the key of its
+//    bias. That last one is there too, and it panics as well.
+//
+// Read each panic: it names its culprit.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -111,19 +123,17 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
-    defer gpa.free(path);
+    // TODO: `registry`, the logbook of the file. It wants the real
+    // address (exercise 098).
 
-    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
-    defer registry.deinit();
-
-    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
+    // The key cabinet, for our one CPU.
+    var store: zml.io.TensorStore = ???;
     defer store.deinit();
 
     const view = store.view();
     try stdout.print("{d} entries in the locker, {d} of them under \"coach\".\n", .{
         view.count(),
-        view.withPrefix("coach").count(),
+        ???,
     });
 
     // A loose tensor, at the root of the file.
@@ -132,11 +142,11 @@ pub fn main(init: std.process.Init) !void {
 
     for (0..2) |i| {
         // Stand in front of layer i of the coach.
-        const layer = view.withPrefix("coach").withLayer(i);
+        const layer: zml.io.TensorStore.View = ???;
         try stdout.print("\nlayer \"{s}\"\n", .{layer.prefix().?});
 
         // A weight is a matrix: outputs first, then inputs.
-        const weight = layer.createReplicatedTensor("weight", .{ .dout, .d });
+        const weight: zml.Tensor = ???;
         try stdout.print("  weight: {f}\n", .{weight});
 
         // Not every layer has a bias. Only cut a key if there is

@@ -1,6 +1,18 @@
 --- exercises/11_time_loops/077_the_shadow.zig
 +++ answers/11_time_loops/077_the_shadow.zig
-@@ -95,12 +95,14 @@
+@@ -90,22 +90,24 @@
+ 
+     /// Gus saw his shadow.
+     pub fn onTrue(self: Burrow) zml.Tensor {
+-        return ???;
++        return self.temps.addConstant(-10);
+     }
+ 
+     /// No shadow.
+     pub fn onFalse(self: Burrow) zml.Tensor {
+-        return ???;
++        return self.temps.addConstant(5);
+     }
  };
  
  fn prediction(sunshine: zml.Tensor, temps: zml.Tensor) zml.Tensor {
@@ -17,3 +29,21 @@
  }
  
  pub fn main(init: std.process.Init) !void {
+@@ -124,7 +126,7 @@
+ 
+     var exe = try platform.compileFn(gpa, io, prediction, .{ sunshine, temps }, .{});
+     defer exe.deinit();
+-    var exe2 = ???;
++    var exe2 = try platform.compileFn(gpa, io, prediction2, .{ sunshine, temps }, .{});
+     defer exe2.deinit();
+ 
+     var temps_buffer: zml.Buffer = try .fromBytes(io, platform, temps.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 3, 10 }));
+@@ -137,7 +139,7 @@
+ 
+         var result: zml.Buffer = try exe.eval(gpa, io, .{ sunshine_buffer, temps_buffer });
+         defer result.deinit();
+-        var result2: zml.Buffer = ???;
++        var result2: zml.Buffer = try exe2.eval(gpa, io, .{ sunshine_buffer, temps_buffer });
+         defer result2.deinit();
+ 
+         try stdout.print("{d} minutes of sun. Gus says {any}, and Gus's lawyer says {any}.\n", .{

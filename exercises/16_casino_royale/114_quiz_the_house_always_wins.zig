@@ -51,15 +51,49 @@
 // A scalar token works because `TokenEmbedding.forward` is a
 // `gather`: the result has the shape of the indices, plus `.d`.
 //
-// The House wants the motto word for word, so the sampling is
-// greedy: `topk = 1`. (Once it works, set `topk` to 3 in your
-// copy and run it by hand a few times with different seeds.
-// The House after a few drinks.)
+// The sign has two moods, and a mood is a
+// `zml.nn.SamplingStrategy`. It is the third argument of
+// `forward`: a plain Zig value, baked in at compile time. So,
+// ONE model, ONE set of weights loaded once, and TWO Exes:
 //
-// Everything from here on is yours. Shapes, ghosts, tags, a
-// gather, a dot, an argMax, a model struct, a file of weights,
-// a compiled Exe with a state threaded through it, and a loop.
-// Sixteen chapters. You know all of it.
+//     sober    the default strategy: greedy. The House wants
+//              the motto word for word.
+//     tipsy    `topk = 3`, at the default temperature. The
+//              House after a few drinks.
+//
+// What `main` must print:
+//
+//  1. THE MOTTO. The sober sign starts from "the" and writes
+//     until the token it picks is the "." (or for 20 tokens, if
+//     the model has other ideas): the first word, then a space
+//     and a word for each new token, then ".\n" at the end.
+//
+//  2. THE NIGHT SHIFT. The tipsy sign starts from "the" as
+//     well, and writes `night_shift` tokens without ever
+//     stopping. Its words are not printed (which ones come out
+//     depends on your machine, remember exercise 110). They are
+//     COUNTED: how many times was the token that came out the
+//     one the motto wanted after the token that went in?
+//     `script`, below, has the answer for every token. Then two
+//     facts, with the two format strings you will find at the
+//     bottom of `main`.
+//
+// Before you run the night shift, work out what to expect.
+// `make_fixtures.py` explains that the right next word scores
+// 3, and that the runners-up score 1. Top 3, softmax (you
+// printed such odds in the previous exercise): how often
+// should a tipsy sign stay on script?
+//
+// One state for the dice, seed 2024, threaded through every
+// call of both Exes.
+//
+// Everything from here on is yours: the fields of the struct,
+// its four methods, and `main`. Shapes, ghosts, tags, a gather,
+// a dot, an argMax, a model struct, a file of weights, two
+// compiled Exes with a state threaded through them, and a loop
+// that feeds a model its own words. Sixteen chapters. You know
+// all of it, and exercises 101 (the weights), 112 (the
+// sampler) and 111 (the loop) are where to look when you don't.
 //
 // Good luck. Not that luck has anything to do with it.
 //
@@ -76,19 +110,34 @@ const first_token: i32 = 6;
 /// The id of ".", where a sentence ends.
 const end_token: i32 = 0;
 
-const Sign = struct {
-    embed: zml.nn.TokenEmbedding,
-    head: zml.nn.Linear,
+/// The motto, as a table: `script[t]` is the token that follows
+/// token `t`. After "the" (6) comes "house" (3). After "." (0), the
+/// motto starts over.
+const script = [8]i32{ 6, 0, 7, 2, 1, 4, 3, 5 };
 
+/// How many tokens the tipsy sign writes.
+const night_shift = 500;
+
+const Sign = struct {
+    // A token embedding and a linear head.
+    ???,
+
+    /// The model, with placeholders made from the file.
     pub fn init(view: zml.io.TensorStore.View) Sign {
         return ???;
     }
 
     /// token: {} i32 -> the next token: {} i32, and the Rng.
-    pub fn forward(self: Sign, token: zml.Tensor, rng: zml.Tensor.Rng) struct { zml.Tensor, zml.Tensor.Rng } {
+    pub fn forward(
+        self: Sign,
+        token: zml.Tensor,
+        strategy: zml.nn.SamplingStrategy,
+        rng: zml.Tensor.Rng,
+    ) struct { zml.Tensor, zml.Tensor.Rng } {
         return ???;
     }
 
+    /// The weights, from the file to the device.
     pub fn load(
         self: *const Sign,
         gpa: std.mem.Allocator,
@@ -99,9 +148,9 @@ const Sign = struct {
         return ???;
     }
 
+    /// Frees what `load` returned.
     pub fn unload(buffers: *zml.Bufferized(Sign)) void {
-        buffers.embed.weight.deinit();
-        buffers.head.weight.deinit();
+        ???;
     }
 };
 
@@ -116,53 +165,18 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    // The weights: header, key cabinet, model.
-    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
-    defer gpa.free(path);
+    // The file, the model, the placeholders, two Exes, the weights,
+    // the dice. Then the motto, printed with these three lines (the
+    // "." token itself is never printed as a word: the last line
+    // stands for it). Then the night shift, counted.
+    //
+    //     try stdout.print("{s}", .{words[@intCast(first_token)]});
+    //     try stdout.print(" {s}", .{words[@intCast(next_token)]});
+    //     try stdout.print(".\n", .{});
+    ???;
 
-    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
-    defer registry.deinit();
-
-    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
-    defer store.deinit();
-
-    const sign: Sign = ???;
-
-    // The placeholders: one token (a scalar), and the dice.
-    const token: zml.Tensor = ???;
-    const rng: zml.Tensor.Rng = ???;
-
-    var exe = ???;
-    defer exe.deinit();
-
-    var sign_buffers = try sign.load(gpa, io, platform, &store);
-    defer Sign.unload(&sign_buffers);
-
-    var rng_buffer = ???;
-    defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
-
-    var runner = try exe.runner(gpa);
-    defer runner.deinit(gpa);
-
-    // The loop. `token_buffer` always holds the last token.
-    var token_buffer: zml.Buffer = try .scalar(io, platform, first_token, .i32);
-    defer token_buffer.deinit();
-
-    try stdout.print("{s}", .{words[@intCast(first_token)]});
-
-    // The sign would go on forever: stop at the end of the
-    // sentence (or after 20 tokens, if the model has other ideas).
-    for (0..20) |_| {
-        // Run the model on `token_buffer`. The token that comes out
-        // is the token that goes in next: free the old Buffer (it
-        // was not donated, it is still yours) and keep the new one.
-        // And mind the dice.
-        ???
-
-        const next_token = try token_buffer.getValue(i32, io);
-        if (next_token == end_token) break;
-        try stdout.print(" {s}", .{words[@intCast(next_token)]});
-    }
-    try stdout.print(".\n", .{});
+    // `on_script`: how many of the `night_shift` tokens followed the motto.
+    try stdout.print("After a few drinks, the sign went off script: {}\n", .{on_script < night_shift});
+    try stdout.print("It still got the next word right more often than not: {}\n", .{2 * on_script > night_shift});
     try stdout.flush();
 }

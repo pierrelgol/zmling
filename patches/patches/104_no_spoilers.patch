@@ -1,14 +1,56 @@
 --- exercises/15_pay_attention/104_no_spoilers.zig
 +++ answers/15_pay_attention/104_no_spoilers.zig
-@@ -73,9 +73,9 @@
+@@ -108,19 +108,26 @@
+ /// Nobody hears the llamas behind her, nor those more than `window`
+ /// places in front (when there is a window).
+ fn causalMask(window: ?u32) zml.Tensor {
+-    return ???;
++    const table: zml.Shape = .init(.{ .q = herd, .k = herd }, .i32);
++    const listener = zml.Tensor.arange(.{ .end = herd }, .i32).withTags(.{.q}).broad(table);
++    const speaker = zml.Tensor.arange(.{ .end = herd }, .i32).withTags(.{.k}).broad(table);
++
++    var allowed = speaker.cmp(.LE, listener);
++    if (window) |w| allowed = allowed.logical(.AND, listener.cmp(.LT, speaker.addConstant(w)));
++
++    return allowed.select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
+ }
+ 
+ /// The same mask, from the shelf.
+ fn officialMask(window: ?u32) zml.Tensor {
+-    return ???;
++    return zml.nn.causalAttnMask(.{ .q = herd, .k = herd }, .f32, window);
+ }
+ 
+ /// Attention weights {.q, .k}, with no spoilers.
+ fn causalWeights(q: zml.Tensor, k: zml.Tensor, window: ?u32) zml.Tensor {
+     const hd: f32 = @floatFromInt(q.dim(.hd));
      const scores = q.dot(k, .hd).scale(1.0 / @sqrt(hd));
- 
-     // One cell per (listener, speaker) pair.
--    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.q), .hd = q.dim(.hd) }, scores.dtype(), window);
-+    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.q), .k = k.dim(.k) }, scores.dtype(), window);
- 
--    return scores.softmax(.k).add(mask);
-+    return scores.add(mask).softmax(.k);
+-    return scores.softmax(.k).add(causalMask(window));
++    return scores.add(causalMask(window)).softmax(.k);
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
+@@ -147,10 +154,19 @@
+ 
+     // `window` is a plain Zig value: it is baked into each Exe.
+     for ([_]?u32{ null, 2 }) |window| {
+-        // Three Exes, for `causalMask`, `officialMask` and
+-        // `causalWeights`, and their three results: `mask`,
+-        // `official` and `weights`, the Buffers printed below.
+-        ???;
++        var mask_exe = try platform.compileFn(gpa, io, causalMask, .{window}, .{});
++        defer mask_exe.deinit();
++        var official_exe = try platform.compileFn(gpa, io, officialMask, .{window}, .{});
++        defer official_exe.deinit();
++        var weights_exe = try platform.compileFn(gpa, io, causalWeights, .{ q, k, window }, .{});
++        defer weights_exe.deinit();
++
++        var mask: zml.Buffer = try mask_exe.eval(gpa, io, .{});
++        defer mask.deinit();
++        var official: zml.Buffer = try official_exe.eval(gpa, io, .{});
++        defer official.deinit();
++        var weights: zml.Buffer = try weights_exe.eval(gpa, io, .{ q_buffer, k_buffer });
++        defer weights.deinit();
+ 
+         if (window) |w| {
+             try stdout.print("a memory of {d} llamas:\n", .{w});

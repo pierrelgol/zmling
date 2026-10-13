@@ -1,6 +1,18 @@
 --- exercises/13_layer_cake/091_level_the_tiers.zig
 +++ answers/13_layer_cake/091_level_the_tiers.zig
-@@ -74,7 +74,7 @@
+@@ -74,7 +74,10 @@
+ /// The layer norm of the lesson, by hand, with an eps of 1e-5.
+ /// x: {.cake, .d}, weight and bias: {.d}. Returns {.cake, .d}.
+ fn levelByHand(x: zml.Tensor, weight: zml.Tensor, bias: zml.Tensor) zml.Tensor {
+-    return ???;
++    const centered = x.sub(x.mean(.d));
++    const variance = centered.mul(centered).mean(.d);
++    const leveled = centered.div(variance.addConstant(1e-5).sqrt());
++    return leveled.mul(weight.broad(x.shape())).add(bias.broad(x.shape()));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -92,27 +95,27 @@
      const bias: zml.Tensor = .init(.{ .d = 4 }, .f32);
  
      // A flat cake must come out flat. Not as four NaN.
@@ -9,8 +21,13 @@
  
      const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 4 }, .f32);
  
-@@ -82,8 +82,8 @@
+     var exe = try platform.compile(gpa, io, level, .forward, .{cakes}, .{});
      defer exe.deinit();
+ 
+-    // TODO: `hand_exe`, your function, compiled for the same three
+-    // placeholders.
++    var hand_exe = try platform.compileFn(gpa, io, levelByHand, .{ cakes, weight, bias }, .{});
++    defer hand_exe.deinit();
  
      // One number per tier. A mean of 10 and a spread of 2, please.
 -    const spread: [4]f32 = @splat(1);
@@ -20,3 +37,22 @@
  
      var weight_buffer: zml.Buffer = try .fromBytes(io, platform, weight.shape(), std.mem.sliceAsBytes(&spread));
      defer weight_buffer.deinit();
+     var bias_buffer: zml.Buffer = try .fromBytes(io, platform, bias.shape(), std.mem.sliceAsBytes(&mean));
+     defer bias_buffer.deinit();
+ 
+-    // The Buffers of the norm. Only Tensors become Buffers.
+-    const level_buffers: zml.Bufferized(zml.nn.LayerNorm) = ???;
++    // Look: no `.eps` in here. Only Tensors become Buffers.
++    const level_buffers: zml.Bufferized(zml.nn.LayerNorm) = .{ .weight = weight_buffer, .bias = bias_buffer };
+ 
+     const heights = [3][4]f32{
+         .{ 2, 4, 4, 6 }, // the lopsided one
+@@ -125,7 +128,7 @@
+     var result: zml.Buffer = try exe.eval(gpa, io, .{ level_buffers, cakes_buffer });
+     defer result.deinit();
+ 
+-    var by_hand: zml.Buffer = ???;
++    var by_hand: zml.Buffer = try hand_exe.eval(gpa, io, .{ cakes_buffer, weight_buffer, bias_buffer });
+     defer by_hand.deinit();
+ 
+     const tables = [2][3][4]f32{ try result.getValue([3][4]f32, io), try by_hand.getValue([3][4]f32, io) };

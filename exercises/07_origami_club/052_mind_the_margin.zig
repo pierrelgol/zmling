@@ -61,11 +61,24 @@
 //
 //     const Pad = zml.Tensor.Pad;
 //
-// The task: Ingrid's entry is a sheet of 2 rows by 3 columns.
-// Mount it on a card with a margin of exactly ONE blank square
-// (a zero) on all four sides. The apprentice who wrote the
-// mounting code copied the doc comment, and also seems to have
-// run out of card on one side. The ruler is watching.
+// Ingrid's entry is a sheet of 2 rows by 3 columns, and there
+// are three things to do with it:
+//
+//   - `mount`: put it on a card with a margin of exactly ONE
+//     blank square (a zero) on all four sides. The apprentice
+//     who wrote it copied the doc comment, and also seems to
+//     have run out of card on one side. The ruler is watching.
+//
+//   - `spread`: Timmy's idea, "to let the paper breathe". One
+//     blank square BETWEEN every two neighbours, along the rows
+//     and along the columns, and no margin around. Use the size
+//     formula above to predict the shape before you run it.
+//     Yours to write.
+//
+//   - `showpiece`: the spread sheet, mounted. Done: it only
+//     calls the other two.
+//
+// In `main`, the loop forgot how to make an Exe.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -77,6 +90,15 @@ fn mount(sheet: zml.Tensor) zml.Tensor {
         .rows = .{ .low = 1, .high = 1 },
         .cols = .{ .low = 1 },
     });
+}
+
+/// One blank between neighbours, in both directions. No margin.
+fn spread(sheet: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+fn showpiece(sheet: zml.Tensor) zml.Tensor {
+    return mount(spread(sheet));
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -92,22 +114,25 @@ pub fn main(init: std.process.Init) !void {
 
     const sheet: zml.Tensor = .init(.{ .rows = 2, .cols = 3 }, .i32);
 
-    var exe = try platform.compileFn(gpa, io, mount, .{sheet}, .{});
-    defer exe.deinit();
-
     var sheet_buffer: zml.Buffer = try .fromBytes(io, platform, sheet.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 2, 3, 4, 5, 6 }));
     defer sheet_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{sheet_buffer});
-    defer result.deinit();
+    inline for (.{ mount, spread, showpiece }, .{ "mount", "spread", "showpiece" }) |entry, name| {
+        // One Exe per entry, compiled for the sheet.
+        var exe = ???;
+        defer exe.deinit();
 
-    const card: zml.Slice = try result.toSliceAlloc(gpa, io);
-    defer card.free(gpa);
+        var result: zml.Buffer = try exe.eval(gpa, io, .{sheet_buffer});
+        defer result.deinit();
 
-    try stdout.print("Mounted on {f}\n", .{card.shape});
+        const card: zml.Slice = try result.toSliceAlloc(gpa, io);
+        defer card.free(gpa);
 
-    const width: usize = @intCast(card.shape.dim(-1));
-    var lines = std.mem.window(i32, card.constItems(i32), width, width);
-    while (lines.next()) |line| try stdout.print("  {any}\n", .{line});
+        try stdout.print("{s}: {f}\n", .{ name, card.shape });
+
+        const width: usize = @intCast(card.shape.dim(-1));
+        var lines = std.mem.window(i32, card.constItems(i32), width, width);
+        while (lines.next()) |line| try stdout.print("  {any}\n", .{line});
+    }
     try stdout.flush();
 }

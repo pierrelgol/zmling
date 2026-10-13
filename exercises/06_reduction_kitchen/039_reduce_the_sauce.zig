@@ -57,6 +57,11 @@
 // 7:15 pm. Chef Odile wants to know how many portions of each
 // dish to fire. "The tables, I do not care about. Reduce them."
 //
+// The ritual needs its axis, the read-back needs a size, and in
+// between somebody forgot the most important step of any
+// kitchen: nothing was ever put on the fire. `exe` is compiled
+// and never run. You have run Exes since exercise 011.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -88,8 +93,8 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer orders_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{orders_buffer});
-    defer result.deinit();
+    // Run `exe` on the orders. The Buffer that comes back is
+    // called `result`, and it has to be released like the others.
 
     // Two axes, but how many numbers?
     const portions = try result.getValue([???]i32, io);

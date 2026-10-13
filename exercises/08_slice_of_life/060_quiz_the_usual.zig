@@ -34,22 +34,58 @@
 //   6. Both go in the delivery bag, his box first:
 //      {boxes=2,slices=5}.
 //
+//   7. The bill. Tensorino's charges by the number written on
+//      the slice (don't ask, it's a family tradition): the
+//      total of each box of the bag, {boxes=2}.
+//
+// Four helpers, each one a brick for the next:
+//
+//     hisBox      steps 2 to 4, from ONE pizza
+//     herSample   step 5, from the tray
+//     theUsual    steps 1 and 6, calling the two above
+//     bill        step 7, calling theUsual
+//
 // Everything you need was served in this chapter:
 //
 //     slice      .single   .dynSingle   start / end / step
 //     slices     chunkExact / split     concatenate   stack
 //
+// except the total, which comes from the Reduction Kitchen.
+//
 // Remember what must be decided at compile time (every size)
-// and what may wait for the data (where `which` points). The
+// and what may wait for the data (where `which` points). Each
 // Exe is compiled once and run for three different Thursdays.
 //
 // The slices are numbered so that you can check the result by
 // eye: slice 5 of pizza 2 is 25.
 //
+// Luigi did write something tonight: the numbers on the slices
+// and the prints. Everything between them is yours. Two
+// placeholders (one of them a scalar i32), two Exes
+// (`theUsual` and `bill`), the tray's Buffer, and, every
+// Thursday, a Buffer for `which`, two runs and two read-backs.
+// The prints tell you the names and the types they expect.
+//
 const std = @import("std");
 const zml = @import("zml");
 
+/// Steps 2 to 4. {slices=8} in, {slices=5} out.
+fn hisBox(pizza: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+/// Step 5. The whole tray in, {slices=5} out.
+fn herSample(tray: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+/// Steps 1 and 6: {boxes=2,slices=5}.
 fn theUsual(tray: zml.Tensor, which: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+/// Step 7: {boxes=2}.
+fn bill(tray: zml.Tensor, which: zml.Tensor) zml.Tensor {
     return ???;
 }
 
@@ -64,30 +100,21 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const tray: zml.Tensor = .init(.{ .pizzas = 3, .slices = 8 }, .i32);
-    const which: zml.Tensor = .init(.{}, .i32);
-
-    var exe = try platform.compileFn(gpa, io, theUsual, .{ tray, which }, .{});
-    defer exe.deinit();
-
     var numbers: [3][8]i32 = undefined;
     for (&numbers, 0..) |*pizza, p| {
         for (pizza, 0..) |*slice, s| slice.* = @intCast(p * 10 + s);
     }
-    var tray_buffer: zml.Buffer = try .fromBytes(io, platform, tray.shape(), std.mem.sliceAsBytes(&numbers));
-    defer tray_buffer.deinit();
 
-    try stdout.print("The usual is a {f}.\n", .{exe.output_shapes[0]});
+    // Before the loop: the placeholders, the two Exes (call the
+    // one for `theUsual` `usual_exe`), and the tray's Buffer.
+
+    try stdout.print("The usual is a {f}.\n", .{usual_exe.output_shapes[0]});
 
     for ([_]i32{ 0, 1, 2 }) |thursday| {
-        var which_buffer: zml.Buffer = try .scalar(io, platform, thursday, .i32);
-        defer which_buffer.deinit();
+        // Every Thursday: `bag` is a [2][5]i32 (the usual), and
+        // `total` is a [2]i32 (the bill).
 
-        var result: zml.Buffer = try exe.eval(gpa, io, .{ tray_buffer, which_buffer });
-        defer result.deinit();
-
-        const bag = try result.getValue([2][5]i32, io);
-        try stdout.print("pizza {d}: his box {any}, her sample {any}\n", .{ thursday, bag[0], bag[1] });
+        try stdout.print("pizza {d}: his box {any}, her sample {any}, bill {any}\n", .{ thursday, bag[0], bag[1], total });
     }
     try stdout.flush();
 }

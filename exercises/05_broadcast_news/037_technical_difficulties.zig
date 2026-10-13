@@ -49,6 +49,18 @@
 // No panic will help you this time: the only symptom is wrong
 // numbers on air. Find the line, and put the 1 where it belongs.
 //
+// Before you do, get yourself a witness. Below `forecast` there
+// is a second ritual, `forecastByRule3`, with nothing in it. It
+// must compute the same forecast WITHOUT any broadcast function:
+// make the column, and let the fine print of exercise 036 do the
+// stretching. (That is habit number two in the list below, and
+// the list explains why this version can't go wrong silently.)
+//
+// `main` compares the two results on its last line, but the
+// witness was never called to the stand: compiling it and
+// running it is left to you, right next to the lines that do it
+// for `forecast`.
+//
 // Three habits that keep you out of this hole:
 //
 //   - Don't do `broad`'s job for it. Hand it the tensor with the
@@ -73,6 +85,11 @@ fn forecast(feed: zml.Tensor, correction: zml.Tensor) zml.Tensor {
     return feed.add(column.broad(feed.shape()));
 }
 
+/// The same forecast, with no broadcast function at all.
+fn forecastByRule3(feed: zml.Tensor, correction: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
     const io = init.io;
@@ -90,6 +107,8 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compileFn(gpa, io, forecast, .{ feed, correction }, .{});
     defer exe.deinit();
 
+    // The witness: `forecastByRule3`, compiled into `witness_exe`.
+
     const cities = [_][]const u8{ "Springfield", "Shelbyville", "Ogdenville" };
 
     var feed_buffer: zml.Buffer = try .fromBytes(io, platform, feed.shape(), std.mem.sliceAsBytes(&[3][3]f32{
@@ -105,7 +124,10 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{ feed_buffer, correction_buffer });
     defer result.deinit();
 
+    // Same Buffers, other Exe: the result is called `witness`.
+
     const temps = try result.getValue([3][3]f32, io);
+    const witness_temps = try witness.getValue([3][3]f32, io);
 
     try stdout.print("{f}\n", .{result.shape()});
     try stdout.print("             Fri  Sat  Sun\n", .{});
@@ -114,5 +136,6 @@ pub fn main(init: std.process.Init) !void {
         for (row) |t| try stdout.print(" {d:.1}", .{t});
         try stdout.print("\n", .{});
     }
+    try stdout.print("The witness agrees: {}\n", .{std.meta.eql(temps, witness_temps)});
     try stdout.flush();
 }

@@ -19,7 +19,7 @@
 // the graph.
 //
 //     pub fn forward(self: Polygraph, x: zml.Tensor) zml.Tensor {
-//         var score = self.weight.dot(x, .d).add(self.bias);
+//         var score = ...the layer you know...;
 //         if (self.paranoid) score = score.scale(2);
 //         return score.cmp(.GT, zml.Tensor.scalar(self.threshold, .f32));
 //     }
@@ -65,8 +65,20 @@
 // something, and runs it in paranoid mode. Same machine, same
 // weights, two Exes.
 //
-// Somebody tried to pass the settings in with the weights.
-// And Molder's own polygraph isn't set up like Molder at all.
+// What upstairs left of the file:
+//
+// 1. `forward` is blacked out. The score is weight . x + bias,
+//    with a single output this time: the weight is {d=3}, the
+//    bias a scalar. In paranoid mode the score counts double.
+//    The answer is one bool: is the score above the threshold?
+//
+// 2. Molder's own polygraph isn't set up like Molder at all.
+//
+// 3. Somebody tried to pass the settings in with the weights.
+//
+// 4. Nobody is questioning the witnesses. In the loop, each
+//    statement becomes a Buffer and goes through both Exes. One
+//    output each, so `eval` will do. The model goes first.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -79,9 +91,7 @@ const Polygraph = struct {
 
     /// One bool: is the witness lying?
     pub fn forward(self: Polygraph, x: zml.Tensor) zml.Tensor {
-        var score = self.weight.dot(x, .d).add(self.bias);
-        if (self.paranoid) score = score.scale(2);
-        return score.cmp(.GT, zml.Tensor.scalar(self.threshold, .f32));
+        return ???;
     }
 };
 
@@ -138,12 +148,12 @@ pub fn main(init: std.process.Init) !void {
     };
 
     for (witnesses, 1..) |statement, n| {
-        var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&statement));
+        var x_buffer: zml.Buffer = ???;
         defer x_buffer.deinit();
 
-        var s: zml.Buffer = try scally_exe.eval(gpa, io, .{ weights, x_buffer });
+        var s: zml.Buffer = ???;
         defer s.deinit();
-        var m: zml.Buffer = try molder_exe.eval(gpa, io, .{ weights, x_buffer });
+        var m: zml.Buffer = ???;
         defer m.deinit();
 
         try stdout.print("Witness {d}: Scally's polygraph says lying={}, Molder's says lying={}.\n", .{

@@ -1,41 +1,75 @@
 --- exercises/02_ghost_tensors/016_quiz_cold_spots.zig
 +++ answers/02_ghost_tensors/016_quiz_cold_spots.zig
-@@ -35,7 +35,7 @@
- const zml = @import("zml");
+@@ -56,12 +56,12 @@
  
+ /// (celsius * intensity) * 1.8 + 32
  fn toFahrenheit(celsius: zml.Tensor, intensity: zml.Tensor) zml.Tensor {
 -    return ???;
 +    return celsius.mul(intensity).scale(1.8).addConstant(32);
  }
  
- pub fn main(init: std.process.Init) !void {
-@@ -54,23 +54,23 @@
-     const readings = [_]f32{ -40, 0, 10, 37 };
+ /// wild - calm
+ fn shift(calm: zml.Tensor, wild: zml.Tensor) zml.Tensor {
+-    return ???;
++    return wild.sub(calm);
+ }
  
+ pub fn main(init: std.process.Init) !void {
+@@ -82,32 +82,32 @@
+     // PART 1
+     //
      // Placeholders: four f32 readings tagged .spots, and one f32 scalar.
 -    const celsius: zml.Tensor = ???;
 -    const intensity: zml.Tensor = ???;
 +    const celsius: zml.Tensor = .init(.{ .spots = 4 }, .f32);
 +    const intensity: zml.Tensor = .init(.{}, .f32);
  
--    var exe = try platform.compileFn(gpa, io, toFahrenheit, ???, .{});
+     // The seance.
+-    var exe = ???;
 +    var exe = try platform.compileFn(gpa, io, toFahrenheit, .{ celsius, intensity }, .{});
      defer exe.deinit();
  
-     var celsius_buffer: zml.Buffer = try .fromBytes(io, platform, celsius.shape(), std.mem.sliceAsBytes(&readings));
+     // The readings, as a body.
+-    var celsius_buffer: zml.Buffer = ???;
++    var celsius_buffer: zml.Buffer = try .fromBytes(io, platform, celsius.shape(), std.mem.sliceAsBytes(&readings));
      defer celsius_buffer.deinit();
  
-     for ([_]f32{ 1, 2.5 }) |i| {
--        var intensity_buffer: zml.Buffer = ???;
-+        var intensity_buffer: zml.Buffer = try .scalar(io, platform, i, .f32);
-         defer intensity_buffer.deinit();
+     // The two intensities, as bodies: 1 and 2.5.
+-    var calm_intensity: zml.Buffer = ???;
++    var calm_intensity: zml.Buffer = try .scalar(io, platform, 1, .f32);
+     defer calm_intensity.deinit();
+-    var wild_intensity: zml.Buffer = ???;
++    var wild_intensity: zml.Buffer = try .scalar(io, platform, 2.5, .f32);
+     defer wild_intensity.deinit();
  
--        var result: zml.Buffer = try exe.eval(gpa, io, ???);
-+        var result: zml.Buffer = try exe.eval(gpa, io, .{ celsius_buffer, intensity_buffer });
-         defer result.deinit();
+     // The same Exe, run once for each intensity.
+-    var calm: zml.Buffer = ???;
++    var calm: zml.Buffer = try exe.eval(gpa, io, .{ celsius_buffer, calm_intensity });
+     defer calm.deinit();
+-    var wild: zml.Buffer = ???;
++    var wild: zml.Buffer = try exe.eval(gpa, io, .{ celsius_buffer, wild_intensity });
+     defer wild.deinit();
  
--        const fahrenheit = ???;
-+        const fahrenheit = try result.getValue([4]f32, io);
+     // Both results, back in the land of the living.
+-    const calm_fahrenheit: [4]f32 = ???;
+-    const wild_fahrenheit: [4]f32 = ???;
++    const calm_fahrenheit: [4]f32 = try calm.getValue([4]f32, io);
++    const wild_fahrenheit: [4]f32 = try wild.getValue([4]f32, io);
  
-         try stdout.print("intensity {d}:", .{i});
-         for (fahrenheit) |f| try stdout.print(" {d:.1}", .{f});
+     try stdout.print("intensity 1:", .{});
+     for (calm_fahrenheit) |f| try stdout.print(" {d:.1}", .{f});
+@@ -121,6 +121,14 @@
+     // compiled with `shift`, and its result for the two Buffers
+     // you already hold. The lines below expect that result to be
+     // a zml.Buffer called `shifted`.
++    const before: zml.Tensor = .fromShape(exe.output_shapes[0]);
++    const after: zml.Tensor = .fromShape(exe.output_shapes[0]);
++
++    var shift_exe = try platform.compileFn(gpa, io, shift, .{ before, after }, .{});
++    defer shift_exe.deinit();
++
++    var shifted: zml.Buffer = try shift_exe.eval(gpa, io, .{ calm, wild });
++    defer shifted.deinit();
+ 
+     // This one is on the house: the result, as a Slice.
+     const photo: zml.Slice = try shifted.toSliceAlloc(gpa, io);

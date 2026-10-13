@@ -65,19 +65,32 @@
 // piece a new axis of size 1 (a reshape, free) and calls
 // `concatenate` on that axis. A box is a tray of one.
 //
-// Three orders, for a margherita and a pepperoni of 4 slices
+// Four orders, for a margherita and a pepperoni of 4 slices
 // each:
 //
 //   - `party`:    one long pizza of 8 slices, margherita first.
 //   - `delivery`: two boxes on top of each other: {boxes=2,slices=4}.
 //   - `tasting`:  for each slice position, the two kinds side by
 //                 side: {slices=4,kinds=2}.
+//   - `byHand`:   `delivery` again, WITHOUT calling `stack`. Do
+//                 what the paragraph above says `stack` does.
+//                 You added axes of size 1 in the newsroom
+//                 (exercise 035), and a `reshape` from the last
+//                 chapter would do the job as well.
+//
+// Nonna wrote `party`. Luigi took `delivery` and `tasting`
+// over the phone, with the oven fan on. `byHand` is yours from
+// top to bottom.
+//
+// One more thing. The pepperoni never left the kitchen: `main`
+// has no placeholder and no Buffer for it. Its four slices
+// hold 5, 6, 7 and 8.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 fn party(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
-    return zml.Tensor.concatenate(&.{ margherita, pepperoni }, ???);
+    return zml.Tensor.concatenate(&.{ margherita, pepperoni }, .slices);
 }
 
 fn delivery(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
@@ -86,6 +99,11 @@ fn delivery(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
 
 fn tasting(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
     return zml.Tensor.stack(&.{ margherita, pepperoni }, 0, .kinds);
+}
+
+/// Two boxes, no `stack`: {boxes=2,slices=4}.
+fn byHand(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -100,14 +118,15 @@ pub fn main(init: std.process.Init) !void {
     defer platform.deinit(gpa, io);
 
     const margherita: zml.Tensor = .init(.{ .slices = 4 }, .i32);
-    const pepperoni: zml.Tensor = .init(.{ .slices = 4 }, .i32);
 
     var margherita_buffer: zml.Buffer = try .fromBytes(io, platform, margherita.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 2, 3, 4 }));
     defer margherita_buffer.deinit();
-    var pepperoni_buffer: zml.Buffer = try .fromBytes(io, platform, pepperoni.shape(), std.mem.sliceAsBytes(&[_]i32{ 5, 6, 7, 8 }));
-    defer pepperoni_buffer.deinit();
+    // The pepperoni goes here: `pepperoni` and `pepperoni_buffer`.
 
-    inline for (.{ party, delivery, tasting }, .{ "party:   ", "delivery:", "tasting: " }) |order, name| {
+    inline for (
+        .{ party, delivery, tasting, byHand },
+        .{ "party:   ", "delivery:", "tasting: ", "byHand:  " },
+    ) |order, name| {
         var exe = try platform.compileFn(gpa, io, order, .{ margherita, pepperoni }, .{});
         defer exe.deinit();
 

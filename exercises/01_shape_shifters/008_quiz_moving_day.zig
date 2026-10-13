@@ -31,8 +31,17 @@
 //      single row of pixels: rank 2, tagged .n and .pixels. Don't
 //      compute 48 * 64 yourself.
 //
-// No hand-holding this time. Everything you need is in exercises
-// 001 to 007.
+//   6. The invoice has one line per photo: rank 1, tagged .n.
+//      Don't type 32 again, ask the cabinet for the size of its
+//      .n axis. Amounts are stored as whatever DataType matches
+//      Zig's `u16`. Don't type that one either: compute it.
+//
+//   7. The grand total is a single 64-bit float. One number, no
+//      box around it.
+//
+// No hand-holding this time: the print statements are given, and
+// every line with a number above it is yours to write. Everything
+// you need is in exercises 001 to 007.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -45,23 +54,31 @@ pub fn main(init: std.process.Init) !void {
     const stdout = &stdout_writer.interface;
 
     // 1.
-    const archive = zml.Shape.init(???, ???);
+    const archive = ???;
     try stdout.print("archive:    {f}, {d} MiB\n", .{ archive, archive.byteSize() / MiB });
 
     // 2.
-    const studio = archive.transpose(???);
+    const studio = ???;
     try stdout.print("studio:     {f}\n", .{studio});
 
     // 3.
-    const floats = studio.???;
+    const floats = ???;
     try stdout.print("floats:     {f}, {d} MiB\n", .{ floats, floats.byteSize() / MiB });
 
     // 4.
-    const thumbnails = floats.???;
+    const thumbnails = ???;
     try stdout.print("thumbnails: {f}\n", .{thumbnails});
 
     // 5.
-    const cabinet = thumbnails.reshape(???);
+    const cabinet = ???;
     try stdout.print("cabinet:    {f}, {d} pixels per photo\n", .{ cabinet, cabinet.dim(-1) });
+
+    // 6.
+    const invoice = ???;
+    try stdout.print("invoice:    {f}, {d} bytes\n", .{ invoice, invoice.byteSize() });
+
+    // 7.
+    const total = ???;
+    try stdout.print("total:      {f}, rank {d}, {d} bytes\n", .{ total, total.rank(), total.byteSize() });
     try stdout.flush();
 }

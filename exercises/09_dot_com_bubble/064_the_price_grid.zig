@@ -46,7 +46,16 @@
 //     first, like you did for the Synergy Matrix.
 //
 // Chad built the price grid on a napkin and then in Zig. The
-// napkin was fine.
+// napkin was fine. Look at his placeholders before you look at
+// anything else.
+//
+// Then Marketing has a follow-up question: if the whole STOCK
+// (so many units of each product) sold at one tier, how many
+// dollars would that be? One number per tier. That is the grid,
+// with its .products axis contracted against the stock: an
+// `outer` followed by a `dot`, in a function called
+// `revenuePerTier` that is still empty. Nobody compiled it or
+// ran it: `main` expects an Exe and a Buffer called `sold_out`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -54,6 +63,11 @@ const zml = @import("zml");
 /// Every product at every discount tier.
 fn priceGrid(prices: zml.Tensor, tiers: zml.Tensor) zml.Tensor {
     return prices.outer(tiers);
+}
+
+/// Dollars per tier if the whole stock sold at that tier: {tiers}.
+fn revenuePerTier(prices: zml.Tensor, tiers: zml.Tensor, stock: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -71,23 +85,34 @@ pub fn main(init: std.process.Init) !void {
     // as {products=3,tiers=3,f32}.
     const prices: zml.Tensor = .init(.{3}, .f32);
     const tiers: zml.Tensor = .init(.{3}, .f32);
+    // Units in the warehouse, per product.
+    const stock: zml.Tensor = .init(.{3}, .f32);
 
     var exe = try platform.compileFn(gpa, io, priceGrid, .{ prices, tiers }, .{});
     defer exe.deinit();
+
+    // Marketing's follow-up question needs an Exe of its own.
 
     var prices_buffer: zml.Buffer = try .fromBytes(io, platform, prices.shape(), std.mem.sliceAsBytes(&[_]f32{ 5, 20, 1000 }));
     defer prices_buffer.deinit();
     // List price, friends of Chad, employees.
     var tiers_buffer: zml.Buffer = try .fromBytes(io, platform, tiers.shape(), std.mem.sliceAsBytes(&[_]f32{ 1, 0.5, 0.1 }));
     defer tiers_buffer.deinit();
+    var stock_buffer: zml.Buffer = try .fromBytes(io, platform, stock.shape(), std.mem.sliceAsBytes(&[_]f32{ 100, 10, 1 }));
+    defer stock_buffer.deinit();
 
     var result: zml.Buffer = try exe.eval(gpa, io, .{ prices_buffer, tiers_buffer });
     defer result.deinit();
+
+    // ...and an answer: a Buffer called `sold_out`.
 
     try stdout.print("price grid {f}:\n", .{result.shape()});
     for (try result.getValue([3][3]f32, io)) |row| {
         for (row) |price| try stdout.print(" {d:>7.2}", .{price});
         try stdout.print("\n", .{});
     }
+    try stdout.print("stock sold out, per tier {f}:", .{sold_out.shape()});
+    for (try sold_out.getValue([3]f32, io)) |dollars| try stdout.print(" ${d:.2}", .{dollars});
+    try stdout.print("\n", .{});
     try stdout.flush();
 }

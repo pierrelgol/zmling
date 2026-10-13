@@ -72,6 +72,10 @@
 // You've met two of them before; the third one doesn't crash, it
 // just overcharges the wrong people.
 //
+// He also never got around to cooking the tickets: part 1 of
+// main() prints a result nobody computed. A recipe without
+// input, compiled and run. The sample above is most of it.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -98,13 +102,9 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    // 1. No input: an empty tuple of placeholders, and later an
+    // 1. Compile `tickets` and run it, cleaning up as you go. No
+    //    input: an empty tuple of placeholders, and later an
     //    empty tuple of Buffers.
-    var tickets_exe = try platform.compileFn(gpa, io, tickets, .{}, .{});
-    defer tickets_exe.deinit();
-
-    var tickets_result: zml.Buffer = try tickets_exe.eval(gpa, io, .{});
-    defer tickets_result.deinit();
 
     try stdout.print("Tickets: {any}\n", .{try tickets_result.getValue([5]i32, io)});
 

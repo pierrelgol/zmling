@@ -73,8 +73,20 @@
 // boss calls it the Sure Thing," says Monte. "Pull."
 //
 // You are to compute the outcome twice: once by hand, once with
-// `sampleTokens`. The machine was last serviced by a nephew of
-// the House.
+// `sampleTokens`. To do:
+//
+//  1. Write `greedy`, by hand (exercise 42 has the op), and
+//     `pull`, the official way, with the default strategy.
+//
+//  2. The first block of `main` is complete. The second one
+//     has kept its two print lines: it needs an Exe, a state
+//     for the dice (seed 777), a runner, and a run that puts
+//     the tokens in `result`. Two outputs, in the order `pull`
+//     returns them.
+//
+//  3. The machine was last serviced by a nephew of the House.
+//     When everything is written, ZML will tell you what he
+//     did to the logits.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -86,7 +98,7 @@ fn greedy(logits: zml.Tensor) zml.Tensor {
 
 /// The same, the official way.
 fn pull(logits: zml.Tensor, rng: zml.Tensor.Rng) struct { zml.Tensor, zml.Tensor.Rng } {
-    return zml.nn.sampleTokens(logits, .{ .topk = 1 }, rng);
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -129,18 +141,9 @@ pub fn main(init: std.process.Init) !void {
 
     // With sampleTokens: two outputs, hence a runner.
     {
-        var exe = try platform.compileFn(gpa, io, pull, .{ logits, rng }, .{});
-        defer exe.deinit();
-
-        var rng_buffer = try rng.initBuffer(io, platform, 777);
-        defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
-
-        var runner = try exe.runner(gpa);
-        defer runner.deinit(gpa);
-
-        var result: zml.Buffer = undefined;
-        runner.run(io, .{ logits_buffer, rng_buffer }, .{ &result, &rng_buffer }, .{ .wait = true });
-        defer result.deinit();
+        // The Exe of `pull`, the dice, a runner, one run: `result`
+        // holds the three tokens.
+        ???;
 
         try stdout.print("sampleTokens:", .{});
         for (try result.getValue([3]i32, io)) |token| try stdout.print(" {s}", .{symbols[@intCast(token)]});

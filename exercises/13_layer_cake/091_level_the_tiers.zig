@@ -53,11 +53,29 @@
 //
 // On the bench: three cakes of four tiers, heights in cm. Chef
 // Babette wants every cake leveled to a MEAN of 10 with a
-// SPREAD of 2. The norm on the bench is set to "do nothing in
-// particular", and somebody thought eps was optional.
+// SPREAD of 2. And she wants it done twice, because she trusts
+// the pantry exactly as far as she can throw it:
+//
+//  1. FROM THE PANTRY, with `zml.nn.LayerNorm`. The norm on the
+//     bench is set to "do nothing in particular", somebody
+//     thought eps was optional, and nobody made its Buffers.
+//
+//  2. BY HAND. Write `levelByHand`: the formula above, with the
+//     tools of the reduction kitchen (`mean` is from exercise
+//     041; remember what it does to the axis it reduces) and of
+//     the diner (chapter 3). Use 1e-5 for eps. Then compile it
+//     and run it: it is a plain function of three tensors.
+//
+// Same numbers on both sides, or somebody is not going home.
 //
 const std = @import("std");
 const zml = @import("zml");
+
+/// The layer norm of the lesson, by hand, with an eps of 1e-5.
+/// x: {.cake, .d}, weight and bias: {.d}. Returns {.cake, .d}.
+fn levelByHand(x: zml.Tensor, weight: zml.Tensor, bias: zml.Tensor) zml.Tensor {
+    return ???;
+}
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -81,6 +99,9 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compile(gpa, io, level, .forward, .{cakes}, .{});
     defer exe.deinit();
 
+    // TODO: `hand_exe`, your function, compiled for the same three
+    // placeholders.
+
     // One number per tier. A mean of 10 and a spread of 2, please.
     const spread: [4]f32 = @splat(1);
     const mean: [4]f32 = @splat(0);
@@ -90,8 +111,8 @@ pub fn main(init: std.process.Init) !void {
     var bias_buffer: zml.Buffer = try .fromBytes(io, platform, bias.shape(), std.mem.sliceAsBytes(&mean));
     defer bias_buffer.deinit();
 
-    // Look: no `.eps` in here. Only Tensors become Buffers.
-    const level_buffers: zml.Bufferized(zml.nn.LayerNorm) = .{ .weight = weight_buffer, .bias = bias_buffer };
+    // The Buffers of the norm. Only Tensors become Buffers.
+    const level_buffers: zml.Bufferized(zml.nn.LayerNorm) = ???;
 
     const heights = [3][4]f32{
         .{ 2, 4, 4, 6 }, // the lopsided one
@@ -104,11 +125,18 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{ level_buffers, cakes_buffer });
     defer result.deinit();
 
-    for (heights, try result.getValue([3][4]f32, io)) |before, after| {
-        for (before) |h| try stdout.print("{d:3}", .{h});
-        try stdout.print("  ->", .{});
-        for (after) |h| try stdout.print(" {d:6.3}", .{h});
-        try stdout.print("\n", .{});
+    var by_hand: zml.Buffer = ???;
+    defer by_hand.deinit();
+
+    const tables = [2][3][4]f32{ try result.getValue([3][4]f32, io), try by_hand.getValue([3][4]f32, io) };
+    for ([_][]const u8{ "From the pantry:", "By hand:" }, tables) |title, table| {
+        try stdout.print("{s}\n", .{title});
+        for (heights, table) |before, after| {
+            for (before) |h| try stdout.print("{d:3}", .{h});
+            try stdout.print("  ->", .{});
+            for (after) |h| try stdout.print(" {d:6.3}", .{h});
+            try stdout.print("\n", .{});
+        }
     }
     try stdout.flush();
 }

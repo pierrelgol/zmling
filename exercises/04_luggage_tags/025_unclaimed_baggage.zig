@@ -61,15 +61,46 @@
 //
 // This morning's delivery: a tensor of bag weights, three
 // carousels of four bags each. Kevin labeled it. Kevin labeled it
-// with enthusiasm.
+// with enthusiasm. He also left a blank, and read one number off
+// the wrong line of the form.
+//
+// Then point 3, for real. The airline wants the weights in
+// pounds (1 kg is 2.2 lb), and it wants them LABELED. The recipe
+// `inPounds` receives the delivery as it came, untagged, and
+// returns it tagged and in pounds: the labeling happens inside
+// the recipe, between two ordinary operations of the diner. Write
+// it. The Exe reports the shape of what it returns, labels
+// included (`output_shapes`, exercise 021).
+//
+// The delivery has to get onto the device too. Three carousels of
+// four numbers: the last Buffer you built from a table like that
+// was in exercise 022.
 //
 const std = @import("std");
 const zml = @import("zml");
 
+// What the scales said, in kilograms.
+const kilograms = [3][4]f32{
+    .{ 10, 20, 15, 5 },
+    .{ 23, 8, 15, 31 },
+    .{ 12, 12, 30, 2 },
+};
+
+/// The delivery, labeled .carousels and .bags, in pounds.
+fn inPounds(delivery: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
 pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const io = init.io;
+
     var buffer: [4096]u8 = undefined;
-    var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
+    var stdout_writer = std.Io.File.stdout().writer(io, &buffer);
     const stdout = &stdout_writer.interface;
+
+    const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+    defer platform.deinit(gpa, io);
 
     // As delivered. Yes, we are in main(), and yes, this is fine:
     // a placeholder, and nothing below records an operation.
@@ -85,10 +116,26 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("{d} carousels, {d} bags on each. Bags are axis {d}.\n", .{
         weights.dim(.carousels),
         weights.dim(???),
-        weights.axis(.bags),
+        weights.axis(.carousels),
     });
 
     // The original didn't change.
     try stdout.print("The delivery slip still says {f}.\n", .{delivery.shape()});
+
+    // The untagged delivery goes in, pounds with labels come out.
+    var exe = try platform.compileFn(gpa, io, inPounds, .{delivery}, .{});
+    defer exe.deinit();
+
+    // The kilograms, on the device, in the shape of the delivery.
+    var delivery_buffer: zml.Buffer = ???;
+    defer delivery_buffer.deinit();
+
+    var result: zml.Buffer = try exe.eval(gpa, io, .{delivery_buffer});
+    defer result.deinit();
+
+    const pounds = try result.getValue([3][4]f32, io);
+    try stdout.print("In pounds, {f}. Carousel 0:", .{exe.output_shapes[0]});
+    for (pounds[0]) |lb| try stdout.print(" {d:.1}", .{lb});
+    try stdout.print("\n", .{});
     try stdout.flush();
 }

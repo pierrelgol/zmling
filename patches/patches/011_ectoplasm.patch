@@ -1,6 +1,11 @@
 --- exercises/02_ghost_tensors/011_ectoplasm.zig
 +++ answers/02_ghost_tensors/011_ectoplasm.zig
-@@ -88,11 +88,11 @@
+@@ -88,15 +88,15 @@
+     // The body: same shape as the placeholder, plus the numbers.
+     // Write the whole `fromBytes` call. Ask the placeholder for
+     // its shape rather than spelling it out again.
+-    var flames_buffer: zml.Buffer = ???;
++    var flames_buffer: zml.Buffer = try .fromBytes(io, platform, candles.shape(), std.mem.sliceAsBytes(&flames));
      defer flames_buffer.deinit();
  
      // Run the seance on the body.

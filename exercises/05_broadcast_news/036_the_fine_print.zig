@@ -57,25 +57,52 @@
 //
 // Wardrobe department. Every anchor has a wardrobe budget per
 // night, {anchor=3}, and wardrobe wrote down what they really
-// spent, {anchor=3,night=4}. Management wants to know which
-// FRACTION of the budget was left, each night:
+// spent, {anchor=3,night=4}. Management wants two tables.
+//
+// FIRST, which fraction of the budget was left, each night
+// (below zero when somebody went over):
 //
 //     left = (budget - spent) / budget
 //
 // The author of `leftover` made a column out of `budget`, good
 // idea, and then believed the slogan about automatic stretching.
-// Half of this line is fine and half of it panics. (By the way:
+// Half of that line is fine and half of it panics. (By the way:
 // the panic says "subtract", not "sub". ZML reports the name the
 // operation has inside the compiler.)
+//
+// SECOND, how many dollars each anchor went OVER budget, each
+// night. Somebody who stayed under budget is 0 dollars over, not
+// "minus 50 dollars over": negative amounts become 0, and Gus's
+// diner had the very thing for that on its menu (exercise 020).
+//
+//     over = spent - budget, but never below 0
+//
+// Nobody wrote `overspend`. It is yours, and if you put the
+// tensors on the right sides, the fine print does all the
+// stretching: no broadcast function needed.
+//
+// Nobody compiled it or ran it either. `main` makes the Buffers
+// and prints the two tables; the lines in between, for the
+// second table, are for you. It is the same pipeline as for the
+// first one, and the same Buffers will do.
+//
+// (Write what is missing first. The panic waits for you behind
+// the compile errors.)
 //
 const std = @import("std");
 const zml = @import("zml");
 
+/// The fraction of the budget that was left, each night.
 fn leftover(spent: zml.Tensor, budget: zml.Tensor) zml.Tensor {
     // {anchor=3} -> {anchor=3,night=1}
     const column = budget.appendAxes(.{.night});
 
     return column.sub(spent).div(column);
+}
+
+/// Dollars over budget, each night. Never negative.
+fn overspend(spent: zml.Tensor, budget: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -95,12 +122,16 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compileFn(gpa, io, leftover, .{ spent, budget }, .{});
     defer exe.deinit();
 
+    // The second table: `overspend`, compiled for the same two
+    // placeholders.
+
     const anchors = [_][]const u8{ "Brock", "Linda", "Gail" };
 
-    // Brock's Wednesday was a tie. A very expensive tie.
+    // Brock's Wednesday was a tie. A very expensive tie. Linda's
+    // Thursday was the awards dinner.
     var spent_buffer: zml.Buffer = try .fromBytes(io, platform, spent.shape(), std.mem.sliceAsBytes(&[3][4]f32{
-        .{ 50, 25, 100, 0 },
-        .{ 100, 150, 20, 200 },
+        .{ 50, 25, 130, 0 },
+        .{ 100, 150, 20, 260 },
         .{ 5, 10, 25, 50 },
     }));
     defer spent_buffer.deinit();
@@ -111,11 +142,21 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{ spent_buffer, budget_buffer });
     defer result.deinit();
 
-    const left = try result.getValue([3][4]f32, io);
+    // Run the second Exe, and keep its result in `over_result`.
 
+    const left = try result.getValue([3][4]f32, io);
+    const over = try over_result.getValue([3][4]f32, io);
+
+    try stdout.print("Budget left:\n", .{});
     for (anchors, left) |anchor, row| {
         try stdout.print("{s:<5}", .{anchor});
         for (row) |fraction| try stdout.print(" {d:.2}", .{fraction});
+        try stdout.print("\n", .{});
+    }
+    try stdout.print("Dollars over budget:\n", .{});
+    for (anchors, over) |anchor, row| {
+        try stdout.print("{s:<5}", .{anchor});
+        for (row) |dollars| try stdout.print(" {d:>3}", .{dollars});
         try stdout.print("\n", .{});
     }
     try stdout.flush();

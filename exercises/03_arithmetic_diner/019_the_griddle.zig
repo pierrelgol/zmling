@@ -42,7 +42,10 @@
 // To try several recipes without drowning in boilerplate, this
 // exercise has a helper, `cook`: it compiles a one-tensor recipe,
 // runs it on four numbers, and returns the four results. Nothing
-// new in it; read it once, it will come back.
+// new in it, which is why two of its lines are missing: the one
+// that puts the ingredients on the device (exercise 010) and the
+// one that reads the four results back (exercise 011). It will
+// come back, so get it right once.
 //
 // Today's tickets:
 //
@@ -56,6 +59,9 @@
 //   - The tip jar is shared out in whole dollars. Flo wants
 //     halves rounded the way she learned in school.
 //
+// Gus wrote the first ticket and forgot one word. Nobody wrote
+// the second one. The third one runs, and Flo is not happy.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -66,8 +72,7 @@ fn offBy(burners: zml.Tensor) zml.Tensor {
 
 /// 20 + 60 * e^(-minutes / 10)
 fn coffee(minutes: zml.Tensor) zml.Tensor {
-    // TODO: Newton is waiting. So is the coffee.
-    return minutes;
+    return ???;
 }
 
 /// Whole dollars. A half dollar rounds up, like in school.
@@ -88,13 +93,15 @@ fn cook(
     var exe = try platform.compileFn(gpa, io, recipe, .{x}, .{});
     defer exe.deinit();
 
-    var input: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&ingredients));
+    // The ingredients, on the device, in the shape of `x`.
+    var input: zml.Buffer = ???;
     defer input.deinit();
 
     var result: zml.Buffer = try exe.eval(gpa, io, .{input});
     defer result.deinit();
 
-    return result.getValue([4]f32, io);
+    // The four results, back on the host.
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {

@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/076_dont_drive_angry.zig
 +++ answers/11_time_loops/076_dont_drive_angry.zig
-@@ -65,8 +65,7 @@
+@@ -79,13 +79,13 @@
  
      // Run time: below zero, it feels twice as cold.
      const zero = zml.Tensor.scalar(0, .i32);
@@ -9,4 +9,41 @@
 +    return t.cmp(.LT, zero).select(t.scale(2), t);
  }
  
+ /// How many hours feel colder than -5? An i32 scalar.
+ fn frostbiteHours(temps: zml.Tensor, pessimist: bool) zml.Tensor {
+-    return ???;
++    const frozen = feelsLike(temps, pessimist).cmp(.LT, zml.Tensor.scalar(-5, .i32));
++    return frozen.convert(.i32).sum(.hours).squeeze(.hours);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -103,12 +103,12 @@
+ 
+     var optimist_exe = try platform.compileFn(gpa, io, feelsLike, .{ temps, false }, .{});
+     defer optimist_exe.deinit();
+-    var pessimist_exe = ???;
++    var pessimist_exe = try platform.compileFn(gpa, io, feelsLike, .{ temps, true }, .{});
+     defer pessimist_exe.deinit();
+ 
+     var optimist_count_exe = try platform.compileFn(gpa, io, frostbiteHours, .{ temps, false }, .{});
+     defer optimist_count_exe.deinit();
+-    var pessimist_count_exe = ???;
++    var pessimist_count_exe = try platform.compileFn(gpa, io, frostbiteHours, .{ temps, true }, .{});
+     defer pessimist_count_exe.deinit();
+ 
+     const thermometers = [_]i32{ -4, 0, 3, 7 };
+@@ -117,12 +117,12 @@
+ 
+     var optimist: zml.Buffer = try optimist_exe.eval(gpa, io, .{temps_buffer});
+     defer optimist.deinit();
+-    var pessimist: zml.Buffer = ???;
++    var pessimist: zml.Buffer = try pessimist_exe.eval(gpa, io, .{temps_buffer});
+     defer pessimist.deinit();
+ 
+     var optimist_count: zml.Buffer = try optimist_count_exe.eval(gpa, io, .{temps_buffer});
+     defer optimist_count.deinit();
+-    var pessimist_count: zml.Buffer = ???;
++    var pessimist_count: zml.Buffer = try pessimist_count_exe.eval(gpa, io, .{temps_buffer});
+     defer pessimist_count.deinit();
+ 
+     try stdout.print("The thermometers say   {any}\n", .{thermometers});

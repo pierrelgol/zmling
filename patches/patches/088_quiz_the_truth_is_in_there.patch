@@ -1,26 +1,67 @@
 --- exercises/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
 +++ answers/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
-@@ -61,7 +61,11 @@
-     };
+@@ -63,11 +63,24 @@
+     }
+ };
  
-     pub fn forward(self: Agent, x: zml.Tensor) Verdict {
--        return ???;
+-// TODO: `const Agent = struct { ... };` with
+-//   - the fields `hidden` and `output` (two Layers) and `doubt`,
+-//   - `pub const Verdict`, a struct of two Tensors: `score`
+-//     and `alien`,
+-//   - `pub fn forward(self: Agent, x: zml.Tensor) Verdict`.
++const Agent = struct {
++    hidden: Layer,
++    output: Layer,
++    doubt: f32,
++
++    pub const Verdict = struct {
++        score: zml.Tensor,
++        alien: zml.Tensor,
++    };
++
++    pub fn forward(self: Agent, x: zml.Tensor) Verdict {
 +        const score = self.output.forward(self.hidden.forward(x).relu());
 +        return .{
 +            .score = score,
 +            .alien = score.cmp(.GT, zml.Tensor.scalar(self.doubt, .f32)),
 +        };
-     }
++    }
++};
+ 
+ //                                  glow hum speed
+ const hidden_weight = [2][3]f32{ .{ 1, 0, 1 }, .{ 0, 2, -1 } };
+@@ -87,6 +100,20 @@
+     .{ -1, 0, -1 }, // a weather balloon, signed and dated
  };
  
-@@ -90,16 +94,50 @@
++/// A full set of weights. Everybody has the same hidden layer.
++fn upload(io: std.Io, platform: *zml.Platform, agent: Agent, out_weight: *const [1][2]f32, out_bias: *const [1]f32) !zml.Bufferized(Agent) {
++    return .{
++        .hidden = .{
++            .weight = try .fromBytes(io, platform, agent.hidden.weight.shape(), std.mem.sliceAsBytes(&hidden_weight)),
++            .bias = try .fromBytes(io, platform, agent.hidden.bias.shape(), std.mem.sliceAsBytes(&hidden_bias)),
++        },
++        .output = .{
++            .weight = try .fromBytes(io, platform, agent.output.weight.shape(), std.mem.sliceAsBytes(out_weight)),
++            .bias = try .fromBytes(io, platform, agent.output.bias.shape(), std.mem.sliceAsBytes(out_bias)),
++        },
++    };
++}
++
+ pub fn main(init: std.process.Init) !void {
+     const gpa = init.gpa;
+     const io = init.io;
+@@ -98,24 +125,52 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
--    // TODO: the two agents and the case file, as placeholders.
--    // TODO: `molder_exe` and `scally_exe`.
--    // TODO: the weights, uploaded once, and freed at the end.
--    // TODO: a runner for each Exe.
+-    // TODO, part 1:
+-    //   - the two agents and the case file, as placeholders;
+-    //   - `molder_exe` and `scally_exe`;
+-    //   - the weights, uploaded once, and freed at the end;
+-    //   - a runner for each Exe.
+-    //
+-    // TODO, part 2: Skimmer's set of weights, same treatment.
 +    const molder: Agent = .{
 +        .hidden = .{ .weight = .init(.{ .d_out = 2, .d = 3 }, .f32), .bias = .init(.{ .d_out = 2 }, .f32) },
 +        .output = .{ .weight = .init(.{ .d_out = 1, .d = 2 }, .f32), .bias = .init(.{ .d_out = 1 }, .f32) },
@@ -35,17 +76,10 @@
 +    var scally_exe = try platform.compile(gpa, io, scally, .forward, .{x}, .{});
 +    defer scally_exe.deinit();
 +
-+    var weights: zml.Bufferized(Agent) = .{
-+        .hidden = .{
-+            .weight = try .fromBytes(io, platform, molder.hidden.weight.shape(), std.mem.sliceAsBytes(&hidden_weight)),
-+            .bias = try .fromBytes(io, platform, molder.hidden.bias.shape(), std.mem.sliceAsBytes(&hidden_bias)),
-+        },
-+        .output = .{
-+            .weight = try .fromBytes(io, platform, molder.output.weight.shape(), std.mem.sliceAsBytes(&output_weight)),
-+            .bias = try .fromBytes(io, platform, molder.output.bias.shape(), std.mem.sliceAsBytes(&output_bias)),
-+        },
-+    };
++    var weights = try upload(io, platform, molder, &output_weight, &output_bias);
 +    defer zml.Buffer.deinitAll(Agent, &weights);
++    var skimmer_weights = try upload(io, platform, molder, &skimmer_output_weight, &skimmer_output_bias);
++    defer zml.Buffer.deinitAll(Agent, &skimmer_weights);
 +
 +    var molder_runner = try molder_exe.runner(gpa);
 +    defer molder_runner.deinit(gpa);
@@ -54,9 +88,15 @@
  
      try stdout.print("Each agent's Exe has {d} inputs and {d} outputs.\n", .{ molder_exe.input_shapes.len, molder_exe.output_shapes.len });
  
+-    // TODO, part 2: `approved` counts Skimmer's aliens.
++    var approved: usize = 0;
+ 
      for (cases, 1..) |case, n| {
--        // TODO: this case as a Buffer; then ask both agents, and
--        // put their answers in `molder_says` and `scally_says`.
+-        // TODO, part 1: this case as a Buffer; then ask both agents,
+-        // and put their answers in `molder_says` and `scally_says`.
+-        //
+-        // TODO, part 2: the same case through Scally's Exe, with
+-        // Skimmer's weights. Is it an alien? (It is.)
 +        var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&case));
 +        defer x_buffer.deinit();
 +
@@ -67,6 +107,13 @@
 +        var scally_says: zml.Bufferized(Agent.Verdict) = undefined;
 +        scally_runner.run(io, .{ weights, x_buffer }, .{&scally_says}, .{ .wait = true });
 +        defer zml.Buffer.deinitAll(Agent.Verdict, &scally_says);
++
++        // Part 2: Scally's Exe, Skimmer's weights.
++        var skimmer_says: zml.Bufferized(Agent.Verdict) = undefined;
++        scally_runner.run(io, .{ skimmer_weights, x_buffer }, .{&skimmer_says}, .{ .wait = true });
++        defer zml.Buffer.deinitAll(Agent.Verdict, &skimmer_says);
++
++        if ((try skimmer_says.alien.getValue([1]bool, io))[0]) approved += 1;
  
          const score = try molder_says.score.getValue([1]f32, io);
          const molder_believes = try molder_says.alien.getValue([1]bool, io);

@@ -64,9 +64,24 @@
 // ZML's `transpose` quietly emits a free reshape when it
 // notices that.)
 //
-// Fix the scoreboard. Timmy would like you to know that he is
-// fine with his real scores, and that the elbow thing was a
-// design choice.
+// Part one: fix the scoreboard. Timmy would like you to know
+// that he is fine with his real scores, and that the elbow
+// thing was a design choice. Whoever wrote `main` had the old
+// layout in mind too: check how the board is read back.
+//
+// Part two: the judges also want, for each round, the GAP
+// between the best and the worst score of that round, as a
+// {rounds=3}. Write `gaps`, starting from the scoreboard. You
+// met `max`, `min` and the axis of size 1 they leave behind in
+// the Reduction Kitchen (exercises 040 and 041); bring them
+// back. Then give `gaps` its own Exe in `main`: compile, run,
+// read back. Only the print is waiting for you there.
+//
+// When it all works, try this for fun: make `gaps` start from
+// `scores` instead of the scoreboard. Same answer! A reduction
+// finds its axis by TAG and doesn't care where the axis sits.
+// Now put the reshape back in `scoreboard` and look at the
+// gaps again. Tags are only as honest as whoever wrote them.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -74,6 +89,11 @@ const zml = @import("zml");
 /// One row per member in, one row per round out.
 fn scoreboard(scores: zml.Tensor) zml.Tensor {
     return scores.reshape(.{ .rounds = 3, .members = 2 });
+}
+
+/// For each round, best score minus worst score: {rounds=3}.
+fn gaps(scores: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -102,12 +122,16 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{scores_buffer});
     defer result.deinit();
 
-    // A nested Zig array is row-major too: [rounds][members].
-    const board = try result.getValue([3][2]i32, io);
+    // A nested Zig array is row-major too: one row per ROUND.
+    const board = try result.getValue([2][3]i32, io);
+
+    // The same three steps for `gaps`: an Exe called `gaps_exe`,
+    // its result, and the three numbers in an array called `gap`.
 
     try stdout.print("Scoreboard {f}\n", .{exe.output_shapes[0]});
     for (board, 1..) |round, i| {
         try stdout.print("round {d}: Ingrid {d}, Timmy {d}\n", .{ i, round[0], round[1] });
     }
+    try stdout.print("Gaps {f}: {any}\n", .{ gaps_exe.output_shapes[0], gap });
     try stdout.flush();
 }

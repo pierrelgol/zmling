@@ -77,6 +77,22 @@
 // are complaining: both hands are always the same. Monte blames
 // the shoe. The shoe is fine.
 //
+// To do:
+//
+//  1. In `deal`, the two draws are written, and one of them is
+//     the reason for the complaints. The end of the function is
+//     missing: both hands in ONE tensor, stacked along a new
+//     `.hand` axis the way you boxed pizzas in exercise 57, and
+//     turned into honest cards. A float in [1, 14), rounded
+//     down, is 1, 2, ... 13: `floor` rounds, and `convert`
+//     (exercise 21) makes the i32.
+//
+//  2. `main` prints its report, and nothing else: the
+//     placeholder, the Exe, and what happens on each of the
+//     three evenings are for you. An evening is: a state made
+//     from the seed (and freed), one run, and the cards copied
+//     into `evening.*` as a `[2][5]i32`.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -89,7 +105,7 @@ fn deal(rng: zml.Tensor.Rng) zml.Tensor {
     _, const first = rng.uniform(hand, .{ .min = 1, .max = 14 });
     _, const second = rng.uniform(hand, .{ .min = 1, .max = 14 });
 
-    return zml.Tensor.stack(&.{ first, second }, 0, .hand).floor().convert(.i32);
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -106,20 +122,15 @@ pub fn main(init: std.process.Init) !void {
     // A placeholder for the state of the generator.
     const rng: zml.Tensor.Rng = ???;
 
-    var exe = try platform.compileFn(gpa, io, deal, .{rng}, .{});
-    defer exe.deinit();
+    // The Exe of `deal`.
+    ???;
 
     // Three evenings at table 4. The first two start from the
     // same seed, the third from another one.
     var evenings: [3][2][5]i32 = undefined;
     for ([_]u128{ 1234, 1234, 777 }, &evenings) |seed, *evening| {
-        var rng_buffer = try rng.initBuffer(io, platform, seed);
-        defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
-
-        var result: zml.Buffer = try exe.eval(gpa, io, .{rng_buffer});
-        defer result.deinit();
-
-        evening.* = try result.getValue([2][5]i32, io);
+        // A state from `seed`, one run, and the cards in `evening.*`.
+        ???;
     }
 
     const first_hand, const second_hand = evenings[0];

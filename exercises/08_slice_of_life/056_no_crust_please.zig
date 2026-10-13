@@ -53,12 +53,22 @@
 // the position in the number: piece 23 is row 2, column 3.
 //
 //   - `noCrust`: Mr. Henderson's order. No piece from an edge.
+//     The axes are listed; the cuts are not.
 //
 //   - `leftEdge`: Nonna wants to check how the crust is baking.
 //     From the left-most column, one piece out of two starting
 //     from the top. The result has a single axis, .rows.
 //
+//   - `corners`: Luigi's snack, "nobody will notice". The four
+//     corner pieces of the pan, and nothing else:
+//     {rows=2,cols=2}. Yours to write. No `.single` in this
+//     one (the axes must survive), and no negative index
+//     either: the Slice struct has a field that jumps.
+//
 // Luigi wrote `leftEdge`. Read his two tuples side by side.
+//
+// And somebody unplugged the oven: the loop in `main` has lost
+// the line that turns each order into an Exe.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -71,6 +81,11 @@ fn noCrust(pan: zml.Tensor) zml.Tensor {
 /// Column 0, every other row: {rows=2}.
 fn leftEdge(pan: zml.Tensor) zml.Tensor {
     return pan.slices(.{ .rows, .cols }, &.{ .single(0), .{ .step = 2 } });
+}
+
+/// The four corners: {rows=2,cols=2}.
+fn corners(pan: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -93,8 +108,9 @@ pub fn main(init: std.process.Init) !void {
     var pan_buffer: zml.Buffer = try .fromBytes(io, platform, pan.shape(), std.mem.sliceAsBytes(&pieces));
     defer pan_buffer.deinit();
 
-    inline for (.{ noCrust, leftEdge }, .{ "noCrust", "leftEdge" }) |order, name| {
-        var exe = try platform.compileFn(gpa, io, order, .{pan}, .{});
+    inline for (.{ noCrust, leftEdge, corners }, .{ "noCrust", "leftEdge", "corners" }) |order, name| {
+        // Compile `order` for the pan.
+        var exe = ???;
         defer exe.deinit();
 
         var result: zml.Buffer = try exe.eval(gpa, io, .{pan_buffer});

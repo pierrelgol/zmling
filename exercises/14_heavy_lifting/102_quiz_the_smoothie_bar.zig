@@ -23,23 +23,56 @@
 //
 // That's a model nobody understands, with weights in a file,
 // and a note about the architecture. Welcome to machine
-// learning! You have everything you need to run it:
+// learning!
+//
+// Denise has an idea, and Denise's ideas are not suggestions.
+// The gym gets an app. A member walks in, the app looks at
+// their lifts and at their smoothie order, and answers with
+// both the Coach's verdict and the receipt. ONE model for the
+// whole gym, loaded in ONE go, with two inputs and two outputs:
+//
+//     Gym
+//       coach   the Coach of exercise 101, under "coach":
+//                   coach.0   3 lifts -> 2 hunches (no bias), relu
+//                   coach.1   2 hunches -> 3 scores (with a bias)
+//                   and the index of the highest score
+//       bar     the Blendtron, under "bar"
+//
+// The struct tree mirrors the names of the file: that is the
+// whole trick, and this time you draw the tree. Three model
+// structs, each with an `init` that takes a view (and hands
+// narrower views to its children) and a `forward`:
+//
+//     Coach.forward       lifts {.member, .d} -> {.member}, i32
+//     Blendtron.forward   cups {.member, .d} -> {.member, .dout}
+//     Gym.forward         lifts and cups -> a struct with both:
+//                         the printing calls them `verdict` and
+//                         `receipt`
+//
+// plus `linear`, the helper that makes a `zml.nn.Linear` out of
+// the "weight" and (if there is one!) the "bias" under a view,
+// and something that loads a whole Gym from the store.
+//
+// Everything you need, you have used in this chapter or the one
+// before:
 //
 //     TensorRegistry.fromPath     the header of the file
 //     TensorStore.fromRegistry    the key cabinet, and its `view()`
 //     withPrefix / withLayer      where a view stands
+//     hasKey                      look before you leap
 //     createReplicatedTensor      a placeholder with an address
 //     zml.mem.bufferize           the empty bar
 //     zml.io.Loader               init, load, await, deinit
 //     platform.compile            shapes are enough
-//     exe.eval                    weights first, then the input
+//     exe.runner, runner.run      weights first, then the inputs;
+//                                 two outputs do not `eval`
+//     zml.Buffer.deinitAll        a flat struct of Buffers, freed
+//                                 at once (optional ones included)
 //
-// This time the model is yours to wire: `init`, `forward` and
-// `load` are empty, and so are a few lines of `main`. The
-// `linear` helper of the previous exercise is still here (every
-// blender has a bias, so it has an easy day).
+// The path of the file, the members, and the printing are given.
+// The rest of the page is blank, and it is yours.
 //
-// Three customers are waiting. One of them ordered nothing at
+// Three members are waiting. One of them ordered nothing at
 // all, and will be charged for it.
 //
 const std = @import("std");
@@ -47,49 +80,30 @@ const zml = @import("zml");
 
 const weights_path = "zmling/14_heavy_lifting/gym.safetensors";
 
-/// A Linear from the "weight" and (if there is one) the "bias"
-/// found under `view`.
-fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
-    return .init(
-        view.createReplicatedTensor("weight", .{ .dout, .d }),
-        if (view.hasKey("bias")) view.createReplicatedTensor("bias", .{.dout}) else null,
-        .d,
-    );
-}
+// TODO: `linear`. A view goes in, a `zml.nn.Linear` comes out.
 
-const Blendtron = struct {
-    chop: zml.nn.Linear,
-    blend: zml.nn.Linear,
-    pour: zml.nn.Linear,
+// TODO: `Coach`, `Blendtron` and `Gym`.
 
-    /// `view` stands on the machine: its blenders are "0", "1" and "2".
-    pub fn init(view: zml.io.TensorStore.View) Blendtron {
-        return ???;
-    }
+const members = [_][]const u8{ "Olga", "Chad", "You" };
 
-    /// cups: {.order, .d} -> {.order, .dout} price and taste
-    pub fn forward(self: Blendtron, cups: zml.Tensor) zml.Tensor {
-        return ???;
-    }
+//                            squat, bench, deadlift
+const member_lifts = [3][3]f32{
+    .{ 2.0, 1.5, 2.5 }, // Olga
+    .{ 0.5, 1.5, 1.0 }, // Chad
+    .{ 0.5, 0.4, 0.6 }, // You (it's your second week)
+};
 
-    /// Brings the six tensors of the machine from the file to the
-    /// device. The caller owns the Buffers (see `unload`).
-    pub fn load(
-        self: *const Blendtron,
-        gpa: std.mem.Allocator,
-        io: std.Io,
-        platform: *const zml.Platform,
-        store: *const zml.io.TensorStore,
-    ) !zml.Bufferized(Blendtron) {
-        return ???;
-    }
+//                           banana, spinach
+const member_cups = [3][2]f32{
+    .{ 2, 1 }, // Olga: the Classic
+    .{ 1, 3 }, // Chad: the Regret
+    .{ 0, 0 }, // You: "just a glass, please"
+};
 
-    pub fn unload(buffers: *zml.Bufferized(Blendtron)) void {
-        inline for (.{ &buffers.chop, &buffers.blend, &buffers.pour }) |blender| {
-            blender.weight.deinit();
-            if (blender.bias) |*bias| bias.deinit();
-        }
-    }
+const verdicts = [_][]const u8{
+    "DO YOU EVEN LIFT?",
+    "LIGHT WEIGHT, BABY!",
+    "NEVER SKIP LEG DAY.",
 };
 
 pub fn main(init: std.process.Init) !void {
@@ -103,42 +117,26 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
-    defer gpa.free(path);
+    // TODO: the real address of the file; the logbook; the key
+    // cabinet.
+    // TODO: the gym, from a view. Mind where that view stands.
+    // TODO: the placeholders of the two inputs: three members.
+    // TODO: the Exe. Shapes are enough.
+    // TODO: the heavy lifting. Free it all at the end.
+    // TODO: the lifts and the cups of the three members, as Buffers.
+    // TODO: the run. The two results go in `visit`.
 
-    // The logbook, then the key cabinet.
-    var registry: zml.safetensors.TensorRegistry = ???;
-    defer registry.deinit();
-
-    var store: zml.io.TensorStore = ???;
-    defer store.deinit();
-
-    // The machine. Mind where its view stands.
-    const blendtron: Blendtron = .init(???);
-
-    // Three orders: cups of banana, cups of spinach.
-    const cups: zml.Tensor = .init(.{ .order = 3, .d = 2 }, .f32);
-
-    var exe = ???;
-    defer exe.deinit();
-
-    var blendtron_buffers = try blendtron.load(gpa, io, platform, &store);
-    defer Blendtron.unload(&blendtron_buffers);
-
-    const orders = [3][2]f32{
-        .{ 2, 1 }, // the Classic
-        .{ 1, 3 }, // the Regret
-        .{ 0, 0 }, // "just a glass, please"
-    };
-    var cups_buffer: zml.Buffer = try .fromBytes(io, platform, cups.shape(), std.mem.sliceAsBytes(&orders));
-    defer cups_buffer.deinit();
-
-    var result: zml.Buffer = try exe.eval(gpa, io, ???);
-    defer result.deinit();
-
-    try stdout.print("receipt {f}\n", .{result.shape()});
-    for (orders, try result.getValue([3][2]f32, io)) |order, receipt| {
-        try stdout.print("  {d} banana, {d} spinach: ${d:.2}, taste {d}\n", .{ order[0], order[1], receipt[0], receipt[1] });
+    try stdout.print("verdicts {f}, receipts {f}\n", .{ visit.verdict.shape(), visit.receipt.shape() });
+    const receipts = try visit.receipt.getValue([3][2]f32, io);
+    for (members, try visit.verdict.getValue([3]i32, io), member_cups, receipts) |member, verdict, order, receipt| {
+        try stdout.print("  {s:<4} {s:<19}  {d} banana, {d} spinach: ${d:.2}, taste {d}\n", .{
+            member,
+            verdicts[@intCast(verdict)],
+            order[0],
+            order[1],
+            receipt[0],
+            receipt[1],
+        });
     }
     try stdout.flush();
 }

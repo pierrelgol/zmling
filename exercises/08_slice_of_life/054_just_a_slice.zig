@@ -72,9 +72,15 @@
 // from `start` to the end of the axis. Use `end`. (`len` does
 // have its moment of glory, in exercise 059.)
 //
-// Four orders are waiting. `firstThree` was written by Nonna.
-// The others were written by Luigi, who counts slices starting
-// from 1 "like a normal person".
+// Five orders are waiting. `firstThree` was written by Nonna.
+// Luigi, who counts slices starting from 1 "like a normal
+// person", wrote `lastTwo` and `everyOther`, started `middle`,
+// and left on a delivery before he got to the last one:
+//
+//   - `leftovers`: the last THREE slices of the pizza, served
+//     last one first. The cut is today's lesson. The serving
+//     order is a move from the Origami Club (exercise 051),
+//     and the lesson above tells you which.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -90,12 +96,17 @@ fn lastTwo(pizza: zml.Tensor) zml.Tensor {
 
 /// Everything except the first two and the last two.
 fn middle(pizza: zml.Tensor) zml.Tensor {
-    return pizza.slice(.slices, .{ .start = 3, .end = -2 });
+    return pizza.slice(.slices, ???);
 }
 
 /// One slice out of two, starting with slice number 1 (so: 1, 3, 5, 7).
 fn everyOther(pizza: zml.Tensor) zml.Tensor {
     return pizza.slice(.slices, .{ .step = 2 });
+}
+
+/// The last three slices, last one first.
+fn leftovers(pizza: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -119,8 +130,8 @@ pub fn main(init: std.process.Init) !void {
     // One Exe per order. (`inline for`, because compileFn needs
     // to know each function at compile time.)
     inline for (
-        .{ firstThree, lastTwo, middle, everyOther },
-        .{ "firstThree:", "lastTwo:   ", "middle:    ", "everyOther:" },
+        .{ firstThree, lastTwo, middle, everyOther, leftovers },
+        .{ "firstThree:", "lastTwo:   ", "middle:    ", "everyOther:", "leftovers: " },
     ) |order, name| {
         var exe = try platform.compileFn(gpa, io, order, .{pizza}, .{});
         defer exe.deinit();

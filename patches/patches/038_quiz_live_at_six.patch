@@ -1,23 +1,24 @@
 --- exercises/05_broadcast_news/038_quiz_live_at_six.zig
 +++ answers/05_broadcast_news/038_quiz_live_at_six.zig
-@@ -50,13 +50,13 @@
+@@ -65,12 +65,15 @@
  
+ /// 4. Nothing below 35, nothing above 160. Same shape as `picture`.
+ fn legal(picture: zml.Tensor) zml.Tensor {
+-    return ???;
++    return picture.maximum(.scalar(35, .f32)).minimum(.scalar(160, .f32));
+ }
+ 
+ /// Corrections 1 to 3, in that order, and then `legal`.
  fn onAir(frames: zml.Tensor, tint: zml.Tensor, vignette: zml.Tensor, exposure: zml.Tensor) zml.Tensor {
-     // 1. One value per channel.
--    const tinted = frames.add(???);
+-    return ???;
 +    const tinted = frames.add(tint.broad(frames.shape()));
- 
-     // 2. One value per pixel position, untagged.
--    const shaded = tinted.mul(???);
 +    const shaded = tinted.mul(vignette.broadcastLeft(frames.shape()));
- 
-     // 3. One value per frame. Mind Doug's note.
--    return shaded.div(???);
-+    return shaded.div(exposure.appendAxes(.{ .c, .h, .w }));
++    const exposed = shaded.div(exposure.appendAxes(.{ .c, .h, .w }));
++    return legal(exposed);
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -71,10 +71,10 @@
+@@ -85,12 +88,14 @@
      defer platform.deinit(gpa, io);
  
      // Four placeholders, with the shapes listed above. All f32.
@@ -30,5 +31,22 @@
 +    const vignette: zml.Tensor = .init(.{ 2, 2 }, .f32);
 +    const exposure: zml.Tensor = .init(.{ .n = 2 }, .f32);
  
-     var exe = try platform.compileFn(gpa, io, onAir, .{ frames, tint, vignette, exposure }, .{});
-     defer exe.deinit();
+     // Compile `onAir` into `exe`.
++    var exe = try platform.compileFn(gpa, io, onAir, .{ frames, tint, vignette, exposure }, .{});
++    defer exe.deinit();
+ 
+     // Frame 1 is frame 0 with the studio lights at full power.
+     var frames_buffer: zml.Buffer = try .fromBytes(io, platform, frames.shape(), std.mem.sliceAsBytes(&[2][3][2][2]f32{
+@@ -118,8 +123,12 @@
+     defer vignette_buffer.deinit();
+ 
+     // The exposures: 1 for frame 0, and 4 for frame 1.
++    var exposure_buffer: zml.Buffer = try .fromBytes(io, platform, exposure.shape(), std.mem.sliceAsBytes(&[_]f32{ 1, 4 }));
++    defer exposure_buffer.deinit();
+ 
+     // Run it: the picture goes into `result`.
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ frames_buffer, tint_buffer, vignette_buffer, exposure_buffer });
++    defer result.deinit();
+ 
+     const picture = try result.getValue([2][3][2][2]f32, io);
+ 

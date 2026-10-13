@@ -1,6 +1,6 @@
 --- exercises/09_dot_com_bubble/062_synergy.zig
 +++ answers/09_dot_com_bubble/062_synergy.zig
-@@ -63,12 +63,12 @@
+@@ -71,17 +71,17 @@
  
  /// Dollars per day.
  fn dailyRevenue(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
@@ -14,4 +14,32 @@
 +    return orders.dot(recipes, .products);
  }
  
+ /// The position along .days of the day with the most dollars. Rank 0.
+ fn bestDay(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return ???;
++    return dailyRevenue(orders, prices).argMax(.days).indices.squeeze(.days);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -103,8 +103,8 @@
+     defer revenue_exe.deinit();
+     var parts_exe = try platform.compileFn(gpa, io, partsNeeded, .{ orders, recipes }, .{});
+     defer parts_exe.deinit();
+-
+-    // Nobody compiled the third report: `bestDay`, into `best_exe`.
++    var best_exe = try platform.compileFn(gpa, io, bestDay, .{ orders, prices }, .{});
++    defer best_exe.deinit();
+ 
+     // Units ordered: Pet Rock, Deluxe Rock, Family Pack, Enterprise Rock.
+     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[3][4]f32{
+@@ -128,8 +128,8 @@
+     defer revenue.deinit();
+     var parts: zml.Buffer = try parts_exe.eval(gpa, io, .{ orders_buffer, recipes_buffer });
+     defer parts.deinit();
+-
+-    // ...and nobody ran it. The last print reads a Buffer called `best`.
++    var best: zml.Buffer = try best_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
++    defer best.deinit();
+ 
+     try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([3]f32, io) });
+     try stdout.print("parts {f}:\n", .{parts.shape()});

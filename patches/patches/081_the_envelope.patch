@@ -1,6 +1,20 @@
 --- exercises/12_the_exe_files/081_the_envelope.zig
 +++ answers/12_the_exe_files/081_the_envelope.zig
-@@ -101,10 +101,10 @@
+@@ -95,8 +95,11 @@
+     var photo = evidence.photo.mul(sensitivity);
+     if (night_vision) photo = photo.scale(4);
+ 
+-    // From here on, the page is water damage. See `Report`.
+-    return ???;
++    return .{
++        .brightest = photo.max(.pixels).squeeze(.pixels),
++        .loudest = evidence.tape.max(.seconds).squeeze(.seconds),
++        .enhanced = photo,
++    };
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -111,13 +114,13 @@
      defer platform.deinit(gpa, io);
  
      const evidence: Evidence = .{
@@ -13,8 +27,12 @@
 +    const sensitivity: zml.Tensor = .init(.{}, .f32);
  
      // Three arguments: a struct, a Tensor, a bool.
-     var exe = try platform.compileFn(gpa, io, analyze, .{ evidence, sensitivity, true }, .{});
-@@ -115,8 +115,8 @@
+-    var exe = try platform.compileFn(gpa, io, analyze, ???, .{});
++    var exe = try platform.compileFn(gpa, io, analyze, .{ evidence, sensitivity, true }, .{});
+     defer exe.deinit();
+ 
+     try stdout.print("This Exe takes {d} Buffers:\n", .{exe.input_shapes.len});
+@@ -125,13 +128,15 @@
          try stdout.print("  input {d}: {f}\n", .{ i, shape });
      }
  
@@ -24,4 +42,13 @@
 +    for (exe.output_shapes, 0..) |shape, i| {
          try stdout.print("  output {d}: {f}\n", .{ i, shape });
      }
+ 
+-    // TODO: `numbers_in` and `numbers_out`, counted over all the
+-    // slots of each list.
++    var numbers_in: usize = 0;
++    for (exe.input_shapes) |shape| numbers_in += shape.count();
++    var numbers_out: usize = 0;
++    for (exe.output_shapes) |shape| numbers_out += shape.count();
+ 
+     try stdout.print("In all, {d} numbers go in and {d} come out.\n", .{ numbers_in, numbers_out });
      try stdout.flush();

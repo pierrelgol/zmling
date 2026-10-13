@@ -50,13 +50,26 @@
 // anything that came in an unmarked envelope, Scally wants to
 // know exactly what goes in and what comes out.
 //
-// Give `analyze` its placeholders, and print the two lists.
-// What the function needs:
+// Four things to do before Scally signs anything.
+//
+// 1. The envelope got wet, and the end of `analyze` is gone.
+//    The comments in `Report` say what each field holds. The
+//    reductions are from chapter 06, and an axis that has been
+//    reduced away should not hang around with size 1.
+//
+// 2. Give `analyze` its placeholders, and compile it with night
+//    vision ON. What the function needs:
 //
 //     the photo        4 frames of 6 pixels each, f32,
 //                      axes tagged .frames and .pixels
 //     the tape         10 seconds of sound, f32, tagged .seconds
 //     the sensitivity  one f32 number
+//
+// 3. Print the two lists. The first one is done.
+//
+// 4. Count the NUMBERS, not the slots: how many f32 go in, over
+//    all the inputs, and how many come out. A Shape can tell you
+//    how many elements it has; you asked one in chapter 01.
 //
 // Nothing is executed in this exercise. An Exe can be questioned
 // without being run. Scally approves.
@@ -82,11 +95,8 @@ fn analyze(evidence: Evidence, sensitivity: zml.Tensor, night_vision: bool) Repo
     var photo = evidence.photo.mul(sensitivity);
     if (night_vision) photo = photo.scale(4);
 
-    return .{
-        .brightest = photo.max(.pixels).squeeze(.pixels),
-        .loudest = evidence.tape.max(.seconds).squeeze(.seconds),
-        .enhanced = photo,
-    };
+    // From here on, the page is water damage. See `Report`.
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -107,7 +117,7 @@ pub fn main(init: std.process.Init) !void {
     const sensitivity: zml.Tensor = ???;
 
     // Three arguments: a struct, a Tensor, a bool.
-    var exe = try platform.compileFn(gpa, io, analyze, .{ evidence, sensitivity, true }, .{});
+    var exe = try platform.compileFn(gpa, io, analyze, ???, .{});
     defer exe.deinit();
 
     try stdout.print("This Exe takes {d} Buffers:\n", .{exe.input_shapes.len});
@@ -119,5 +129,10 @@ pub fn main(init: std.process.Init) !void {
     for (???, 0..) |shape, i| {
         try stdout.print("  output {d}: {f}\n", .{ i, shape });
     }
+
+    // TODO: `numbers_in` and `numbers_out`, counted over all the
+    // slots of each list.
+
+    try stdout.print("In all, {d} numbers go in and {d} come out.\n", .{ numbers_in, numbers_out });
     try stdout.flush();
 }

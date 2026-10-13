@@ -31,25 +31,18 @@
 //     k, v:  {.k = max_len, .hd}
 //
 // and each arrival overwrites one row, at a position which is
-// only known at RUN time. That's a new op:
-//
-//     pub fn dynamicUpdateSlice(
-//         self: Tensor,
-//         offset_: anytype,
-//         update_: Tensor,
-//     ) Tensor
+// only known at RUN time. You have swapped a pizza on a tray
+// exactly that way, in exercise 59:
 //
 //     archive.dynamicUpdateSlice(.{ .k = pos }, row)
 //
 // "Return a copy of `archive` where `row` has been written at
-// offset `pos` along `.k`." From its source:
+// offset `pos` along `.k`." What matters here:
 //
-//  - the offsets are a struct of rank 0 integer TENSORS, one
-//    per tag: real inputs of the Exe, different on every run;
-//  - `update_` must have the dtype of `self`, and its tags must
-//    be tags of `self`, in the same order. An axis it doesn't
-//    have, like `.k` for a single row `{.hd}`, is treated as a
-//    slice of size 1 at the given offset;
+//  - `pos` is a rank 0 integer TENSOR: a real input of the Exe,
+//    different on every run;
+//  - a single row `{.hd}` has no `.k` axis, and that's fine: it
+//    is treated as a slice of size 1 at the given offset;
 //  - like every Tensor op, it RETURNS the result. Nothing is
 //    modified in place. The new archive is an output of the
 //    Exe, and must be handed back as an input on the next run.
@@ -59,21 +52,41 @@
 // exp(0) is 1: without precautions, every llama spends a good
 // part of her attention listening to llamas WHO HAVE NOT
 // ARRIVED YET. They have nothing to say and they say it loudly.
-// You know the cure: a mask. 0 for the rows up to `pos`, -inf
-// for the others.
+// You know the cure: a mask. It is ONE ROW of the triangle you
+// drew in exercise 104, the row of the newcomer: 0 for the
+// rows of the archive up to `pos` (herself included), -inf for
+// the others. The same three ops, except that this time the
+// listener's position is not an `arange`, it is `pos`.
+//
+// With the mask, the rest is exercise 103 for a single
+// listener: scores, mask, softmax, blend. The newcomer's query
+// is a lone `{.hd}` vector: against `{.k, .hd}` keys, `dot`
+// gives her one score per row of the archive.
 //
 // The step function returns two things, what the newcomer
 // heard and the new archive, so it runs with the `Runner` of
 // chapter 12: `runner.run(io, inputs, outputs, .{ .wait = true })`.
+// The Archive is a struct of Tensors: on the Buffer side it is
+// a `zml.Bufferized(Archive)`, going in and coming out.
 //
 // (ZML's Llama example has the same struct, named `KvCache`,
 // with one more axis for the layers. It writes with a more
 // general op, `scatterSlices`. Same idea.)
 //
-// To do: file the newcomer in `Archive.updateAt`, and write the
-// mask in `arrived` (its current body is to be thrown away). If you get it right, the llamas hear,
-// one by one, exactly what the "official" causal attention of
-// exercise 105 computed for the whole herd at once.
+// To do, top to bottom:
+//
+//  1. `Archive`: its two fields, and `updateAt`.
+//  2. `arrived`: the mask.
+//  3. `step`: file the newcomer FIRST (she hears herself), then
+//     let her listen to the updated archive.
+//  4. `main`: compile `step` and get a runner. Then, in the
+//     loop, run one step, and make the archive that came out
+//     the archive that goes in next. The old one is yours to
+//     free: nothing was donated.
+//
+// If you get it right, the llamas hear, one by one, exactly
+// what the causal attention of exercise 105 computed for the
+// whole herd at once.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -81,36 +94,25 @@ const zml = @import("zml");
 const max_len = 4;
 
 const Archive = struct {
-    k: zml.Tensor,
-    v: zml.Tensor,
+    // Every key so far, and every value so far: {.k = max_len, .hd}.
+    ???,
 
     /// The archive, with one key and one value {.hd} filed at row `pos`.
     pub fn updateAt(self: Archive, new_k: zml.Tensor, new_v: zml.Tensor, pos: zml.Tensor) Archive {
-        return .{
-            .k = ???,
-            .v = ???,
-        };
+        return ???;
     }
 };
 
 /// A mask over the rows of the archive, {.k}: 0 for the rows 0 to `pos`
 /// (included: a llama hears herself), -inf for the rows that are still empty.
 fn arrived(pos: zml.Tensor) zml.Tensor {
-    // Everybody is welcome, even those who are not there.
-    _ = pos;
-    return zml.Tensor.zeroes(.init(.{ .k = max_len }, .f32));
+    return ???;
 }
 
 /// One llama arrives at position `pos`, with her q, k and v: {.hd}.
 /// Returns what she hears, {.hd}, and the updated archive.
 fn step(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor, archive: Archive, pos: zml.Tensor) struct { zml.Tensor, Archive } {
-    const updated = archive.updateAt(k, v, pos);
-
-    const hd: f32 = @floatFromInt(q.dim(.hd));
-    const scores = updated.k.dot(q, .hd).scale(1.0 / @sqrt(hd));
-    const weights = scores.add(arrived(pos)).softmax(.k);
-
-    return .{ weights.dot(updated.v, .k), updated };
+    return ???;
 }
 
 const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
@@ -135,11 +137,8 @@ pub fn main(init: std.process.Init) !void {
     };
     const pos: zml.Tensor = .init(.{}, .i32);
 
-    var exe = try platform.compileFn(gpa, io, step, .{ q, k, v, archive, pos }, .{});
-    defer exe.deinit();
-
-    var runner = try exe.runner(gpa);
-    defer runner.deinit(gpa);
+    // Compile `step`. Two outputs: it will need a `runner`.
+    ???;
 
     // The archive starts empty: all zeros.
     const empty: [max_len][2]f32 = @splat(.{ 0, 0 });
@@ -163,21 +162,11 @@ pub fn main(init: std.process.Init) !void {
         var pos_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(i)), .i32);
         defer pos_buffer.deinit();
 
-        var heard: zml.Buffer = undefined;
-        var new_archive: zml.Bufferized(Archive) = undefined;
-        runner.run(
-            io,
-            .{ q_buffer, k_buffer, v_buffer, zml.Bufferized(Archive){ .k = archive_k, .v = archive_v }, pos_buffer },
-            .{ &heard, &new_archive },
-            .{ .wait = true },
-        );
-        defer heard.deinit();
-
-        // The new archive replaces the old one, for the next llama.
-        archive_k.deinit();
-        archive_v.deinit();
-        archive_k = new_archive.k;
-        archive_v = new_archive.v;
+        // Run one step: the newcomer and the archive
+        // (`archive_k`, `archive_v`) go in, `heard` and a new
+        // archive come out. Then the new archive replaces the old
+        // one, for the next llama.
+        ???;
 
         const h = try heard.getValue([2]f32, io);
         try stdout.print("{s} arrives at row {d} and hears {d:6.3} {d:6.3}\n", .{ name, i, h[0], h[1] });

@@ -61,15 +61,40 @@
 // of .cols. When a merge dies with an element-count mismatch,
 // check your neighbours.
 //
-// Run the exercise to see it. Then fix it: Coach has a pile of
-// 2 layers of paper and wants, for each row, ONE long strip
-// that runs through layer 0 and continues into layer 1.
+// Fill in the blanks, then run the exercise to see it. Coach
+// has a pile of 2 layers of paper and three requests:
+//
+//   - `longStrips`: for each row, ONE long strip that runs
+//     through layer 0 and continues into layer 1:
+//     {rows=3,strip=8}. This is the one that dies.
+//
+//   - `columnStrips`: for each COLUMN, one strip that goes down
+//     the rows and, at every row, takes the square of layer 0
+//     and then the square of layer 1: {cols=4,strip=6}. Column
+//     0 reads 0, 12, 4, 16, 8, 20. Yours to write, in one call.
+//     The order in which you name the axes decides which one
+//     moves fastest inside the strip.
+//
+//   - `weights`: the sum of each long strip, {rows=3}. Timmy
+//     wrote it. He was absent the day of exercise 040.
+//
+// `main` is also missing the line that runs each Exe.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 fn longStrips(pile: zml.Tensor) zml.Tensor {
     return pile.merge(.{ .strip = .{ .layers, .cols } });
+}
+
+/// One strip per column, rows first, then layers: {cols=4,strip=6}.
+fn columnStrips(pile: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+/// The sum of each long strip: {rows=3}.
+fn weights(pile: zml.Tensor) zml.Tensor {
+    return longStrips(pile).sum(.strip);
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -85,9 +110,6 @@ pub fn main(init: std.process.Init) !void {
 
     const pile: zml.Tensor = .init(.{ .layers = 2, .rows = 3, .cols = 4 }, .i32);
 
-    var exe = try platform.compileFn(gpa, io, longStrips, .{pile}, .{});
-    defer exe.deinit();
-
     // Squares 0..11 are layer 0, squares 12..23 are layer 1.
     var squares: [24]i32 = undefined;
     for (&squares, 0..) |*square, i| square.* = @intCast(i);
@@ -95,16 +117,23 @@ pub fn main(init: std.process.Init) !void {
     var pile_buffer: zml.Buffer = try .fromBytes(io, platform, pile.shape(), std.mem.sliceAsBytes(&squares));
     defer pile_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{pile_buffer});
-    defer result.deinit();
+    inline for (.{ longStrips, columnStrips, weights }, .{ "longStrips", "columnStrips", "weights" }) |request, name| {
+        var exe = try platform.compileFn(gpa, io, request, .{pile}, .{});
+        defer exe.deinit();
 
-    const strips: zml.Slice = try result.toSliceAlloc(gpa, io);
-    defer strips.free(gpa);
+        // Run it on the pile.
+        var result: zml.Buffer = ???;
+        defer result.deinit();
 
-    try stdout.print("{f}\n", .{strips.shape});
+        const strips: zml.Slice = try result.toSliceAlloc(gpa, io);
+        defer strips.free(gpa);
 
-    const width: usize = @intCast(strips.shape.dim(-1));
-    var lines = std.mem.window(i32, strips.constItems(i32), width, width);
-    while (lines.next()) |line| try stdout.print("  {any}\n", .{line});
+        try stdout.print("{s}: {f}\n", .{ name, strips.shape });
+
+        // One line per run of the last axis.
+        const width: usize = @intCast(strips.shape.dim(-1));
+        var lines = std.mem.window(i32, strips.constItems(i32), width, width);
+        while (lines.next()) |line| try stdout.print("  {any}\n", .{line});
+    }
     try stdout.flush();
 }

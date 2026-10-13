@@ -1,6 +1,6 @@
 --- exercises/01_shape_shifters/006_repacking.zig
 +++ answers/01_shape_shifters/006_repacking.zig
-@@ -42,15 +42,15 @@
+@@ -48,22 +48,22 @@
      const plates = zml.Shape.init(.{ 10, 12 }, .u16);
  
      // Stacks of 8, as many as it takes. Let ZML do the division.
@@ -18,4 +18,12 @@
 +    const insurance = plates.reshape(.{.auto});
  
      try stdout.print("cupboard {f}, dishwasher {f}, insurance {f}\n", .{ cupboard, dishwasher, insurance });
+ 
+     // Moving day: everything goes into 5 crates. Write the
+     // reshape yourself: two tagged axes, .crates and .plates, and
+     // let ZML work out how many plates end up in each crate.
+-    const crates = ???;
++    const crates = plates.reshape(.{ .crates = 5, .plates = .auto });
+ 
+     try stdout.print("moving {f}: {d} plates per crate\n", .{ crates, crates.dim(.plates) });
      try stdout.flush();

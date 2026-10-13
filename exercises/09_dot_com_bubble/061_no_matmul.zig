@@ -45,8 +45,25 @@
 //   - the two axes have the same size;
 //   - same dtype on both sides (no promotion, remember).
 //
-// Chad copied the function below from a NumPy tutorial he found
-// on GeoCities. Zig has opinions about it.
+// Three things are wrong today, and they are three different
+// kinds of wrong.
+//
+// Chad copied `revenue` from a NumPy tutorial he found on
+// GeoCities. Zig has opinions about it.
+//
+// Then Brenda asks the question Chad didn't: what did those
+// rocks COST? There is a third list,
+//
+//     costs    { 2, 8, 20, 400 }       dollars, per product
+//
+// and the profit is the dot product of the MARGINS with the
+// units, a margin being a price minus a cost (element by
+// element: chapter 3). Nobody wrote `profit`. You do.
+//
+// When all of that compiles, `dot` will panic about one of the
+// placeholders in `main`. Read what it says: it checks exactly
+// the three things listed above, and it names the one it
+// didn't find.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -54,6 +71,12 @@ const zml = @import("zml");
 /// Total dollars: sum over products of price * units.
 fn revenue(prices: zml.Tensor, units: zml.Tensor) zml.Tensor {
     return prices.matmul(units);
+}
+
+/// Dollars left once the rocks are paid for:
+/// sum over products of (price - cost) * units.
+fn profit(prices: zml.Tensor, costs: zml.Tensor, units: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -69,20 +92,28 @@ pub fn main(init: std.process.Init) !void {
 
     // Pet Rock, Deluxe Rock, Family Pack, Enterprise Rock (TM).
     const prices: zml.Tensor = .init(.{ .products = 4 }, .f32);
-    const units: zml.Tensor = .init(.{ .products = 4 }, .f32);
+    const costs: zml.Tensor = .init(.{ .products = 4 }, .f32);
+    const units: zml.Tensor = .init(.{ .units = 4 }, .f32);
 
     var exe = try platform.compileFn(gpa, io, revenue, .{ prices, units }, .{});
     defer exe.deinit();
+    var profit_exe = try platform.compileFn(gpa, io, profit, .{ prices, costs, units }, .{});
+    defer profit_exe.deinit();
 
     var prices_buffer: zml.Buffer = try .fromBytes(io, platform, prices.shape(), std.mem.sliceAsBytes(&[_]f32{ 5, 20, 50, 1000 }));
     defer prices_buffer.deinit();
+    var costs_buffer: zml.Buffer = try .fromBytes(io, platform, costs.shape(), std.mem.sliceAsBytes(&[_]f32{ 2, 8, 20, 400 }));
+    defer costs_buffer.deinit();
     var units_buffer: zml.Buffer = try .fromBytes(io, platform, units.shape(), std.mem.sliceAsBytes(&[_]f32{ 120, 30, 4, 0 }));
     defer units_buffer.deinit();
 
     var result: zml.Buffer = try exe.eval(gpa, io, .{ prices_buffer, units_buffer });
     defer result.deinit();
+    var profit_result: zml.Buffer = try profit_exe.eval(gpa, io, .{ prices_buffer, costs_buffer, units_buffer });
+    defer profit_result.deinit();
 
     try stdout.print("The result is a {f}: no axes left.\n", .{exe.output_shapes[0]});
     try stdout.print("Revenue: ${d}. Cost of the Super Bowl ad: $2000000.\n", .{try result.getValue(f32, io)});
+    try stdout.print("Profit: ${d}. Chad has already spent it on beanbags.\n", .{try profit_result.getValue(f32, io)});
     try stdout.flush();
 }

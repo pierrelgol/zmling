@@ -1,6 +1,17 @@
 --- exercises/12_the_exe_files/085_redacted.zig
 +++ answers/12_the_exe_files/085_redacted.zig
-@@ -107,7 +107,7 @@
+@@ -91,7 +91,9 @@
+ 
+     /// One bool: is the witness lying?
+     pub fn forward(self: Polygraph, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        var score = self.weight.dot(x, .d).add(self.bias);
++        if (self.paranoid) score = score.scale(2);
++        return score.cmp(.GT, zml.Tensor.scalar(self.threshold, .f32));
+     }
+ };
+ 
+@@ -117,7 +119,7 @@
          .weight = scally.weight,
          .bias = scally.bias,
          .threshold = 5,
@@ -9,7 +20,7 @@
      };
      const x: zml.Tensor = .init(.{ .d = 3 }, .f32);
  
-@@ -126,8 +126,6 @@
+@@ -136,8 +138,6 @@
      var weights: zml.Bufferized(Polygraph) = .{
          .weight = try .fromBytes(io, platform, scally.weight.shape(), std.mem.sliceAsBytes(&[_]f32{ 1, 2, 0.5 })),
          .bias = try .scalar(io, platform, -1, .f32),
@@ -18,3 +29,19 @@
      };
      defer zml.Buffer.deinitAll(Polygraph, &weights);
  
+@@ -148,12 +148,12 @@
+     };
+ 
+     for (witnesses, 1..) |statement, n| {
+-        var x_buffer: zml.Buffer = ???;
++        var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&statement));
+         defer x_buffer.deinit();
+ 
+-        var s: zml.Buffer = ???;
++        var s: zml.Buffer = try scally_exe.eval(gpa, io, .{ weights, x_buffer });
+         defer s.deinit();
+-        var m: zml.Buffer = ???;
++        var m: zml.Buffer = try molder_exe.eval(gpa, io, .{ weights, x_buffer });
+         defer m.deinit();
+ 
+         try stdout.print("Witness {d}: Scally's polygraph says lying={}, Molder's says lying={}.\n", .{

@@ -45,6 +45,10 @@
 // of each pair. The apprentice broke both house rules. You'll
 // have to run this twice to meet both panics.
 //
+// But first: the last two steps, running the séance and reading
+// the answer, were never written. Those are yours, and the
+// compiler won't let you meet anybody before they are done.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -80,9 +84,13 @@ pub fn main(init: std.process.Init) !void {
     var bartholomew_buffer: zml.Buffer = try .fromBytes(io, platform, bartholomew_log, std.mem.sliceAsBytes(&[_]i32{ 5, 2, 4, 8, 6 }));
     defer bartholomew_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ agatha_buffer, bartholomew_buffer });
+    // Run the seance: both bodies go in, one body comes out.
+    var result: zml.Buffer = ???;
     defer result.deinit();
 
-    try stdout.print("Spookiest, hour by hour: {any}\n", .{try result.getValue([4]i32, io)});
+    // Bring the four hours back as a Zig array.
+    const hours: [4]i32 = ???;
+
+    try stdout.print("Spookiest, hour by hour: {any}\n", .{hours});
     try stdout.flush();
 }

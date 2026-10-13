@@ -1,6 +1,6 @@
 --- exercises/07_origami_club/052_mind_the_margin.zig
 +++ answers/07_origami_club/052_mind_the_margin.zig
-@@ -74,8 +74,8 @@
+@@ -87,14 +87,17 @@
  
  fn mount(sheet: zml.Tensor) zml.Tensor {
      return sheet.pad(0, .{
@@ -11,3 +11,22 @@
      });
  }
  
+ /// One blank between neighbours, in both directions. No margin.
+ fn spread(sheet: zml.Tensor) zml.Tensor {
+-    return ???;
++    return sheet.pad(0, .{
++        .rows = Pad{ .interior = 1 },
++        .cols = Pad{ .interior = 1 },
++    });
+ }
+ 
+ fn showpiece(sheet: zml.Tensor) zml.Tensor {
+@@ -119,7 +122,7 @@
+ 
+     inline for (.{ mount, spread, showpiece }, .{ "mount", "spread", "showpiece" }) |entry, name| {
+         // One Exe per entry, compiled for the sheet.
+-        var exe = ???;
++        var exe = try platform.compileFn(gpa, io, entry, .{sheet}, .{});
+         defer exe.deinit();
+ 
+         var result: zml.Buffer = try exe.eval(gpa, io, .{sheet_buffer});

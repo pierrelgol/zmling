@@ -66,6 +66,21 @@
 // Timmy operated the copier. The garland has the right length.
 // That is the nicest thing one can say about it.
 //
+// Second job, and this one is yours from the first line to the
+// last: the POSTER. Coach has a stamp of 2 by 2 squares,
+//
+//     stamp {rows=2,cols=2}        { 1, 2 },
+//                                  { 3, 4 }
+//
+// and wants it twice as tall and twice as wide, every square
+// becoming a block of 2 by 2: {rows=4,cols=4}. That is the
+// nearest-neighbour upscaling mentioned above. Write `poster`.
+//
+// Then write its trip through the machine in `main`. The
+// placeholder, the numbers and the prints are there. The Exe,
+// the Buffer, the run and the read-back are not: four steps
+// you have done in every exercise since chapter 2.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -78,6 +93,11 @@ fn garland(motif: zml.Tensor) zml.Tensor {
 
     // 3. The whole thing twice.
     return mirrored.repeat1d(.beads, 2);
+}
+
+/// Every square of the stamp becomes a 2x2 block: {rows=4,cols=4}.
+fn poster(stamp: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -108,5 +128,21 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("Garland {f}:", .{beads.shape});
     for (beads.constItems(i32)) |bead| try stdout.print(" {d}", .{bead});
     try stdout.print("\n", .{});
+
+    const stamp: zml.Tensor = .init(.{ .rows = 2, .cols = 2 }, .i32);
+    const ink = [2][2]i32{
+        .{ 1, 2 },
+        .{ 3, 4 },
+    };
+
+    // Compile `poster` for the stamp, put `ink` in a Buffer, run,
+    // and copy the result to a zml.Slice called `squares`.
+    // Release everything you create.
+
+    try stdout.print("Poster {f}\n", .{squares.shape});
+
+    const width: usize = @intCast(squares.shape.dim(-1));
+    var lines = std.mem.window(i32, squares.constItems(i32), width, width);
+    while (lines.next()) |line| try stdout.print("  {any}\n", .{line});
     try stdout.flush();
 }

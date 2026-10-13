@@ -49,7 +49,17 @@
 //
 // The Captain will only dig for a chest that holds MORE THAN 10
 // doubloons AND carries NO curse at all. The cabin boy wrote the
-// two questions for Polly. He's twelve, be nice.
+// two questions for Polly. He's twelve, be nice: one of them
+// panics, and he gave up half way through the other.
+//
+// The Captain can't read a row of trues and falses (he can't
+// read), so he also wants ONE number: how many holes to dig.
+// Nobody can add up Polly's answers as they are, but once a
+// bool is CONVERTED to an .i32 (chapter 3), true is 1 and false
+// is 0, and counting is a reduction (chapter 6). `holesToDig`
+// is empty, and so is the place in `main` where it should be
+// compiled and run: the last print wants a Buffer called
+// `holes`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -59,6 +69,11 @@ fn worthDigging(doubloons: zml.Tensor, curses: zml.Tensor) zml.Tensor {
     const rich = doubloons.cmp(.GT, .scalar(10, .f32));
     const safe = curses.cmp(???, .scalar(0, .i32));
     return rich.logical(.AND, safe);
+}
+
+/// How many chests are worth digging up: one .i32, no axis.
+fn holesToDig(doubloons: zml.Tensor, curses: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -78,6 +93,8 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compileFn(gpa, io, worthDigging, .{ doubloons, curses }, .{});
     defer exe.deinit();
 
+    // The Captain's number needs an Exe as well.
+
     var doubloons_buffer: zml.Buffer = try .fromBytes(io, platform, doubloons.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
     defer doubloons_buffer.deinit();
     // 0 is no curse, 1 is "mild itching", 2 is "skeleton crew".
@@ -87,7 +104,10 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{ doubloons_buffer, curses_buffer });
     defer result.deinit();
 
+    // Run it into a Buffer called `holes`.
+
     try stdout.print("Polly answers with a {f}.\n", .{result.shape()});
     try stdout.print("Worth the shovel: {any}\n", .{try result.getValue([6]bool, io)});
+    try stdout.print("Holes to dig: {d}. Polly will supervise.\n", .{try holes.getValue(i32, io)});
     try stdout.flush();
 }

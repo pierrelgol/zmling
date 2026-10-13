@@ -59,6 +59,12 @@
 // pile of paper, and we only look at the shape they produce
 // (`exe.output_shapes`, no need to run anything).
 //
+// Timmy wrote `restack`, Ingrid wrote `flip`. The other two
+// moves were left to you, and so was the middle of the small sheet's block in
+// `main`: the Exe is compiled and the Buffer is ready, but
+// nobody runs the one on the other or brings the answer home.
+// You did both in exercise 013.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -75,12 +81,12 @@ fn restack(pile: zml.Tensor) zml.Tensor {
 
 /// Exchange .sheets and .rows, don't touch .cols.
 fn flip(pile: zml.Tensor) zml.Tensor {
-    return pile.swapAxes(???, ???);
+    return pile.swapAxes(.sheets, .rows);
 }
 
 /// All the axes, backwards.
 fn insideOut(pile: zml.Tensor) zml.Tensor {
-    return pile.transpose(.{});
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -104,10 +110,12 @@ pub fn main(init: std.process.Init) !void {
         var sheet_buffer: zml.Buffer = try .fromBytes(io, platform, sheet.shape(), std.mem.sliceAsBytes(&[_]i32{ 0, 1, 2, 3, 4, 5 }));
         defer sheet_buffer.deinit();
 
-        var result: zml.Buffer = try exe.eval(gpa, io, .{sheet_buffer});
+        // Run the Exe on the sheet, then copy the result to host
+        // memory as a zml.Slice called `turned`.
+        var result: zml.Buffer = ???;
         defer result.deinit();
 
-        const turned: zml.Slice = try result.toSliceAlloc(gpa, io);
+        const turned: zml.Slice = ???;
         defer turned.free(gpa);
 
         try stdout.print("turn:      {f}\n", .{turned.shape});

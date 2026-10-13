@@ -1,6 +1,15 @@
 --- exercises/02_ghost_tensors/013_a_slice_of_afterlife.zig
 +++ answers/02_ghost_tensors/013_a_slice_of_afterlife.zig
-@@ -81,8 +81,8 @@
+@@ -80,7 +80,7 @@
+ 
+     // Hold the seance: compile `birthday` for the placeholder
+     // above.
+-    var exe = ???;
++    var exe = try platform.compileFn(gpa, io, birthday, .{ages}, .{});
+     defer exe.deinit();
+ 
+     // Host memory for 5 floats.
+@@ -88,8 +88,8 @@
      defer photo.free(gpa);
  
      // Ghost number i is (i + 1) centuries old.
@@ -11,3 +20,12 @@
      }
  
      var ages_buffer: zml.Buffer = try .fromSlice(io, platform, photo);
+@@ -99,7 +99,7 @@
+     defer result.deinit();
+ 
+     // Copy the result back to host memory, as a Slice we own.
+-    const older: zml.Slice = ???;
++    const older: zml.Slice = try result.toSliceAlloc(gpa, io);
+     defer older.free(gpa);
+ 
+     try stdout.print("Result is a {f} slice. Happy birthday:", .{older.shape});

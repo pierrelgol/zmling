@@ -1,6 +1,24 @@
 --- exercises/13_layer_cake/093_the_menu.zig
 +++ answers/13_layer_cake/093_the_menu.zig
-@@ -78,7 +78,7 @@
+@@ -83,7 +83,7 @@
+ /// The embedding, by hand: the rows of `table` {voc, d} that
+ /// `ids` asks for. Returns the axes of `ids`, then `.d`.
+ fn lookUp(table: zml.Tensor, ids: zml.Tensor) zml.Tensor {
+-    return ???;
++    return table.gather(.{ .voc = ids }, .{});
+ }
+ 
+ const Till = struct {
+@@ -91,7 +91,7 @@
+ 
+     /// order: {.s} item ids -> {.d}, the average flavor of the order.
+     pub fn forward(self: Till, order: zml.Tensor) zml.Tensor {
+-        return ???;
++        return self.menu.forward(order).mean(.s).squeeze(.s);
+     }
+ };
+ 
+@@ -109,17 +109,19 @@
      const menu: zml.nn.TokenEmbedding = .{ .weight = .init(.{ .voc = 5, .d = 3 }, .f32) };
  
      // The order: four positions, one item id each.
@@ -9,8 +27,27 @@
  
      var exe = try platform.compile(gpa, io, menu, .forward, .{order}, .{});
      defer exe.deinit();
-@@ -96,7 +96,7 @@
+ 
+-    // TODO: `hand_exe`, the same lookup by hand: `lookUp` is a
+-    // function of the table and the ids.
++    // The same lookup, by hand: a function of the table and the ids.
++    var hand_exe = try platform.compileFn(gpa, io, lookUp, .{ menu.weight, order }, .{});
++    defer hand_exe.deinit();
+ 
+     // The till: a model that has the menu as a field.
+     const till: Till = .{ .menu = menu };
+-    // TODO: `till_exe`.
++    var till_exe = try platform.compile(gpa, io, till, .forward, .{order}, .{});
++    defer till_exe.deinit();
+ 
+     var weight_buffer: zml.Buffer = try .fromBytes(io, platform, menu.weight.shape(), std.mem.sliceAsBytes(&[5][3]f32{
+         //  sweet, buttery, crunchy
+@@ -132,10 +134,10 @@
+     defer weight_buffer.deinit();
+ 
      const menu_buffers: zml.Bufferized(zml.nn.TokenEmbedding) = .{ .weight = weight_buffer };
+-    const till_buffers: zml.Bufferized(Till) = ???;
++    const till_buffers: zml.Bufferized(Till) = .{ .menu = menu_buffers };
  
      // "A croissant, two eclairs, and a macaron."
 -    const items = [4]i32{ ???, ???, ???, ??? };

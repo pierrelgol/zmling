@@ -28,7 +28,43 @@
 // speakers get a weight of precisely zero, and the allowed ones
 // still share 100%.
 //
-// `zml.nn` builds the triangle for you:
+// Today you draw the triangle yourself. It is one table of
+// shape {.q, .k}, and each cell only needs to know its row and
+// its column:
+//
+//  - The row numbers 0, 1, 2... are an `arange` (exercise 22).
+//    Tag it `.q` and stretch it over the whole table with
+//    `broad` (chapter 5): every cell now holds the position of
+//    its LISTENER. Same again tagged `.k`: every cell holds the
+//    position of its SPEAKER. Integers will do.
+//
+//  - A cell is allowed when its speaker does not stand behind
+//    its listener. That is a comparison, the `cmp` of chapter 10
+//    (exercise 68), and it gives a table of bools.
+//
+//  - 0 where allowed, -inf elsewhere: the `select` of exercise
+//    69. In Zig, minus infinity is `-std.math.inf(f32)`.
+//
+// Some herds also have a short memory: with a WINDOW of 2, a
+// llama hears herself and the ONE llama just before her, and
+// that's all. One more condition on the same two tables,
+//
+//     listener < speaker + window
+//
+// glued to the first one with `logical(.AND, ...)`, exercise 68
+// again. `window` is a plain Zig optional, `null` meaning "no
+// limit": an ordinary Zig `if (window) |w|` decides, while
+// tracing, whether the second condition is in the graph at all.
+//
+// The mask contains only constants. It's built while tracing
+// and is baked into the Exe: `causalMask` takes no Tensor, so
+// its Exe has no input, and `eval` gets an empty tuple, `.{}`.
+//
+// The order of operations is the whole point: scores, THEN the
+// mask, THEN the softmax. The mask must knock speakers out
+// before the 100% gets shared.
+//
+// Of course `zml.nn` has the triangle on the shelf:
 //
 //     pub fn causalAttnMask(
 //         attn_shape_: anytype,
@@ -36,46 +72,55 @@
 //         attn_window_len: ?u32,
 //     ) Tensor
 //
-// From its source:
+// `attn_shape_` is the shape of the SCORES: exactly two axes,
+// listeners then speakers, like `.{ .q = 4, .k = 4 }`. (Any
+// other rank panics.) The triangle is drawn by POSITION, first
+// axis against second: the tags are only names, and nothing
+// will warn you if you swap them. With a float `dtype` you get
+// 0 and -inf, ready to be added. Its body is the one you are
+// about to write, give or take a line: go and compare, in
+// zml/nn.zig, once yours works.
 //
-//  - `attn_shape_` is the shape of the SCORES: exactly two
-//    axes, listeners then speakers, like `.{ .q = 4, .k = 4 }`.
-//    One cell per pair. (Any other rank panics.) The triangle
-//    is drawn by POSITION, first axis against second: the tags
-//    are only names, and nothing will warn you if you swap them.
+// To do:
 //
-//  - With a float `dtype`, a cell holds 0 where k <= q and -inf
-//    elsewhere: ready to be added. (With an integer dtype you
-//    get 1 and 0 instead, which is handy for looking at it.)
+//  1. Write `causalMask`, by hand, window included.
 //
-//  - `attn_window_len` is for herds with a short memory: with
-//    a window of 2, a llama hears herself and the ONE llama
-//    just before her, and that's all. `null` means no limit.
+//  2. Write `officialMask` with the helper. The program checks
+//     that the two agree, -inf for -inf.
 //
-// It contains only constants. It's built while tracing and is
-// baked into the Exe, like `Tensor.arange`.
+//  3. `causalWeights` is the `attentionWeights` of the previous
+//     exercise, with the mask. It compiles and runs, and prints
+//     `-inf` all over the hillside. Something in it happens too
+//     late.
 //
-// The order of operations is the whole point: scores, THEN the
-// mask, THEN the softmax. The mask must knock speakers out
-// before the 100% gets shared.
-//
-// The function below gets two things wrong. The first one, ZML
-// will complain about. The second one prints `-inf` all over
-// the hillside.
+//  4. In `main`: three Exes per kind of herd, to compile and to
+//     run. Mind what each function takes: Tensors become
+//     placeholders, and plain Zig values are just passed along.
 //
 const std = @import("std");
 const zml = @import("zml");
 
-/// Attention weights {.q, .k}, where nobody hears the llamas behind her,
-/// nor those more than `window` places in front (when there is a window).
+/// The size of the herd.
+const herd = 4;
+
+/// The causal mask, by hand: {.q = herd, .k = herd}, f32.
+/// 0 where the listener may hear the speaker, -inf elsewhere.
+/// Nobody hears the llamas behind her, nor those more than `window`
+/// places in front (when there is a window).
+fn causalMask(window: ?u32) zml.Tensor {
+    return ???;
+}
+
+/// The same mask, from the shelf.
+fn officialMask(window: ?u32) zml.Tensor {
+    return ???;
+}
+
+/// Attention weights {.q, .k}, with no spoilers.
 fn causalWeights(q: zml.Tensor, k: zml.Tensor, window: ?u32) zml.Tensor {
     const hd: f32 = @floatFromInt(q.dim(.hd));
     const scores = q.dot(k, .hd).scale(1.0 / @sqrt(hd));
-
-    // One cell per (listener, speaker) pair.
-    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.q), .hd = q.dim(.hd) }, scores.dtype(), window);
-
-    return scores.softmax(.k).add(mask);
+    return scores.softmax(.k).add(causalMask(window));
 }
 
 const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
@@ -91,8 +136,8 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const q: zml.Tensor = .init(.{ .q = 4, .hd = 2 }, .f32);
-    const k: zml.Tensor = .init(.{ .k = 4, .hd = 2 }, .f32);
+    const q: zml.Tensor = .init(.{ .q = herd, .hd = 2 }, .f32);
+    const k: zml.Tensor = .init(.{ .k = herd, .hd = 2 }, .f32);
 
     // Same herd as before.
     var q_buffer: zml.Buffer = try .fromBytes(io, platform, q.shape(), std.mem.sliceAsBytes(&[4][2]f32{ .{ 1, 0 }, .{ 0, 1 }, .{ 1, 1 }, .{ 0, 0 } }));
@@ -102,19 +147,29 @@ pub fn main(init: std.process.Init) !void {
 
     // `window` is a plain Zig value: it is baked into each Exe.
     for ([_]?u32{ null, 2 }) |window| {
-        var exe = try platform.compileFn(gpa, io, causalWeights, .{ q, k, window }, .{});
-        defer exe.deinit();
-
-        var weights: zml.Buffer = try exe.eval(gpa, io, .{ q_buffer, k_buffer });
-        defer weights.deinit();
+        // Three Exes, for `causalMask`, `officialMask` and
+        // `causalWeights`, and their three results: `mask`,
+        // `official` and `weights`, the Buffers printed below.
+        ???;
 
         if (window) |w| {
             try stdout.print("a memory of {d} llamas:\n", .{w});
         } else {
             try stdout.print("no spoilers:\n", .{});
         }
+
+        const by_hand = try mask.getValue([herd][herd]f32, io);
+        try stdout.print("  the mask {f}:\n", .{mask.shape()});
+        for (by_hand) |row| {
+            try stdout.print("   ", .{});
+            for (row) |m| try stdout.print(" {d:5}", .{m});
+            try stdout.print("\n", .{});
+        }
+        try stdout.print("  the official mask agrees: {}\n", .{std.meta.eql(by_hand, try official.getValue([herd][herd]f32, io))});
+
+        try stdout.print("  the weights:\n", .{});
         try stdout.print("        Tina  Kuzco Paca  Dolly\n", .{});
-        for (names, try weights.getValue([4][4]f32, io)) |name, row| {
+        for (names, try weights.getValue([herd][herd]f32, io)) |name, row| {
             try stdout.print("  {s}", .{name});
             for (row) |w| try stdout.print(" {d:.3}", .{w});
             try stdout.print("\n", .{});

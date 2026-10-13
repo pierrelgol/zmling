@@ -1,11 +1,6 @@
 --- exercises/08_slice_of_life/057_boxing_night.zig
 +++ answers/08_slice_of_life/057_boxing_night.zig
-@@ -77,15 +77,15 @@
- const zml = @import("zml");
- 
- fn party(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
--    return zml.Tensor.concatenate(&.{ margherita, pepperoni }, ???);
-+    return zml.Tensor.concatenate(&.{ margherita, pepperoni }, .slices);
+@@ -94,16 +94,19 @@
  }
  
  fn delivery(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
@@ -18,4 +13,27 @@
 +    return zml.Tensor.stack(&.{ margherita, pepperoni }, .last, .kinds);
  }
  
+ /// Two boxes, no `stack`: {boxes=2,slices=4}.
+ fn byHand(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
+-    return ???;
++    const first_box = margherita.insertAxes(.slices, .{.boxes});
++    const second_box = pepperoni.insertAxes(.slices, .{.boxes});
++
++    return zml.Tensor.concatenate(&.{ first_box, second_box }, .boxes);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -118,10 +121,12 @@
+     defer platform.deinit(gpa, io);
+ 
+     const margherita: zml.Tensor = .init(.{ .slices = 4 }, .i32);
++    const pepperoni: zml.Tensor = .init(.{ .slices = 4 }, .i32);
+ 
+     var margherita_buffer: zml.Buffer = try .fromBytes(io, platform, margherita.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 2, 3, 4 }));
+     defer margherita_buffer.deinit();
+-    // The pepperoni goes here: `pepperoni` and `pepperoni_buffer`.
++    var pepperoni_buffer: zml.Buffer = try .fromBytes(io, platform, pepperoni.shape(), std.mem.sliceAsBytes(&[_]i32{ 5, 6, 7, 8 }));
++    defer pepperoni_buffer.deinit();
+ 
+     inline for (
+         .{ party, delivery, tasting, byHand },

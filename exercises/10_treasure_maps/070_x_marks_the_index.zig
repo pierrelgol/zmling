@@ -55,12 +55,29 @@
 // dictates today's route; the cabin boy writes it down.
 // Pirates count from one.
 //
+// The bosun has a question of his own: how much work is the
+// whole trip? Paces north, paces east and feet of digging, each
+// added up over the stops of the route: three numbers, {clue=3}.
+// That is `readClues` and then a reduction over the axis that
+// `gather` just created. Both functions are empty.
+//
+// `main` has the map and its Buffer, and the route's Buffer,
+// which is asking for the shape of a placeholder that isn't
+// there: one position per stop, four stops, and a dtype that
+// `gather` accepts. Then compile both functions and run them,
+// into `result` and `effort`.
+//
 const std = @import("std");
 const zml = @import("zml");
 
 /// The clues of each island on the route, in the order of the route.
 fn readClues(map: zml.Tensor, route: zml.Tensor) zml.Tensor {
-    return map.gather(???, .{});
+    return ???;
+}
+
+/// Each clue added up over the whole route: {clue}.
+fn totalEffort(map: zml.Tensor, route: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -75,10 +92,9 @@ pub fn main(init: std.process.Init) !void {
     defer platform.deinit(gpa, io);
 
     const map: zml.Tensor = .init(.{ .island = 5, .clue = 3 }, .i32);
-    const route: zml.Tensor = .init(.{ .stop = 4 }, .i32);
 
-    var exe = try platform.compileFn(gpa, io, readClues, .{ map, route }, .{});
-    defer exe.deinit();
+    // The placeholder `route` goes here, and then an Exe for each
+    // of the two functions.
 
     var map_buffer: zml.Buffer = try .fromBytes(io, platform, map.shape(), std.mem.sliceAsBytes(&[5][3]i32{
         .{ 1, 2, 3 }, // Skull Island
@@ -94,12 +110,13 @@ pub fn main(init: std.process.Init) !void {
     var route_buffer: zml.Buffer = try .fromBytes(io, platform, route.shape(), std.mem.sliceAsBytes(&[_]i32{ 5, 1, 3, 2 }));
     defer route_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ map_buffer, route_buffer });
-    defer result.deinit();
+    // Run both: `result` for the clues, `effort` for the bosun.
 
     try stdout.print("clues {f}:\n", .{result.shape()});
     for (try result.getValue([4][3]i32, io), 1..) |clues, stop| {
         try stdout.print("  stop {d}: {d} paces north, {d} paces east, dig {d} feet\n", .{ stop, clues[0], clues[1], clues[2] });
     }
+    const all = try effort.getValue([3]i32, io);
+    try stdout.print("The whole trip: {d} paces north, {d} paces east, {d} feet of digging.\n", .{ all[0], all[1], all[2] });
     try stdout.flush();
 }

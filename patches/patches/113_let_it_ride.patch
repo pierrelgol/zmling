@@ -1,6 +1,16 @@
 --- exercises/16_casino_royale/113_let_it_ride.zig
 +++ answers/16_casino_royale/113_let_it_ride.zig
-@@ -94,15 +94,15 @@
+@@ -104,7 +104,8 @@
+ /// {.topk = strategy.topk}: which pockets they are (i32), and the
+ /// chances of each one (f32, they sum to 1).
+ fn odds(logits: zml.Tensor, strategy: zml.nn.SamplingStrategy) struct { zml.Tensor, zml.Tensor } {
+-    return ???;
++    const best = logits.topK(.{ .topk = .voc }, strategy.topk, .{});
++    return .{ best.indices, best.values.scale(1.0 / strategy.temperature).softmax(.topk) };
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -126,15 +127,15 @@
  
      const tables = [_]Table{
          // No dice: the favorite, every time.
@@ -20,12 +30,50 @@
      };
  
      // One seed for the whole test, one state threaded through
-@@ -125,7 +125,7 @@
+@@ -147,9 +148,17 @@
+ 
+         // The odds, computed.
+         {
+-            // The Exe of `odds` for this table, a runner, one run:
+-            // `pockets` and `chances` are its two results.
+-            ???;
++            var exe = try platform.compileFn(gpa, io, odds, .{ logits, table.strategy }, .{});
++            defer exe.deinit();
++
++            var runner = try exe.runner(gpa);
++            defer runner.deinit(gpa);
++
++            var pockets: zml.Buffer = undefined;
++            var chances: zml.Buffer = undefined;
++            runner.run(io, .{logits_buffer}, .{ &pockets, &chances }, .{ .wait = true });
++            defer pockets.deinit();
++            defer chances.deinit();
+ 
+             // The number of candidates depends on the table: slices.
+             const pocket_slice = try pockets.toSliceAlloc(gpa, io);
+@@ -165,17 +174,20 @@
+         }
+ 
+         // The spins, observed.
+-        // The Exe of `sampleTokens` for this table, and its runner.
+-        ???;
++        var exe = try platform.compileFn(gpa, io, zml.nn.sampleTokens, .{ logits, table.strategy, rng }, .{});
++        defer exe.deinit();
++
++        var runner = try exe.runner(gpa);
++        defer runner.deinit(gpa);
+ 
+         const state_before = try rng_buffer._state.getValue(u128, io);
+ 
+         // How many times each pocket came up.
          var counts: [6]u32 = @splat(0);
          for (0..spins) |_| {
-             var pocket: zml.Buffer = undefined;
--            runner.run(io, ???, ???, .{ .wait = true });
+-            // One spin: `pocket` is where the ball landed. And
+-            // the dice must not be the same at the next spin.
+-            ???;
++            var pocket: zml.Buffer = undefined;
 +            runner.run(io, .{ logits_buffer, rng_buffer }, .{ &pocket, &rng_buffer }, .{ .wait = true });
-             defer pocket.deinit();
++            defer pocket.deinit();
  
              counts[@intCast(try pocket.getValue(i32, io))] += 1;
+         }

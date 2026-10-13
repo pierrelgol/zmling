@@ -1,6 +1,6 @@
 --- exercises/06_reduction_kitchen/039_reduce_the_sauce.zig
 +++ answers/06_reduction_kitchen/039_reduce_the_sauce.zig
-@@ -62,7 +62,7 @@
+@@ -67,7 +67,7 @@
  
  /// How many portions of each dish, all tables together?
  fn toFire(orders: zml.Tensor) zml.Tensor {
@@ -9,8 +9,12 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -92,7 +92,7 @@
-     defer result.deinit();
+@@ -95,9 +95,11 @@
+ 
+     // Run `exe` on the orders. The Buffer that comes back is
+     // called `result`, and it has to be released like the others.
++    var result: zml.Buffer = try exe.eval(gpa, io, .{orders_buffer});
++    defer result.deinit();
  
      // Two axes, but how many numbers?
 -    const portions = try result.getValue([???]i32, io);

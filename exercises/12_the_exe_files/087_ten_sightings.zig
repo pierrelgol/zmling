@@ -55,11 +55,22 @@
 // row of two scores per sighting. The bias {d_out=2} has to be
 // stretched to that shape by hand, with `broad` (chapter 05).
 //
-// The task. The agent on night duty made each Buffer exactly as
-// big as its batch. Two calls go well; the third one panics, and
-// by now you can read that message in your sleep. Pad the batch
-// instead: a [batch_size][3]f32 full of zeros (`@splat`), with
-// the real rows copied to the front (`@memcpy`).
+// The task. The night shift left you this:
+//
+// 1. `forward` is missing. It is described just above, and you
+//    wrote it once already, as `layer` in exercise 067.
+//
+// 2. The weights are two arrays and no Buffers. Upload them
+//    once, as a `zml.Bufferized(Detector)`, with one line to
+//    free them all (exercise 085).
+//
+// 3. One runner for the whole night (exercise 083).
+//
+// 4. The agent on night duty made each Buffer exactly as big as
+//    its batch. Two calls go well; the third one panics, and by
+//    now you can read that message in your sleep. Pad the batch
+//    instead: a [batch_size][3]f32 full of zeros (`@splat`),
+//    with the real rows copied to the front (`@memcpy`).
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -72,8 +83,7 @@ const Detector = struct {
 
     /// {b,d} -> {b,d_out}
     pub fn forward(self: Detector, x: zml.Tensor) zml.Tensor {
-        const scores = x.dot(self.weight, .d);
-        return scores.add(self.bias.broad(scores.shape()));
+        return ???;
     }
 };
 
@@ -97,16 +107,18 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compile(gpa, io, model, .forward, .{x}, .{});
     defer exe.deinit();
 
-    var weights: zml.Bufferized(Detector) = .{
-        .weight = try .fromBytes(io, platform, model.weight.shape(), std.mem.sliceAsBytes(&[2][3]f32{
-            .{ 1, 2, 0 }, // alien
-            .{ 0, -1, 3 }, // weather balloon
-        })),
-        .bias = try .fromBytes(io, platform, model.bias.shape(), std.mem.sliceAsBytes(&[2]f32{ 0.5, -1 })),
+    //                            glow hum speed
+    const weight_data = [2][3]f32{
+        .{ 1, 2, 0 }, // alien
+        .{ 0, -1, 3 }, // weather balloon
     };
-    defer zml.Buffer.deinitAll(Detector, &weights);
+    const bias_data = [2]f32{ 0.5, -1 };
 
-    var runner = try exe.runner(gpa);
+    // Uploaded once. And freed, all of them, in one line.
+    var weights: zml.Bufferized(Detector) = ???;
+    defer ???;
+
+    var runner = ???;
     defer runner.deinit(gpa);
 
     // glow, hum, speed

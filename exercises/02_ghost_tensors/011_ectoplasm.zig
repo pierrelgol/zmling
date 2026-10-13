@@ -53,8 +53,10 @@
 // `[3]f32` for a {3,f32} buffer, `[2][3]f32` for {2,3,f32},
 // plain `f32` for a scalar.
 //
-// Time to light actual candles. Madame Zelda's apprentice (you)
-// miscounted them.
+// Time to light actual candles. Two blanks are yours: the body
+// itself, and what walks into the séance. The compiler wants
+// those first. After that you'll find that Madame Zelda's
+// apprentice (you) miscounted the candles somewhere.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -84,7 +86,9 @@ pub fn main(init: std.process.Init) !void {
     const flames = [_]f32{ 1, 2, 3, 4, 5, 6, 7 };
 
     // The body: same shape as the placeholder, plus the numbers.
-    var flames_buffer: zml.Buffer = try .fromBytes(io, platform, candles.shape(), std.mem.sliceAsBytes(&flames));
+    // Write the whole `fromBytes` call. Ask the placeholder for
+    // its shape rather than spelling it out again.
+    var flames_buffer: zml.Buffer = ???;
     defer flames_buffer.deinit();
 
     // Run the seance on the body.

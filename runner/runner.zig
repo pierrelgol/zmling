@@ -349,7 +349,10 @@ const exercises = [_]Exercise{
     },
     .{
         .main_file = "01_shape_shifters/002_piano_dims.zig",
-        .output = "88 keys, 2 hammers each. Full manifest: { 3, 88, 2 }",
+        .output =
+        \\88 keys, 2 hammers each. Full manifest: { 3, 88, 2 }
+        \\528 parts in the crate, 1056 bytes.
+        ,
         .hint = "Axes are numbered from 0. A rank 3 shape has no axis 3.\n",
     },
     .{
@@ -363,6 +366,7 @@ const exercises = [_]Exercise{
         .main_file = "01_shape_shifters/004_the_lonely_sock.zig",
         .output =
         \\sock:          rank 0, count 1, dims {  }
+        \\boxed sock:    rank 1, count 1, dims { 1 }
         \\paranoid sock: rank 3, count 1, dims { 1, 1, 1 }
         \\Same thing? false
         \\Is the sock a scalar? true
@@ -370,18 +374,25 @@ const exercises = [_]Exercise{
     },
     .{
         .main_file = "01_shape_shifters/005_label_your_boxes.zig",
-        .output = "{shelves=5,eggs=12,u8}: 12 eggs per shelf, shelves are axis 0, axis 1 is called 'eggs'.",
+        .output =
+        \\{shelves=5,eggs=12,u8}: 12 eggs per shelf, shelves are axis 0, axis 1 is called 'eggs'.
+        \\{drawers=3,pizzas=4,u8}: 12 pizzas, and the last axis is called 'pizzas'.
+        ,
         .hint = "The first line of the panic names the shape and the tag it could not find.\n",
     },
     .{
         .main_file = "01_shape_shifters/006_repacking.zig",
-        .output = "cupboard {15,8,u16}, dishwasher {20,6,u16}, insurance {120,u16}",
+        .output =
+        \\cupboard {15,8,u16}, dishwasher {20,6,u16}, insurance {120,u16}
+        \\moving {crates=5,plates=24,u16}: 24 plates per crate
+        ,
     },
     .{
         .main_file = "01_shape_shifters/007_truck_tetris.zig",
         .output =
         \\Loaded: {layers=2,rows=4,boxes=5,u8}, 40 boxes in total.
         \\Aftermath: {layers=2,rows=4,i64}.
+        \\Depot: {pallets=6,layers=2,rows=4,i64}, rank 3.
         ,
         .hint = "Shapes are values: `truck = truck.someMethod(...)`.\n",
     },
@@ -393,6 +404,8 @@ const exercises = [_]Exercise{
         \\floats:     {n=32,c=3,h=480,w=640,f32}, 112 MiB
         \\thumbnails: {n=32,h=48,w=64,f32}
         \\cabinet:    {n=32,pixels=3072,f32}, 3072 pixels per photo
+        \\invoice:    {n=32,u16}, 64 bytes
+        \\total:      {f64}, rank 0, 8 bytes
         ,
     },
 
@@ -402,6 +415,7 @@ const exercises = [_]Exercise{
         .output =
         \\Tensor({rooms=13,candles=7,f32}) haunts 13 rooms and 91 candle flames in total.
         \\It would weigh 364 bytes, if it weighed anything.
+        \\Tensor({barrels=3,i32}) lurks in the cellar: rank 1, made of i32.
         ,
     },
     .{
@@ -433,6 +447,7 @@ const exercises = [_]Exercise{
         \\volume 0.5: { 0.5, 1, 1.5 }
         \\volume 1: { 1, 2, 3 }
         \\volume 10: { 10, 20, 30 }
+        \\A whisper of 3 echoes back as 9.
         ,
         .hint = "A sock in a box is not a sock.\n",
     },
@@ -445,17 +460,21 @@ const exercises = [_]Exercise{
         .output =
         \\intensity 1: -40.0 32.0 50.0 98.6
         \\intensity 2.5: -148.0 32.0 77.0 198.5
+        \\The wild night moved {spots=4,f32} by: -108.0 0.0 27.0 99.9
         ,
     },
     // Chapter 03: The Arithmetic Diner
     .{
         .main_file = "03_arithmetic_diner/017_the_tab.zig",
         .output = "Each guest owes: { 40, 42, 2, 42 }",
-        .hint = "The comment above the function is the formula. The lesson has the method names.\n",
+        .hint = "The comment above the function is the formula. And count: how many inputs, how many Buffers?\n",
     },
     .{
         .main_file = "03_arithmetic_diner/018_keep_the_change.zig",
-        .output = "Pancake prices: { 2, 4.5, 8, 12.5 }",
+        .output =
+        \\Pancake prices: { 2, 4.5, 8, 12.5 }
+        \\Change from a twenty: { 18, 15.5, 12, 7.5 }
+        ,
         .hint = "Flo's formula has four steps, in an order. Does the chain have the same order?\n",
     },
     .{
@@ -475,16 +494,20 @@ const exercises = [_]Exercise{
         \\leaky    -0.300  -0.100   0.000   1.000   3.000
         \\by hand  -0.300  -0.100   0.000   1.000   3.000
         \\sigmoid   0.047   0.269   0.500   0.731   0.953
+        \\by hand   0.047   0.269   0.500   0.731   0.953
         \\tanh     -0.995  -0.762   0.000   0.762   0.995
         \\silu     -0.142  -0.269   0.000   0.731   2.858
         \\by hand  -0.142  -0.269   0.000   0.731   2.858
         \\gelu     -0.004  -0.159   0.000   0.841   2.996
         ,
-        .hint = "Compare each 'by hand' row with the row above it.\n",
+        .hint = "Compare each 'by hand' row with the row above it. And the leaky row with the menu.\n",
     },
     .{
         .main_file = "03_arithmetic_diner/021_no_substitutions.zig",
-        .output = "Pay envelopes are {cooks=3,i32}: { 155, 165, 157 }",
+        .output =
+        \\Pay envelopes are {cooks=3,i32}: { 155, 165, 157 }
+        \\Per hour, as {cooks=3,f32}: 19.375 16.500 26.167
+        ,
         .hint = "The first line of each panic names the two dtypes that met. Which one did you want?\n",
     },
     .{
@@ -497,12 +520,16 @@ const exercises = [_]Exercise{
     },
     .{
         .main_file = "03_arithmetic_diner/023_order_up.zig",
-        .output = "Doneness: 0.201 0.474 0.974 1.701",
-        .hint = "NaN means the square root got something negative. What is under the square root in the formula?\n",
+        .output = "Doneness: -0.298 -0.221 0.375 1.403",
+        .hint = "NaN means the square root got something negative. What is under the square root in the formula?\nAnd a variance is not a standard deviation.\n",
     },
     .{
         .main_file = "03_arithmetic_diner/024_quiz_the_dinner_rush.zig",
-        .output = "Ring up {tables=4,i32}: { 8, 2, 14, 19 }",
+        .output =
+        \\The register rings up {tables=4,i32}
+        \\coupon 10: { 8, 2, 14, 19 }
+        \\coupon 0: { 20, 11, 24, 33 }
+        ,
     },
     // Chapter 04: Luggage Tags
     .{
@@ -512,6 +539,7 @@ const exercises = [_]Exercise{
         \\Labeled:   Tensor({carousels=3,bags=4,f32})
         \\3 carousels, 4 bags on each. Bags are axis 1.
         \\The delivery slip still says {3,4,f32}.
+        \\In pounds, {carousels=3,bags=4,f32}. Carousel 0: 22.0 44.0 33.0 11.0
         ,
         .hint = "Count the axes of the shape in the panic. Count the tags. Is a kilogram an axis?\n",
     },
@@ -522,6 +550,9 @@ const exercises = [_]Exercise{
         \\bags: axis 2, days: axis null
         \\Tensor({days=7,2,bags=5,cm=3,f32}): fully tagged? false
         \\days: axis 0, and the mystery axis has 2 of something called '_'.
+        \\Tensor({bags=5,cm=3,f32}): bags on axis 0
+        \\Tensor({2,bags=5,cm=3,f32}): bags on axis 1
+        \\Tensor({4,7,2,bags=5,cm=3,f32}): bags on axis 3
         ,
         .hint = "Each panic prints the shape: count its axes, and look for the one without a name.\n",
     },
@@ -532,6 +563,7 @@ const exercises = [_]Exercise{
         \\Customs:  Tensor({departures=3,items=4,2,f32})
         \\Complete: Tensor({departures=3,items=4,measures=2,f32}), fully tagged? true
         \\Archive:  Tensor({flights=3,items=4,measures=2,f32}), 4 items per flight.
+        \\Returns:  Tensor({to=3,from=5,f32}), back to 3 flights.
         ,
         .hint = "In rename, the field name is the OLD tag. And a shape should not print the same tag twice.\n",
     },
@@ -544,6 +576,7 @@ const exercises = [_]Exercise{
         \\The mystery axis has size 2
         \\Tensor({days=7,sides=2,bags=5,cm=3,f32}): fully tagged? true
         \\210 measurements, and count() agrees: true
+        \\Tensor({days=7,bags=5,cm=3,sides=2,f32}): still 210
         ,
         .hint = "An underscore alone and an underscore with a digit mean very different things.\n",
     },
@@ -554,20 +587,25 @@ const exercises = [_]Exercise{
         \\weights vs serials: dims true, dims+dtype false, dims+dtype+tags false
         \\weights + fees is {bags=4,f32}
         \\fees + weights is {flights=4,f32}
+        \\checked sum is    {bags=4,f32}
         \\Kilograms plus dollars: { 73, 58, 90, 151 }. Unit: unknown.
         ,
-        .hint = "Read the three definitions again. And which operand does the result take its tags from?\n",
+        .hint = "Read the three definitions again. And which operand does the result take its tags from?\nA failed assert panics with 'reached unreachable code': the stack trace has the line.\n",
     },
     .{
         .main_file = "04_luggage_tags/030_the_wrong_carousel.zig",
-        .output = "Owed, as {flights=2,bags=3,f32}: { { 11, 23, 35 }, { 42, 54, 66 } }",
-        .hint = "Same tags, different order: the stickers are right, the suitcases need to move.\n",
+        .output =
+        \\Owed, as {flights=2,bags=3,f32}: { { 11, 23, 35 }, { 42, 54, 66 } }
+        \\Tuesday, as {flights=3,bags=3,f32}: { { 11, 24, 37 }, { 42, 55, 68 }, { 73, 86, 99 } }
+        ,
+        .hint = "Same tags, different order: the stickers are right, the suitcases need to move.\nTuesday's numbers are off? Look at how you described accounting's table.\n",
     },
     .{
         .main_file = "04_luggage_tags/031_layover.zig",
         .output =
         \\Old machine {n=1,h=2,w=5,c=3,f32}: a pixel of 10 becomes 1.000
         \\New machine {n=1,c=3,h=2,w=5,f32}: a pixel of 10 becomes 1.000
+        \\Handheld    {h=2,w=5,f32}: a pixel of 10 becomes 1.000
         ,
         .hint = "The function says dim(1). Which axis is that on the NEW machine?\n",
     },
@@ -575,7 +613,7 @@ const exercises = [_]Exercise{
         .main_file = "04_luggage_tags/032_quiz_flight_zg404.zig",
         .output =
         \\Report {flights=2,bags=3,f32}, bags on axis 1, fully tagged: true
-        \\Excess: { { 0, 1, 0 }, { 3, 0, 2 } }
+        \\Excess: { { 0, 1, 0 }, { 4, 0, 3 } }
         ,
     },
     // Chapter 05: Broadcast News
@@ -587,11 +625,12 @@ const exercises = [_]Exercise{
         \\Shelbyville  16.5 15.5 17.5 16.5
         \\Ogdenville   30.0 31.0 29.0 33.0
         ,
-        .hint = "The panic names the operation and both shapes. One of them is too small.\n",
+        .hint = "Three panics, one after the other. Each one names what it got and what it wanted.\n",
     },
     .{
         .main_file = "05_broadcast_news/034_stage_left.zig",
         .output =
+        \\{show=3,week=4,f32}
         \\Morning Zoo   120  124  122  180
         \\Noon News      90   84   93  240
         \\Late Movie     55   56   55   68
@@ -612,9 +651,14 @@ const exercises = [_]Exercise{
     .{
         .main_file = "05_broadcast_news/036_the_fine_print.zig",
         .output =
-        \\Brock 0.50 0.75 0.00 1.00
-        \\Linda 0.50 0.25 0.90 0.00
+        \\Budget left:
+        \\Brock 0.50 0.75 -0.30 1.00
+        \\Linda 0.50 0.25 0.90 -0.30
         \\Gail  0.90 0.80 0.50 0.00
+        \\Dollars over budget:
+        \\Brock   0   0  30   0
+        \\Linda   0   0   0  60
+        \\Gail    0   0   0   0
         ,
         .hint = "Only the right side of an operation gets stretched for free.\n",
     },
@@ -626,8 +670,9 @@ const exercises = [_]Exercise{
         \\Springfield  16.0 17.0 15.0
         \\Shelbyville  16.5 15.5 17.5
         \\Ogdenville   30.0 31.0 29.0
+        \\The witness agrees: true
         ,
-        .hint = "No panic this time. Which shape does `column` really have?\n",
+        .hint = "No panic this time. Which shape does `column` really have? Ask the witness.\n",
     },
     .{
         .main_file = "05_broadcast_news/038_quiz_live_at_six.zig",
@@ -635,10 +680,10 @@ const exercises = [_]Exercise{
         \\On air: {n=2,c=3,h=2,w=2,f32}
         \\frame 0 red  : 100.00 60.00 70.00 160.00
         \\frame 0 green: 100.00 60.00 70.00 160.00
-        \\frame 0 blue : 120.00 70.00 80.00 180.00
-        \\frame 1 red  : 50.00 30.00 35.00 80.00
-        \\frame 1 green: 52.50 31.25 36.25 82.50
-        \\frame 1 blue : 55.00 32.50 37.50 85.00
+        \\frame 0 blue : 120.00 70.00 80.00 160.00
+        \\frame 1 red  : 50.00 35.00 35.00 80.00
+        \\frame 1 green: 52.50 35.00 36.25 82.50
+        \\frame 1 blue : 55.00 35.00 37.50 85.00
         ,
         .hint = "Doug's note: rule 3 wants the same tags, in the same order, on both sides.\n",
     },
@@ -669,17 +714,22 @@ const exercises = [_]Exercise{
         \\soup: 7.67
         \\duck: 9.00
         \\tart: 4.00
+        \\z-scores {dish=3,critic=5,f32}
+        \\soup: 0.00 0.37 -1.86 1.12 0.37
+        \\duck: 0.42 0.42 -1.99 0.72 0.42
+        \\tart: -0.12 0.18 -1.35 1.72 -0.43
         ,
+        .hint = "Every mean keeps its size 1 axis, so each step lines up with the scores.\n",
     },
     .{
         .main_file = "06_reduction_kitchen/042_dish_of_the_day.zig",
         .output =
         \\The blackboard is a {day=5,i32}.
-        \\Tuesday: soup
-        \\Wednesday: risotto
-        \\Thursday: duck
-        \\Friday: duck
-        \\Saturday: tart
+        \\Tuesday: soup, 12 sold
+        \\Wednesday: risotto, 14 sold
+        \\Thursday: duck, 11 sold
+        \\Friday: duck, 16 sold
+        \\Saturday: tart, 21 sold
         ,
         .hint = "eval says how many outputs it got. After that, look at the shape on the first line.\n",
     },
@@ -687,21 +737,31 @@ const exercises = [_]Exercise{
         .main_file = "06_reduction_kitchen/043_running_low.zig",
         .output =
         \\Butter: 7.0 2.5 10.5 5.5 -0.5 -2.5 7.5 3.5
-        \\Lowest point: -2.5 kg. We ran out. Nobody tell Chef Odile.
+        \\Lowest point: -2.5 kg, after hour 5. We ran out. Nobody tell Chef Odile.
         ,
         .hint = "First a panic about bytes: how many numbers should come out of `stock`?\n",
     },
     .{
         .main_file = "06_reduction_kitchen/044_plating.zig",
         .output =
-        \\softmax:
+        \\1. by hand:
         \\  guest 0: 0.644 0.237 0.032 0.087  sum 1.00
         \\  guest 1: 0.017 0.028 0.017 0.937  sum 1.00
-        \\by hand:
+        \\  guest 2: nan nan nan nan  sum nan
+        \\2. by hand, stable:
         \\  guest 0: 0.644 0.237 0.032 0.087  sum 1.00
         \\  guest 1: 0.017 0.028 0.017 0.937  sum 1.00
+        \\  guest 2: 0.087 0.237 0.644 0.032  sum 1.00
+        \\3. softmax:
+        \\  guest 0: 0.644 0.237 0.032 0.087  sum 1.00
+        \\  guest 1: 0.017 0.028 0.017 0.937  sum 1.00
+        \\  guest 2: 0.087 0.237 0.644 0.032  sum 1.00
+        \\4. logSumExp:
+        \\  guest 0: 0.644 0.237 0.032 0.087  sum 1.00
+        \\  guest 1: 0.017 0.028 0.017 0.937  sum 1.00
+        \\  guest 2: 0.087 0.237 0.644 0.032  sum 1.00
         ,
-        .hint = "Which axis should add up to 1?\n",
+        .hint = "The nan row of table 1 is expected. In the others: which axis should add up to 1?\n",
     },
     .{
         .main_file = "06_reduction_kitchen/045_quiz_saturday_night.zig",
@@ -710,6 +770,7 @@ const exercises = [_]Exercise{
         \\average bill {f32}: 93.67
         \\best seller {i32}: tart
         \\shares {dish=4,f32}: soup 0.085 duck 0.370 risotto 0.320 tart 0.224
+        \\against the average {table=3,f32}: 0.641 1.036 1.324
         ,
     },
     // Chapter 07: Origami Club
@@ -720,7 +781,7 @@ const exercises = [_]Exercise{
         \\booklet: {pages=2,rows=3,cols=2,i32} { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 }
         \\unfold:  {12,i32} { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 }
         ,
-        .hint = "Two things to fix. One is a panic: its message has both shapes in it.\n",
+        .hint = "Fill in the blanks first. Then one panic is left: its message has both shapes in it.\n",
     },
     .{
         .main_file = "07_origami_club/047_turn_the_paper.zig",
@@ -742,37 +803,68 @@ const exercises = [_]Exercise{
         \\round 1: Ingrid 9, Timmy 2
         \\round 2: Ingrid 8, Timmy 3
         \\round 3: Ingrid 10, Timmy 1
+        \\Gaps {rounds=3,i32}: { 7, 5, 9 }
         ,
-        .hint = "The shape is already right. The shape was never the problem.\n",
+        .hint = "The shape is already right. The shape was never the problem. Then count the rounds in your output.\n",
     },
     .{
         .main_file = "07_origami_club/049_cut_along_the_crease.zig",
-        .output = "{entries=6,i32} { 37, 37, 28, 23, 4, 12 }",
-        .hint = "How many cranes of 4 squares are there in a strip of 8?\n",
+        .output =
+        \\{entries=6,i32} { 37, 37, 28, 23, 4, 12 }
+        \\shares {members=3,cranes=2,f32}
+        \\  Ingrid: 0.500 0.500
+        \\  Coach's nephew: 0.549 0.451
+        \\  Timmy: 0.250 0.750
+        ,
+        .hint = "How many cranes of 4 squares are there in a strip of 8? And a share of WHOSE total?\n",
     },
     .{
         .main_file = "07_origami_club/050_neighbours_only.zig",
         .output =
-        \\{rows=3,strip=8,i32}
+        \\longStrips: {rows=3,strip=8,i32}
         \\  { 0, 1, 2, 3, 12, 13, 14, 15 }
         \\  { 4, 5, 6, 7, 16, 17, 18, 19 }
         \\  { 8, 9, 10, 11, 20, 21, 22, 23 }
+        \\columnStrips: {cols=4,strip=6,i32}
+        \\  { 0, 12, 4, 16, 8, 20 }
+        \\  { 1, 13, 5, 17, 9, 21 }
+        \\  { 2, 14, 6, 18, 10, 22 }
+        \\  { 3, 15, 7, 19, 11, 23 }
+        \\weights: {rows=3,i32}
+        \\  { 60, 92, 124 }
         ,
-        .hint = "The axes to merge must be side by side first.\n",
+        .hint = "The axes to merge must be side by side first. And a sum always leaves a souvenir behind.\n",
     },
     .{
         .main_file = "07_origami_club/051_the_copy_machine.zig",
-        .output = "Garland {beads=12,i32}: 3 3 2 2 1 1 3 3 2 2 1 1",
+        .output =
+        \\Garland {beads=12,i32}: 3 3 2 2 1 1 3 3 2 2 1 1
+        \\Poster {rows=4,cols=4,i32}
+        \\  { 1, 1, 2, 2 }
+        \\  { 1, 1, 2, 2 }
+        \\  { 3, 3, 4, 4 }
+        \\  { 3, 3, 4, 4 }
+        ,
         .hint = "Right length, wrong order. One copier copies the whole motif, the other copies each bead.\n",
     },
     .{
         .main_file = "07_origami_club/052_mind_the_margin.zig",
         .output =
-        \\Mounted on {rows=4,cols=5,i32}
+        \\mount: {rows=4,cols=5,i32}
         \\  { 0, 0, 0, 0, 0 }
         \\  { 0, 1, 2, 3, 0 }
         \\  { 0, 4, 5, 6, 0 }
         \\  { 0, 0, 0, 0, 0 }
+        \\spread: {rows=3,cols=5,i32}
+        \\  { 1, 0, 2, 0, 3 }
+        \\  { 0, 0, 0, 0, 0 }
+        \\  { 4, 0, 5, 0, 6 }
+        \\showpiece: {rows=5,cols=7,i32}
+        \\  { 0, 0, 0, 0, 0, 0, 0 }
+        \\  { 0, 1, 0, 2, 0, 3, 0 }
+        \\  { 0, 0, 0, 0, 0, 0, 0 }
+        \\  { 0, 4, 0, 5, 0, 6, 0 }
+        \\  { 0, 0, 0, 0, 0, 0, 0 }
         ,
         .hint = "Once it compiles, count the columns of the card.\n",
     },
@@ -784,8 +876,11 @@ const exercises = [_]Exercise{
         \\  { 8, 9, 12, 13 }
         \\  { 2, 3, 6, 7 }
         \\  { 0, 1, 4, 5 }
+        \\pooled {rows=2,cols=2,f32}
+        \\  2.5 4.5
+        \\  10.5 12.5
         ,
-        .hint = "After the two cuts you have four axes. Which two must become neighbours?\n",
+        .hint = "After the two cuts you have four axes. Which two must become neighbours? And what shape does `mean` hand you?\n",
     },
     // Chapter 08: Slice of Life
     .{
@@ -795,16 +890,18 @@ const exercises = [_]Exercise{
         \\lastTwo:    {slices=2,i32} { 2, 6 }
         \\middle:     {slices=4,i32} { 4, 1, 5, 9 }
         \\everyOther: {slices=4,i32} { 1, 1, 9, 6 }
+        \\leftovers:  {slices=3,i32} { 6, 2, 9 }
         ,
-        .hint = "The first slice is slice 0, and `end` is excluded. Luigi disagrees three times.\n",
+        .hint = "The first slice is slice 0, and `end` is excluded. Negative numbers count from the end.\n",
     },
     .{
         .main_file = "08_slice_of_life/055_with_or_without_the_box.zig",
         .output =
         \\extraBasil: {slices=4,i32} { 105, 106, 207, 208 }
         \\lastBoxed:  {pizzas=1,slices=4,i32} { 9, 10, 11, 12 }
+        \\compared:   {pizzas=3,slices=4,i32} { 0, 0, 0, 0, 4, 4, 4, 4, 8, 8, 8, 8 }
         ,
-        .hint = "The panic prints the two shapes that should have been equal.\n",
+        .hint = "The panic prints the two shapes that should have been equal. Stretching needs an axis to stretch.\n",
     },
     .{
         .main_file = "08_slice_of_life/056_no_crust_please.zig",
@@ -814,6 +911,9 @@ const exercises = [_]Exercise{
         \\  { 21, 22, 23, 24 }
         \\leftEdge: {rows=2,i32}
         \\  { 0, 20 }
+        \\corners: {rows=2,cols=2,i32}
+        \\  { 0, 5 }
+        \\  { 30, 35 }
         ,
         .hint = "The n-th Slice cuts the n-th axis of the tuple.\n",
     },
@@ -823,6 +923,7 @@ const exercises = [_]Exercise{
         \\party:    {slices=8,i32} { 1, 2, 3, 4, 5, 6, 7, 8 }
         \\delivery: {boxes=2,slices=4,i32} { 1, 2, 3, 4, 5, 6, 7, 8 }
         \\tasting:  {slices=4,kinds=2,i32} { 1, 5, 2, 6, 3, 7, 4, 8 }
+        \\byHand:   {boxes=2,slices=4,i32} { 1, 2, 3, 4, 5, 6, 7, 8 }
         ,
         .hint = "Does the order need a NEW axis? And where does it go?\n",
     },
@@ -831,8 +932,9 @@ const exercises = [_]Exercise{
         .output =
         \\bigFirst: {slices=8,i32} { 5, 9, 2, 6, 1, 4, 1, 3 }
         \\twins:    {slices=4,i32} { -2, -8, 2, -5 }
+        \\tally:    {slices=3,i32} { 3, 6, 22 }
         ,
-        .hint = "Somebody at the party is not getting all the pizza they were promised.\n",
+        .hint = "Somebody at the party is not getting all the pizza they were promised. Then look at who is served first.\n",
     },
     .{
         .main_file = "08_slice_of_life/059_surprise_me.zig",
@@ -845,16 +947,18 @@ const exercises = [_]Exercise{
         \\pick 2: {slices=4,i32} { 30, 31, 32, 33 }
         \\pick 0: {slices=4,i32} { 10, 11, 12, 13 }
         \\swap 1: { 10, 11, 12, 13, 99, 99, 99, 99, 30, 31, 32, 33 }
+        \\fullest before the swap: { 30, 31, 32, 33 }
+        \\fullest after the swap: { 99, 99, 99, 99 }
         ,
-        .hint = "An input that the function ignores cannot change the output.\n",
+        .hint = "Out of its box means the .pizzas axis is gone. Compare the shape printed with the shape promised.\n",
     },
     .{
         .main_file = "08_slice_of_life/060_quiz_the_usual.zig",
         .output =
         \\The usual is a {boxes=2,slices=5,i32}.
-        \\pizza 0: his box { 0, 2, 4, 5, 6 }, her sample { 23, 24, 25, 26, 27 }
-        \\pizza 1: his box { 10, 12, 14, 15, 16 }, her sample { 23, 24, 25, 26, 27 }
-        \\pizza 2: his box { 20, 22, 24, 25, 26 }, her sample { 23, 24, 25, 26, 27 }
+        \\pizza 0: his box { 0, 2, 4, 5, 6 }, her sample { 23, 24, 25, 26, 27 }, bill { 17, 125 }
+        \\pizza 1: his box { 10, 12, 14, 15, 16 }, her sample { 23, 24, 25, 26, 27 }, bill { 67, 125 }
+        \\pizza 2: his box { 20, 22, 24, 25, 26 }, her sample { 23, 24, 25, 26, 27 }, bill { 117, 125 }
         ,
         .hint = "Only `which` is a tensor. Every size in the order is a plain number.\n",
     },
@@ -864,8 +968,13 @@ const exercises = [_]Exercise{
         .output =
         \\The result is a {f32}: no axes left.
         \\Revenue: $1400. Cost of the Super Bowl ad: $2000000.
+        \\Profit: $840. Chad has already spent it on beanbags.
         ,
-        .hint = "One method, and the name of the axis the two lists share.\n",
+        .hint =
+        \\One method, and the name of the axis the two lists share.
+        \\When `dot` panics, compare the tags of the two placeholders it was given.
+        \\
+        ,
     },
     .{
         .main_file = "09_dot_com_bubble/062_synergy.zig",
@@ -875,10 +984,12 @@ const exercises = [_]Exercise{
         \\  day 1: 12 rocks, 4 googly eyes
         \\  day 2: 29 rocks, 18 googly eyes
         \\  day 3: 158 rocks, 36 googly eyes
+        \\best day: day 3. Chad was on holiday.
         ,
         .hint =
         \\The panic names a tensor and a tag: which axis do BOTH operands have?
         \\Then compare the shape that is printed with the one you were asked for.
+        \\The best day is a position, and a reduction leaves an axis of size 1 behind.
         \\
         ,
     },
@@ -886,11 +997,16 @@ const exercises = [_]Exercise{
         .main_file = "09_dot_com_bubble/063_branch_offices.zig",
         .output =
         \\revenue {office=2,days=3,f32}: { { 90, 250, 1500 }, { 4, 0, 27 } }
+        \\totals {office=2,f32}: { 1840, 31 }
         \\synergy {office=2,partner=2,f32}:
         \\  { 1002925, 702320 }
         \\  { 702320, 491841 }
         ,
-        .hint = "Same name on both sides means \"pair them up\". The slide wants them NOT paired up.\n",
+        .hint =
+        \\Same name on both sides means "pair them up". The slide wants them NOT paired up.
+        \\The accountants want {office=2}, not {office=2,days=1}.
+        \\
+        ,
     },
     .{
         .main_file = "09_dot_com_bubble/064_the_price_grid.zig",
@@ -899,12 +1015,18 @@ const exercises = [_]Exercise{
         \\    5.00    2.50    0.50
         \\   20.00   10.00    2.00
         \\ 1000.00  500.00  100.00
+        \\stock sold out, per tier {tiers=3,f32}: $1700.00 $850.00 $170.00
         ,
-        .hint = "The function is fine. What does `broad` match on?\n",
+        .hint =
+        \\`priceGrid` is fine. What does `broad` match on?
+        \\Which axis do the grid and the stock have in common?
+        \\
+        ,
     },
     .{
         .main_file = "09_dot_com_bubble/065_legacy_code.zig",
         .output =
+        \\per quarry {quarry=2,parts=2,f32}: { { 199, 58 }, { 10, 5 } }
         \\parts {2,3,2,f32}:
         \\  quarry 1: { { 12, 4 }, { 29, 18 }, { 158, 36 } }
         \\  quarry 2: { { 2, 1 }, { 0, 0 }, { 8, 4 } }
@@ -912,25 +1034,35 @@ const exercises = [_]Exercise{
         .hint =
         \\Write the two shapes down and number their axes from 0.
         \\Which pair is contracted? Which pair is "for each quarry"?
+        \\Name the axes first: a reduction is easier to ask for by tag.
         \\
         ,
     },
     .{
         .main_file = "09_dot_com_bubble/066_the_valuation_engine.zig",
         .output =
-        \\output {startup=2,d_out=2,f32}
-        \\PetRocks.com: valued at $156.20M, burning $2.87M a month
-        \\Boring Inc.: valued at $40.00M, burning $3.50M a month
+        \\output {startup=2,d_out=2,f32}, runway {startup=2,f32}
+        \\PetRocks.com: valued at $156.20M, burning $2.87M a month, 54.4 months to live
+        \\Boring Inc.: valued at $40.00M, burning $3.50M a month, 11.4 months to live
         ,
-        .hint = "The panic shows both shapes. One of them has to grow before the `add`.\n",
+        .hint =
+        \\The panic shows both shapes. One of them has to grow before the `add`.
+        \\The runway is one slice of the output divided by another.
+        \\
+        ,
     },
     .{
         .main_file = "09_dot_com_bubble/067_quiz_ipo_day.zig",
         .output =
-        \\verdicts {startup=3,verdict=2,f32}
-        \\PetRocks.com: buy 12, sell 2. BUY!
-        \\Gravel.net: buy 16, sell 0. BUY!
-        \\Foosball.org: buy 21, sell -3. BUY!
+        \\scores {startup=3,verdict=2,f32}, picks {startup=3,i32}, sure {startup=3,f32}
+        \\PetRocks.com: buy 12, sell 4. BUY! (99.97% sure)
+        \\Gravel.net: buy 22, sell 24. SELL! (88.08% sure)
+        \\Foosball.org: buy 21, sell -3. BUY! (100.00% sure)
+        ,
+        .hint =
+        \\`layer` is the previous exercise with `tag` where the name of the axis was.
+        \\The three shapes on the first line of the output tell you what to squeeze.
+        \\
         ,
     },
     // Chapter 10: Treasure Maps
@@ -939,8 +1071,13 @@ const exercises = [_]Exercise{
         .output =
         \\Polly answers with a {chest=6,bool}.
         \\Worth the shovel: { true, false, false, true, true, false }
+        \\Holes to dig: 3. Polly will supervise.
         ,
-        .hint = "Doubloons are counted in whole numbers on this ship.\n",
+        .hint =
+        \\Doubloons are counted in whole numbers on this ship.
+        \\Nobody can add up bools. Integers, on the other hand...
+        \\
+        ,
     },
     .{
         .main_file = "10_treasure_maps/069_the_ledger.zig",
@@ -958,6 +1095,7 @@ const exercises = [_]Exercise{
         \\  stop 2: 1 paces north, 2 paces east, dig 3 feet
         \\  stop 3: 21 paces north, 22 paces east, dig 23 feet
         \\  stop 4: 11 paces north, 12 paces east, dig 13 feet
+        \\The whole trip: 74 paces north, 78 paces east, 82 feet of digging.
         ,
         .hint =
         \\One stop is right, and only by accident.
@@ -968,7 +1106,8 @@ const exercises = [_]Exercise{
     .{
         .main_file = "10_treasure_maps/071_latitude_longitude.zig",
         .output =
-        \\under the X's {x=3,i32}: { 9, 8, 7 }
+        \\under the X's {x=3,i32}: { 8, 7, 9 }
+        \\dig X number 2 first.
         \\best of each latitude {lat=4,i32}: { 7, 9, 4, 8 }
         ,
         .hint = "First the order of the fields. Then look at the shape that is printed before the crash.\n",
@@ -978,8 +1117,13 @@ const exercises = [_]Exercise{
         .output =
         \\the pay line {pirate=5,i32}: { 80, 80, 30, 12, 5 }
         \\their ages   {rank=5,i32}: { 19, 27, 41, 35, 63 }
+        \\the first three are 29.0 years old on average.
         ,
-        .hint = "The panic counts three places where one tag shows up. Two is the limit.\n",
+        .hint =
+        \\The panic counts three places where one tag shows up. Two is the limit.
+        \\The surgeon's number: slice, convert, reduce, and leave no axis behind.
+        \\
+        ,
     },
     .{
         .main_file = "10_treasure_maps/073_the_three_best.zig",
@@ -988,8 +1132,13 @@ const exercises = [_]Exercise{
         \\Load chest 4: 95 doubloons.
         \\Load chest 2: 80 doubloons.
         \\Load chest 0: 30 doubloons.
+        \\Top-3 accuracy of the crew: 0.50
         ,
-        .hint = "The compile error quotes an example call. It is a very good example.\n",
+        .hint =
+        \\The compile error quotes an example call. It is a very good example.
+        \\For the bets: build the Shape of the grid once, and `broad` both sides to it.
+        \\
+        ,
     },
     .{
         .main_file = "10_treasure_maps/074_quiz_buried_treasure.zig",
@@ -997,7 +1146,9 @@ const exercises = [_]Exercise{
         \\landing parties: {best=2,role=2,i32}
         \\Island 4: 85 doubloons. Send 6 diggers and 3 lookouts.
         \\Island 3: 70 doubloons. Send 5 diggers and 2 lookouts.
+        \\That makes 11 diggers and 5 lookouts. Polly stays on the ship.
         ,
+        .hint = "Mask first, then pick. And \"safe\" is the opposite of \"more than 3 sharks\".\n",
     },
     // Chapter 11: Time Loops
     .{
@@ -1010,7 +1161,7 @@ const exercises = [_]Exercise{
         \\Phil wakes up at 0 and goes to bed at 0.
         \\Four runs later, the alarm has rung 3 times in total.
         ,
-        .hint = "The loop body is plain Zig. How many days did the story ask for?\n",
+        .hint = "The loop is plain Zig, and so is the counter. How many days did the story ask for? The Buffer and the call are chapter 02.\n",
     },
     .{
         .main_file = "11_time_loops/076_dont_drive_angry.zig",
@@ -1018,8 +1169,9 @@ const exercises = [_]Exercise{
         \\The thermometers say   { -4, 0, 3, 7 }
         \\An optimist feels      { -8, 0, 3, 7 }
         \\A pessimist feels      { -18, -10, -4, 2 }
+        \\Hours of frostbite: 1 for the optimist, 2 for the pessimist.
         ,
-        .hint = "Zig can't branch on a ghost. Chapter 10 had an operation that chooses element by element.\n",
+        .hint = "Zig can't branch on a ghost. Chapter 10 had an operation that chooses element by element. The count starts with a call to the function you just fixed.\n",
     },
     .{
         .main_file = "11_time_loops/077_the_shadow.zig",
@@ -1027,7 +1179,7 @@ const exercises = [_]Exercise{
         \\0 minutes of sun. Gus says { 6, 8, 15 }, and Gus's lawyer says { 6, 8, 15 }.
         \\45 minutes of sun. Gus says { -9, -7, 0 }, and Gus's lawyer says { -9, -7, 0 }.
         ,
-        .hint = "The panic says what dtype it wanted. Where do bool tensors come from?\n",
+        .hint = "A branch is an ordinary method: it uses what the struct holds. Then the panic says what dtype it wanted. Where do bool tensors come from?\n",
     },
     .{
         .main_file = "11_time_loops/078_piano_lessons.zig",
@@ -1036,8 +1188,9 @@ const exercises = [_]Exercise{
         \\After 4 days, Phil has practiced 10 minutes.
         \\After 100 days, Phil has practiced 5050 minutes.
         \\After 3650 days, Phil has practiced 6663075 minutes.
+        \\By hand, 100 days: 5050 minutes, in 100 calls. The loop Exe needs 1.
         ,
-        .hint = "cond returns a Tensor, not a Zig bool. Today's practice time is already in the State.\n",
+        .hint = "cond returns a Tensor, not a Zig bool. Today's practice time is already in the State. In part 2 the loop is plain Zig, and the lesson shows how a result becomes the next input.\n",
     },
     .{
         .main_file = "11_time_loops/079_word_gets_around.zig",
@@ -1047,7 +1200,7 @@ const exercises = [_]Exercise{
         \\looped,   2 inputs, 5 days: { 32, 243, 1 }
         \\looped,   2 inputs, 12 days: { 4096, 531441, 1 }
         ,
-        .hint = "The panic prints two shapes: the crowd that went in and the crowd that came out. The unrolled version starts its crowd differently.\n",
+        .hint = "The call to the loop already says which field Rumor needs. Later, the panic prints two shapes: the crowd that went in and the crowd that came out. The unrolled version starts its crowd differently.\n",
     },
     .{
         .main_file = "11_time_loops/080_quiz_getting_out.zig",
@@ -1057,8 +1210,9 @@ const exercises = [_]Exercise{
         \\Starting from 7: free after 16 steps. Before coffee, Phil stops at 16.
         \\Starting from 27: free after 111 steps. Before coffee, Phil stops at 20.
         \\Starting from 97: free after 118 steps. Before coffee, Phil stops at 20.
+        \\By hand from 27: 111 calls to the Exe, and the highest number on the way was 9232.
         ,
-        .hint = "Which of the three numbers are known at trace time, and which only at run time? Exercises 078 and 079 have the shape of the answer.\n",
+        .hint = "Which numbers are known at trace time, and which only at run time? Exercise 079 has the shape of part 1, the second half of 078 the shape of part 2.\n",
     },
     // Chapter 12: The Exe Files
     .{
@@ -1072,16 +1226,19 @@ const exercises = [_]Exercise{
         \\  output 0: {frames=4,f32}
         \\  output 1: {f32}
         \\  output 2: {frames=4,pixels=6,f32}
+        \\In all, 35 numbers go in and 29 come out.
         ,
-        .hint = "The shapes are spelled out in the lesson. The Exe has two lists; you printed the first one already.\n",
+        .hint = "The shapes are spelled out in the lesson, and the output shapes tell you whether your Report is right. The Exe has two lists; the first one is printed already.\n",
     },
     .{
         .main_file = "12_the_exe_files/082_raw_footage.zig",
         .output =
         \\brightest pixel per frame: { 1, 9, 0.5 }
         \\total glow per frame:      { 2, 14, 0.5 }
+        \\the next night, brightest: { 3, 0, 8 }
+        \\the next night, glow:      { 12, 0, 15 }
         ,
-        .hint = "eval is out. The lesson lists the replacement in order: args, results, set, call, get.\n",
+        .hint = "eval is out. The lesson lists the replacement in order: args, results, set, call, get. The second photo needs only the last three.\n",
     },
     .{
         .main_file = "12_the_exe_files/083_the_stakeout.zig",
@@ -1090,15 +1247,16 @@ const exercises = [_]Exercise{
         \\Night 2: peak 9, 3 seconds over the threshold.
         \\Night 3: peak 6, 2 seconds over the threshold.
         ,
-        .hint = "run takes the inputs as a tuple, then a tuple of pointers to the destinations, then the call options.\n",
+        .hint = "run takes the inputs as a tuple, then a tuple of pointers to the destinations, then the call options. A count is a sum of bools that became numbers.\n",
     },
     .{
         .main_file = "12_the_exe_files/084_the_autopsy.zig",
         .output =
         \\The Exe has 3 inputs: {d_out=2,d=3,f32}, {d_out=2,f32} and {d=3,f32}.
         \\alien: 4.5, weather balloon: 10
+        \\The detector's verdict: weather balloon.
         ,
-        .hint = "compile wants the method's name as an enum literal. Then: which Buffers fill slots 0 and 1?\n",
+        .hint = "compile wants the method's name as an enum literal, whatever the method is called. Then: which Buffers fill slots 0 and 1?\n",
     },
     .{
         .main_file = "12_the_exe_files/085_redacted.zig",
@@ -1108,7 +1266,7 @@ const exercises = [_]Exercise{
         \\Witness 2: Scally's polygraph says lying=false, Molder's says lying=true.
         \\Witness 3: Scally's polygraph says lying=true, Molder's says lying=true.
         ,
-        .hint = "Zig names the field that doesn't exist. And which of the two agents is the paranoid one?\n",
+        .hint = "The settings are Zig values: forward reads them at trace time. Zig names the field that doesn't exist. And which of the two agents is the paranoid one?\n",
     },
     .{
         .main_file = "12_the_exe_files/086_it_goes_all_the_way_up.zig",
@@ -1116,7 +1274,7 @@ const exercises = [_]Exercise{
         \\3 layers, 7 inputs.
         \\What reaches the top: { 2.5, 4.5 }
         ,
-        .hint = "A Bufferized(Layer) is a struct of two Buffers. deinitAll is happy with a Layer, just not with a slice of them.\n",
+        .hint = "The lesson gives the formula of a layer and the loop of the network. A Bufferized(Layer) is a struct of two Buffers. deinitAll is happy with a Layer, just not with a slice of them.\n",
     },
     .{
         .main_file = "12_the_exe_files/087_ten_sightings.zig",
@@ -1132,7 +1290,7 @@ const exercises = [_]Exercise{
         \\Sighting 8: 7.5 against 2. ALIEN.
         \\Sighting 9: 0.5 against 17. weather balloon.
         ,
-        .hint = "Read the two shapes in the panic. Which of the three ways out does the task ask for?\n",
+        .hint = "The first three items are things you have written before. Then read the two shapes in the panic. Which of the three ways out does the task ask for?\n",
     },
     .{
         .main_file = "12_the_exe_files/088_quiz_the_truth_is_in_there.zig",
@@ -1143,8 +1301,9 @@ const exercises = [_]Exercise{
         \\Case 3: score 4. Molder: Aliens! Scally: Swamp gas.
         \\Case 4: score 9. Molder: Aliens! Scally: Swamp gas.
         \\Case 5: score -1. Molder: Inconclusive. Scally: Swamp gas.
+        \\With Skimmer's weights, Scally's Exe finds aliens in 5 cases out of 5. Budget approved.
         ,
-        .hint = "Follow the TODOs in order. What do the two agents NOT have in common?\n",
+        .hint = "Follow the TODOs in order. What do the two agents NOT have in common? And what does Skimmer change: the model, or the numbers?\n",
     },
     // Chapter 13: Layer Cake
     .{
@@ -1154,8 +1313,9 @@ const exercises = [_]Exercise{
         \\  sponge    sweetness  3.25  richness  1.50
         \\  brioche   sweetness  3.00  richness  6.50
         \\  meringue  sweetness  5.00  richness -1.00
+        \\By hand {cake=3,dout=2,f32}: the same six numbers.
         ,
-        .hint = "No label, no cake. Which axis does `forward` contract, and does the input have it?\n",
+        .hint = "No label, no cake: which axis gets contracted, and does the input have it? Then read the compiler: it names the field that is missing.\n",
     },
     .{
         .main_file = "13_layer_cake/090_oven_settings.zig",
@@ -1165,16 +1325,21 @@ const exercises = [_]Exercise{
         \\tanh        -0.964  -0.462   0.462   0.964
         \\sigmoid      0.119   0.378   0.622   0.881
         ,
-        .hint = "Four identical rows: nobody turned the oven on. And how does Zig write a union value that carries a payload?\n",
+        .hint = "Four identical rows: nobody turned the oven on. How does Zig write a union value that carries a payload? And which fields of a Tier hold a Tensor?\n",
     },
     .{
         .main_file = "13_layer_cake/091_level_the_tiers.zig",
         .output =
+        \\From the pantry:
+        \\  2  4  4  6  ->  7.172 10.000 10.000 12.828
+        \\ 10 20 30 40  ->  7.317  9.106 10.894 12.683
+        \\  5  5  5  5  -> 10.000 10.000 10.000 10.000
+        \\By hand:
         \\  2  4  4  6  ->  7.172 10.000 10.000 12.828
         \\ 10 20 30 40  ->  7.317  9.106 10.894 12.683
         \\  5  5  5  5  -> 10.000 10.000 10.000 10.000
         ,
-        .hint = "nan? Work out what gets divided by what for the flat cake. And which field sets the mean, which the spread?\n",
+        .hint = "nan? Work out what gets divided by what for the flat cake. Which field sets the mean, which the spread? By hand: `mean` keeps the axis it reduces, with a size of 1.\n",
     },
     .{
         .main_file = "13_layer_cake/092_no_such_struct.zig",
@@ -1183,7 +1348,7 @@ const exercises = [_]Exercise{
         \\( 30, 40)   rms norm  1.697  1.131   unit length  0.600  0.800
         \\(  0, -5)   rms norm  0.000 -1.414   unit length  0.000 -1.000
         ,
-        .hint = "The numbers of one cake live along one axis. And `rmsNorm` only normalizes: the weight is your job.\n",
+        .hint = "The numbers of one cake live along one axis. `rmsNorm` only normalizes: the weight is your job. And an f32 is not a Tensor.\n",
     },
     .{
         .main_file = "13_layer_cake/093_the_menu.zig",
@@ -1193,8 +1358,10 @@ const exercises = [_]Exercise{
         \\  eclair     sweet 0.8  buttery 0.6  crunchy 0.1
         \\  eclair     sweet 0.8  buttery 0.6  crunchy 0.1
         \\  macaron    sweet 0.9  buttery 0.2  crunchy 0.5
+        \\By hand {s=4,d=3,f32}: the same twelve numbers.
+        \\The whole order {d=3,f32}: sweet 0.675  buttery 0.575  crunchy 0.350
         ,
-        .hint = "The panic names the dtype it received. The ids are written on the menu, in the comments.\n",
+        .hint = "The panic names the dtype it received. The ids are written on the menu, in the comments. By hand: which axis of the table do the ids replace?\n",
     },
     .{
         .main_file = "13_layer_cake/094_the_cake_stand.zig",
@@ -1205,27 +1372,28 @@ const exercises = [_]Exercise{
         \\Bufferized(LayerNorm): weight bias
         \\weekday -1.336  0.267  1.069
         \\sunday   0.579 -1.407  0.828
+        \\sunday, gentle oven  0.587 -1.408  0.821
         ,
-        .hint = "The compiler names a field that does not exist. If Bufferized dropped it, the Exe does not need it.\n",
+        .hint = "The compiler names a field that does not exist: if Bufferized dropped it, the Exe does not need it. The oven is frozen into the Exe, the weights are not.\n",
     },
     .{
         .main_file = "13_layer_cake/095_sweet_or_salty.zig",
         .output =
-        \\verdicts {cake=4,i32}
-        \\  plain          -> rejected
-        \\  strawberry     -> served
-        \\  olive          -> served
-        \\  salted caramel -> rejected
+        \\verdicts {cake=4,i32}, confidence {cake=4,f32}
+        \\  plain          -> rejected (62.2% sure)
+        \\  strawberry     -> served   (62.2% sure)
+        \\  olive          -> served   (62.2% sure)
+        \\  salted caramel -> rejected (62.2% sure)
         ,
-        .hint = "The panic shows the two shapes that met in `dot`: which tag is missing? Then: is there an oven between the tiers?\n",
+        .hint = "The panic names a tag, and the shape that does not have it. Then: is there an oven between the tiers? Two outputs need a runner.\n",
     },
     .{
         .main_file = "13_layer_cake/096_quiz_the_wedding_cake.zig",
         .output =
-        \\occasions {order=3,i32}
-        \\  2 croissants, 2 baguettes -> breakfast
-        \\  2 eclairs, 2 macarons     -> tea time
-        \\  3 brownies, 1 eclair      -> a wedding
+        \\occasions {order=3,i32}, confidence {order=3,f32}
+        \\  2 croissants, 2 baguettes -> breakfast (87.3% sure)
+        \\  2 eclairs, 2 macarons     -> tea time  (70.0% sure)
+        \\  3 brownies, 1 eclair      -> a wedding (97.5% sure)
         ,
         .hint = "Seven steps, in order. A panic names the shapes it got: compare them with the tags that step expects.\n",
     },
@@ -1250,8 +1418,9 @@ const exercises = [_]Exercise{
         \\}
         \\
         \\The plates, in kg: { 20, 10, 5, 2.5 }
+        \\The combination of locker 3: { 36, 24, 36 }
         ,
-        .hint = "Two things about the file layout: which end of the integer comes first, and where byte 0 of the data is.\n",
+        .hint = "Three things about the file layout: which end of the integer comes first, where the header starts, and where byte 0 of the data is. The header you print tells you the rest.\n",
     },
     .{
         .main_file = "14_heavy_lifting/098_the_front_desk.zig",
@@ -1271,9 +1440,11 @@ const exercises = [_]Exercise{
         \\bar.2.weight         {2,2,f32}      16   944
         \\bar.2.bias           {2,f32}         8   960
         \\
+        \\The coach: 3 tensors, 60 bytes.
         \\The plates start at byte 808 of the file.
+        \\coach.0.bias: not in the logbook.
         ,
-        .hint = "FileNotFound, for a file that is right there? The lesson has a paragraph about a quirk.\n",
+        .hint = "FileNotFound, for a file that is right there? The lesson has a paragraph about a quirk. An iterator entry holds two pointers.\n",
     },
     .{
         .main_file = "14_heavy_lifting/099_the_key_ring.zig",
@@ -1289,15 +1460,16 @@ const exercises = [_]Exercise{
         \\  weight: Tensor({dout=3,d=2,f32})
         \\  bias:   Tensor({dout=3,f32})
         ,
-        .hint = "Each panic names an entry of the file. Compare what was asked with what the logbook of 098 says.\n",
+        .hint = "Each panic names an entry of the file. Compare what was asked with what the logbook of 098 says. Views chain: a prefix, then a layer.\n",
     },
     .{
         .main_file = "14_heavy_lifting/100_the_spotter.zig",
         .output =
         \\plates      {plate=4,f32}: { 20, 10, 5, 2.5 }
         \\combination {turn=3,i32}: { 36, 24, 36 }
+        \\on the bar  {f32}: 95 kg
         ,
-        .hint = "Two moves: an empty bar, then the spotter. Four calls and a `defer`.\n",
+        .hint = "Two moves: an empty bar, then the spotter. Four calls and a `defer`. A sum keeps its axis, with a size of 1.\n",
     },
     .{
         .main_file = "14_heavy_lifting/101_meet_the_coach.zig",
@@ -1306,16 +1478,17 @@ const exercises = [_]Exercise{
         \\Chad  NEVER SKIP LEG DAY.
         \\You   DO YOU EVEN LIFT?
         ,
-        .hint = "If Coach says LIGHT WEIGHT about a 0.4 bench press, a tensor of the file is not being used.\n",
+        .hint = "A panic about `0.weight`: where does the view stand? And if Coach says LIGHT WEIGHT about a 0.4 bench press, a tensor of the file is not being used.\n",
     },
     .{
         .main_file = "14_heavy_lifting/102_quiz_the_smoothie_bar.zig",
         .output =
-        \\receipt {order=3,dout=2,f32}
-        \\  2 banana, 1 spinach: $8.50, taste 3
-        \\  1 banana, 3 spinach: $7.50, taste 0
-        \\  0 banana, 0 spinach: $0.50, taste 0
+        \\verdicts {member=3,i32}, receipts {member=3,dout=2,f32}
+        \\  Olga LIGHT WEIGHT, BABY!  2 banana, 1 spinach: $8.50, taste 3
+        \\  Chad NEVER SKIP LEG DAY.  1 banana, 3 spinach: $7.50, taste 0
+        \\  You  DO YOU EVEN LIFT?    0 banana, 0 spinach: $0.50, taste 0
         ,
+        .hint = "Draw the tree of the file first: every dot in a name is one struct deeper. Not every layer in there has a bias.\n",
     },
     // Chapter 15: Pay Attention
     .{
@@ -1333,25 +1506,39 @@ const exercises = [_]Exercise{
         \\  Paca   4.700  4.775
         \\  Dolly  4.000  4.250
         ,
-        .hint = "Whose attention must add up to 1: each row (a listener) or each column (a speaker)?\n",
+        .hint = "Step 2: whose attention must add up to 1, each row (a listener) or each column (a speaker)? And when ZML panics about a tag: values belong to speakers.\n",
     },
     .{
         .main_file = "15_pay_attention/104_no_spoilers.zig",
         .output =
         \\no spoilers:
+        \\  the mask {q=4,k=4,f32}:
+        \\        0  -inf  -inf  -inf
+        \\        0     0  -inf  -inf
+        \\        0     0     0  -inf
+        \\        0     0     0     0
+        \\  the official mask agrees: true
+        \\  the weights:
         \\        Tina  Kuzco Paca  Dolly
         \\  Tina  1.000 0.000 0.000 0.000
         \\  Kuzco 0.804 0.196 0.000 0.000
         \\  Paca  0.333 0.333 0.333 0.000
         \\  Dolly 0.250 0.250 0.250 0.250
         \\a memory of 2 llamas:
+        \\  the mask {q=4,k=4,f32}:
+        \\        0  -inf  -inf  -inf
+        \\        0     0  -inf  -inf
+        \\     -inf     0     0  -inf
+        \\     -inf  -inf     0     0
+        \\  the official mask agrees: true
+        \\  the weights:
         \\        Tina  Kuzco Paca  Dolly
         \\  Tina  1.000 0.000 0.000 0.000
         \\  Kuzco 0.804 0.196 0.000 0.000
         \\  Paca  0.000 0.500 0.500 0.000
         \\  Dolly 0.000 0.000 0.500 0.500
         ,
-        .hint = "The panic shows the two shapes that met in `add`. Which one is not a table of listeners and speakers? Then: what must happen BEFORE the 100% is shared out?\n",
+        .hint = "Two aranges, two tags, one `broad` each, and the table knows its rows and its columns. An Exe without inputs is run with `.{}`. Then: what must happen BEFORE the 100% is shared out?\n",
     },
     .{
         .main_file = "15_pay_attention/105_the_official_channel.zig",
@@ -1367,7 +1554,7 @@ const exercises = [_]Exercise{
         \\  Paca   5.000  5.000
         \\  Dolly  4.000  4.250
         ,
-        .hint = "The panic lists the tags `sdpa` wants. `byHand` does every rename you need, and builds the mask.\n",
+        .hint = "`byHand` is 103 + 104 with renames at both ends; `official` is the same renames around one call. The last panic lists the tags `sdpa` wants: which one has `main` never heard of?\n",
     },
     .{
         .main_file = "15_pay_attention/106_two_ears.zig",
@@ -1385,7 +1572,7 @@ const exercises = [_]Exercise{
         \\  Paca   0.011 0.786 | 0.786 0.011
         \\  Dolly  0.199 0.199 | 0.199 0.199
         ,
-        .hint = "How many heads, and who does the division? Then: `merge` undoes exactly what `splitAxis` did.\n",
+        .hint = "How many heads, and who does the division? `merge` undoes exactly what `splitAxis` did. And count a llama's ears before you trust the loop.\n",
     },
     .{
         .main_file = "15_pay_attention/107_spin_the_llama.zig",
@@ -1395,6 +1582,11 @@ const exercises = [_]Exercise{
         \\  position 1: ( 0.540,  0.841)  length 1.000
         \\  position 2: (-0.416,  0.909)  length 1.000
         \\  position 3: (-0.990,  0.141)  length 1.000
+        \\facing (3, 4), spun by hand, and by rope:
+        \\  position 0: ( 3.000,  4.000)  ( 3.000,  4.000)
+        \\  position 1: (-1.745,  4.686)  (-1.745,  4.686)
+        \\  position 2: (-4.886,  1.063)  (-4.886,  1.063)
+        \\  position 3: (-3.534, -3.537)  (-3.534, -3.537)
         \\scores at positions { 0, 1, 2, 3 }:
         \\   1.000  0.540 -0.416 -0.990
         \\   0.540  1.000  0.540 -0.416
@@ -1406,7 +1598,7 @@ const exercises = [_]Exercise{
         \\  -0.416  0.540  1.000  0.540
         \\  -0.990 -0.416  0.540  1.000
         ,
-        .hint = "A score depends on the distance only if BOTH llamas have turned. Compare the two tables.\n",
+        .hint = "For the formula: slice `.hd` in two halves of size 1, and give the angles the shape of a half. For the tables: a score depends on the distance only if BOTH llamas have turned.\n",
     },
     .{
         .main_file = "15_pay_attention/108_the_gossip_archive.zig",
@@ -1417,18 +1609,28 @@ const exercises = [_]Exercise{
         \\Dolly arrives at row 3 and hears  4.000  4.250
         \\the archive of keys {k=4,hd=2,f32}: (0,2) (2,0) (1,1) (0,0)
         ,
-        .hint = "Keys and values are filed the same way. For the mask: which rows are filled once the llama at `pos` is in?\n",
+        .hint = "Keys and values are filed the same way. For the mask: which rows are filled once the llama at `pos` is in? In `main`, the archive that comes out replaces the one that went in.\n",
     },
     .{
         .main_file = "15_pay_attention/109_quiz_the_whole_herd.zig",
         .output =
-        \\after one round of gossip {s=4,d=4,f32}:
+        \\after 1 round(s) of gossip {s=4,d=4,f32}:
         \\  Tina   0.000  0.000  2.500  0.000
         \\  Kuzco  1.203  0.000  0.750  0.000
         \\  Paca   1.401  0.000  2.011  0.000
         \\  Dolly  0.173  1.452  0.567  1.988
+        \\after 2 round(s) of gossip {s=4,d=4,f32}:
+        \\  Tina   0.000  0.000  6.250  0.000
+        \\  Kuzco  1.428  0.000  2.783  0.000
+        \\  Paca   2.059  0.000  4.656  0.000
+        \\  Dolly  0.294  2.721  1.779  5.376
+        \\after 3 round(s) of gossip {s=4,d=4,f32}:
+        \\  Tina   0.000  0.000 15.625  0.000
+        \\  Kuzco  1.681  0.000  7.252  0.000
+        \\  Paca   3.085  0.000 11.602  0.000
+        \\  Dolly  0.441  5.442  4.448 16.127
         ,
-        .hint = "Steps 1 to 5, one at a time. When ZML panics, the shapes in the message tell you which tag is off.\n",
+        .hint = "Steps 1 to 5, one at a time. When ZML panics, the shapes in the message tell you which tag is off. In `main`: the result of a round is the input of the next one.\n",
     },
     // Chapter 16: Casino Royale
     .{
@@ -1439,7 +1641,7 @@ const exercises = [_]Exercise{
         \\Same seed, same evening: true
         \\Another seed, same evening: false
         ,
-        .hint = "Which state does the second hand come from?\n",
+        .hint = "Which state does the second hand come from? `Tensor.stack` wants the tensors, a position and a tag for the new axis.\n",
     },
     .{
         .main_file = "16_casino_royale/111_groundhog_table.zig",
@@ -1456,36 +1658,45 @@ const exercises = [_]Exercise{
         \\by hand:      seven seven seven
         \\sampleTokens: seven seven seven
         ,
-        .hint = "Read the panic: which tag is it looking for, and what are your logits tagged?\n",
+        .hint = "Tokens first, Rng second, in `pull` and in the pointers. Then read the panic: which tag is it looking for, and what are the logits tagged?\n",
     },
     .{
         .main_file = "16_casino_royale/113_let_it_ride.zig",
         .output =
         \\the sure thing
+        \\  the odds: pocket 1 1.000
         \\  dice were rolled: false
         \\  an outsider (pocket 0, 2 or 5) came up: false
         \\  the favorite came up every single time: true
         \\  pocket 3 got at least a quarter of the spins: false
         \\the honest table
+        \\  the odds: pocket 1 0.506 pocket 4 0.307 pocket 3 0.186
         \\  dice were rolled: true
         \\  an outsider (pocket 0, 2 or 5) came up: false
         \\  the favorite came up every single time: false
         \\  pocket 3 got at least a quarter of the spins: false
         \\the cold table
+        \\  the odds: pocket 1 1.000 pocket 4 0.000 pocket 3 0.000
         \\  dice were rolled: true
         \\  an outsider (pocket 0, 2 or 5) came up: false
         \\  the favorite came up every single time: true
         \\  pocket 3 got at least a quarter of the spins: false
         \\the hot table
+        \\  the odds: pocket 1 0.335 pocket 4 0.333 pocket 3 0.332
         \\  dice were rolled: true
         \\  an outsider (pocket 0, 2 or 5) came up: false
         \\  the favorite came up every single time: false
         \\  pocket 3 got at least a quarter of the spins: true
         ,
-        .hint = "The comment above each table is its strategy. Inputs go in a tuple, outputs are pointers: tokens first.\n",
+        .hint = "`odds`: top-k, temperature, softmax, and mind which axis is left. The comment above each table is its strategy. Inputs go in a tuple, outputs are pointers: tokens first.\n",
     },
     .{
         .main_file = "16_casino_royale/114_quiz_the_house_always_wins.zig",
-        .output = "the house always wins please play again.",
+        .output =
+        \\the house always wins please play again.
+        \\After a few drinks, the sign went off script: true
+        \\It still got the next word right more often than not: true
+        ,
+        .hint = "Build it in the order of the chapters: fields, `init`, `forward`, `load`, then `main`. Run the sober Exe first; the night shift is the same loop with a counter instead of a print.\n",
     },
 };

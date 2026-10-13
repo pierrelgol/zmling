@@ -52,14 +52,28 @@
 // the bag (one dollar per kilogram, Brenda keeps it simple) plus
 // a surcharge that depends on the bag and on the flight. The two
 // tables come from different departments. Kevin added them
-// anyway.
+// anyway, and then "fixed" the panic. You know which way.
+//
+// Then the square table, so that you have seen it once. On
+// Tuesdays there are three flights of three bags, the same two
+// departments send the same two kinds of table, and the same
+// recipe is compiled a second time for the new sizes. Nothing
+// about `owed` changes. What main() lacks is the Tuesday
+// plumbing, all of it chapter 02: the two placeholders (each
+// department keeps its habits: read the Monday ones), the compile
+// call, and the run. The Buffers are there.
+//
+// Careful with those placeholders. Nine numbers are nine numbers:
+// tag the accounting table the way you would LIKE it to be, and
+// everything compiles, everything runs, and six passengers pay
+// somebody else's surcharge.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 /// weights + surcharges, a row per flight.
 fn owed(weights: zml.Tensor, surcharges: zml.Tensor) zml.Tensor {
-    return weights.add(surcharges);
+    return weights.add(surcharges.withTags(.{ .flights, .bags }));
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -100,6 +114,36 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("Owed, as {f}: {any}\n", .{
         result.shape(),
         try result.getValue([2][3]f32, io),
+    });
+
+    // Tuesday. Check-in: a row per flight. Accounting: a row per
+    // bag. Three of each.
+    const square_weights: zml.Tensor = ???;
+    const square_surcharges: zml.Tensor = ???;
+
+    // The same recipe, compiled for Tuesday's shapes.
+
+    var square_weights_buffer: zml.Buffer = try .fromBytes(io, platform, square_weights.shape(), std.mem.sliceAsBytes(&[3][3]f32{
+        .{ 10, 20, 30 },
+        .{ 40, 50, 60 },
+        .{ 70, 80, 90 },
+    }));
+    defer square_weights_buffer.deinit();
+
+    var square_surcharges_buffer: zml.Buffer = try .fromBytes(io, platform, square_surcharges.shape(), std.mem.sliceAsBytes(&[3][3]f32{
+        .{ 1, 2, 3 },
+        .{ 4, 5, 6 },
+        .{ 7, 8, 9 },
+    }));
+    defer square_surcharges_buffer.deinit();
+
+    // Tuesday's run.
+    var square_result: zml.Buffer = ???;
+    defer square_result.deinit();
+
+    try stdout.print("Tuesday, as {f}: {any}\n", .{
+        square_result.shape(),
+        try square_result.getValue([3][3]f32, io),
     });
     try stdout.flush();
 }

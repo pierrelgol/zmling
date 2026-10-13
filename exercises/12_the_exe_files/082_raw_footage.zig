@@ -80,9 +80,24 @@
 // handles to the same memory, and freeing both is the kind of
 // thing that gets a basement office closed.
 //
-// The task. Molder tried to fill the report with one `eval` per
-// field. Replace his attempt with the real thing: the arguments,
-// the results, a call that waits, and one `get`.
+// The task.
+//
+// 1. `analyze` has lost its body: for each frame, the brightest
+//    pixel, and the sum of all its pixels. Chapter 06, and no
+//    size-1 axes left behind.
+//
+// 2. Molder tried to fill the report with one `eval` per field.
+//    Replace his attempt with the real thing: the arguments, the
+//    results, a call that waits, and one `get`.
+//
+// 3. The next night there is a second photo, and Molder did it
+//    again. The two tables are not used up by a call: `set` the
+//    new Buffer into the SAME `args`, call, and `get` from the
+//    SAME `results`. No second pair of tables.
+//
+// The first report is printed after the second call, on purpose.
+// What `get` handed out is yours and stays valid: the second
+// call makes new Buffers, it doesn't write into the old ones.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -95,10 +110,7 @@ const Report = struct {
 };
 
 fn analyze(photo: zml.Tensor) Report {
-    return .{
-        .brightest = photo.max(.pixels).squeeze(.pixels),
-        .glow = photo.sum(.pixels).squeeze(.pixels),
-    };
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -133,7 +145,25 @@ pub fn main(init: std.process.Init) !void {
     defer report.brightest.deinit();
     defer report.glow.deinit();
 
+    // The next night. Same sky, same Exe, same two tables.
+    var second_buffer: zml.Buffer = try .fromBytes(io, platform, photo.shape(), std.mem.sliceAsBytes(&[3][4]f32{
+        .{ 3, 3, 3, 3 },
+        .{ 0, 0, 0, 0 },
+        .{ 1, 2, 4, 8 },
+    }));
+    defer second_buffer.deinit();
+
+    // Molder again. This time: no new tables, the ones from above.
+    var second: zml.Bufferized(Report) = .{
+        .brightest = try exe.eval(gpa, io, .{second_buffer}),
+        .glow = try exe.eval(gpa, io, .{second_buffer}),
+    };
+    defer second.brightest.deinit();
+    defer second.glow.deinit();
+
     try stdout.print("brightest pixel per frame: {any}\n", .{try report.brightest.getValue([3]f32, io)});
     try stdout.print("total glow per frame:      {any}\n", .{try report.glow.getValue([3]f32, io)});
+    try stdout.print("the next night, brightest: {any}\n", .{try second.brightest.getValue([3]f32, io)});
+    try stdout.print("the next night, glow:      {any}\n", .{try second.glow.getValue([3]f32, io)});
     try stdout.flush();
 }

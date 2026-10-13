@@ -1,20 +1,45 @@
 --- exercises/14_heavy_lifting/097_the_locker.zig
 +++ answers/14_heavy_lifting/097_the_locker.zig
-@@ -87,7 +87,7 @@
+@@ -91,7 +91,7 @@
+ /// Where byte `begin` of the tensor data sits, counted from the
+ /// start of the file.
+ fn dataOffset(header_length: usize, begin: usize) usize {
+-    return ???;
++    return 8 + header_length + begin;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -105,13 +105,14 @@
+     defer file.close(io);
+ 
      // 1. The first eight bytes are the length of the header.
-     var length_bytes: [8]u8 = undefined;
-     _ = try file.readPositionalAll(io, &length_bytes, 0);
--    const header_length: usize = @intCast(std.mem.readInt(u64, &length_bytes, ???));
+-    // TODO: `header_length`, a usize. Read the eight bytes, then
+-    // turn them into an integer (`@intCast` makes a usize of a u64).
++    var length_bytes: [8]u8 = undefined;
++    _ = try file.readPositionalAll(io, &length_bytes, 0);
 +    const header_length: usize = @intCast(std.mem.readInt(u64, &length_bytes, .little));
  
      // 2. The header comes right after them.
      var header_bytes: [2048]u8 = undefined;
-@@ -100,7 +100,7 @@
+     const header = header_bytes[0..header_length];
+-    _ = try file.readPositionalAll(io, header, ???);
++    _ = try file.readPositionalAll(io, header, 8);
  
-     // 3. The header says: "plates" is 4 F32, data_offsets [0, 16].
-     //    Where is byte 0 of the data in the file?
--    const plates_offset = 0;
-+    const plates_offset = 8 + header_length + 0;
+     try stdout.print("The header is {d} bytes of JSON:\n", .{header.len});
+     // (Writers pad the header with spaces. Nobody needs to see those.)
+@@ -122,12 +123,13 @@
+     //    exactly the bytes an [4]f32 is made of. (On a little-endian
+     //    machine, which is to say: on yours.)
+     var plates: [4]f32 = undefined;
+-    _ = try file.readPositionalAll(io, std.mem.asBytes(&plates), 0);
++    _ = try file.readPositionalAll(io, std.mem.asBytes(&plates), dataOffset(header_length, 0));
  
-     // Read the 16 bytes straight into four floats: the file holds
-     // exactly the bytes an [4]f32 is made of. (On a little-endian
+     try stdout.print("\nThe plates, in kg: {any}\n", .{plates});
+ 
+     // 4. The combination of locker 3 is in here too.
+-    // TODO: `combination`, read from the file.
++    var combination: [3]i32 = undefined;
++    _ = try file.readPositionalAll(io, std.mem.asBytes(&combination), dataOffset(header_length, 16));
+ 
+     try stdout.print("The combination of locker 3: {any}\n", .{combination});
+     try stdout.flush();

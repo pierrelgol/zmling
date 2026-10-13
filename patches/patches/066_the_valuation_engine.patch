@@ -1,6 +1,6 @@
 --- exercises/09_dot_com_bubble/066_the_valuation_engine.zig
 +++ answers/09_dot_com_bubble/066_the_valuation_engine.zig
-@@ -54,7 +54,8 @@
+@@ -68,12 +68,14 @@
  
  /// y = W x + b, for every startup at once.
  fn valuation(x: zml.Tensor, w: zml.Tensor, bias: zml.Tensor) zml.Tensor {
@@ -9,4 +9,40 @@
 +    return y.add(bias.broad(y.shape()));
  }
  
+ /// Months of money left, valuation / burn: {startup}.
+ fn runway(x: zml.Tensor, w: zml.Tensor, bias: zml.Tensor) zml.Tensor {
+-    return ???;
++    const y = valuation(x, w, bias);
++    return y.slice(.d_out, .single(0)).div(y.slice(.d_out, .single(1)));
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -87,8 +89,14 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // Three placeholders, `x`, `w` and `bias`, and one Exe for each
+-    // of the two functions.
++    const x: zml.Tensor = .init(.{ .startup = 2, .d_in = 3 }, .f32);
++    const w: zml.Tensor = .init(.{ .d_out = 2, .d_in = 3 }, .f32);
++    const bias: zml.Tensor = .init(.{ .d_out = 2 }, .f32);
++
++    var exe = try platform.compileFn(gpa, io, valuation, .{ x, w, bias }, .{});
++    defer exe.deinit();
++    var runway_exe = try platform.compileFn(gpa, io, runway, .{ x, w, bias }, .{});
++    defer runway_exe.deinit();
+ 
+     // Employees, foosball tables, mentions of "synergy".
+     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[2][3]f32{
+@@ -105,7 +113,10 @@
+     var bias_buffer: zml.Buffer = try .fromBytes(io, platform, bias.shape(), std.mem.sliceAsBytes(&[_]f32{ 10, 0.5 }));
+     defer bias_buffer.deinit();
+ 
+-    // Run both: `result` for the valuation, `months` for the runway.
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, w_buffer, bias_buffer });
++    defer result.deinit();
++    var months: zml.Buffer = try runway_exe.eval(gpa, io, .{ x_buffer, w_buffer, bias_buffer });
++    defer months.deinit();
+ 
+     try stdout.print("output {f}, runway {f}\n", .{ result.shape(), months.shape() });
+     for (try result.getValue([2][2]f32, io), try months.getValue([2]f32, io), [_][]const u8{ "PetRocks.com", "Boring Inc." }) |y, left, name| {

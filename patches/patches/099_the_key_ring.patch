@@ -1,6 +1,27 @@
 --- exercises/14_heavy_lifting/099_the_key_ring.zig
 +++ answers/14_heavy_lifting/099_the_key_ring.zig
-@@ -127,7 +127,7 @@
+@@ -123,35 +123,37 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // TODO: `registry`, the logbook of the file. It wants the real
+-    // address (exercise 098).
++    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
++    defer gpa.free(path);
+ 
+-    // The key cabinet, for our one CPU.
+-    var store: zml.io.TensorStore = ???;
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
+     defer store.deinit();
+ 
+     const view = store.view();
+     try stdout.print("{d} entries in the locker, {d} of them under \"coach\".\n", .{
+         view.count(),
+-        ???,
++        view.withPrefix("coach").count(),
      });
  
      // A loose tensor, at the root of the file.
@@ -9,7 +30,15 @@
      try stdout.print("plates: {f}\n", .{plates});
  
      for (0..2) |i| {
-@@ -141,7 +141,7 @@
+         // Stand in front of layer i of the coach.
+-        const layer: zml.io.TensorStore.View = ???;
++        const layer = view.withPrefix("coach").withLayer(i);
+         try stdout.print("\nlayer \"{s}\"\n", .{layer.prefix().?});
+ 
+         // A weight is a matrix: outputs first, then inputs.
+-        const weight: zml.Tensor = ???;
++        const weight = layer.createReplicatedTensor("weight", .{ .dout, .d });
+         try stdout.print("  weight: {f}\n", .{weight});
  
          // Not every layer has a bias. Only cut a key if there is
          // a lock for it.

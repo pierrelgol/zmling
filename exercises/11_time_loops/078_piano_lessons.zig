@@ -69,9 +69,42 @@
 //   - If `cond` never turns false, the Exe never returns. No
 //     panic, no error, just February 2nd again. (Ctrl-C.)
 //
-// The task. The State is ready: `day` counts down from n to 0,
-// `minutes` is the running total. Today's practice time is the
-// value of `day`. Fill in the two blanks.
+// The task, part 1. The State is ready: `day` counts down from
+// n to 0, `minutes` is the running total, and today's practice
+// time is the value of `day`. Write `cond`, write `body`, and
+// write `totalPractice`, which starts the loop and hands back
+// the total.
+//
+// Part 2. There is a third place to put a loop: OUTSIDE the
+// Exe, in `main`. Compile a function that does ONE trip, and
+// call that Exe from an ordinary Zig `while`, feeding the result
+// of each call into the next one:
+//
+//     var total: zml.Buffer = ...zero...;
+//     defer total.deinit();
+//
+//     while (...) {
+//         const next = try exe.eval(gpa, io, .{ total, ... });
+//         total.deinit();
+//         total = next;
+//     }
+//
+// An output Buffer is a perfectly good input Buffer. The total
+// never comes back to Zig; only the handle changes hands. Every
+// call makes a NEW Buffer, so every trip frees the one it
+// replaces, and the `defer` frees the last.
+//
+// One call per trip instead of one call in all: it sounds like
+// the worst of the three loops. It is also how every text
+// generator in the later chapters runs, because between two
+// calls Zig can do what a graph cannot: print the result so far,
+// look at it, decide to stop.
+//
+// `practiceDay` is the one trip: the total so far and a day go
+// in, the new total comes out. Write it, then write its part of
+// `main`: two scalar i32 placeholders, an Exe, and the loop over
+// the days 100, 99, ... 1, counting the calls. The `print` at
+// the bottom tells you which names it expects.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -90,19 +123,18 @@ const Practice = struct {
 
     pub fn body(self: Practice, state: State) State {
         _ = self;
-        return .{
-            .day = state.day.addConstant(-1),
-            .minutes = ???,
-        };
+        return ???;
     }
 };
 
 fn totalPractice(days: zml.Tensor) zml.Tensor {
-    const end = zml.ops.@"while"(Practice, .{}, .{
-        .day = days,
-        .minutes = zml.Tensor.scalar(0, .i32),
-    });
-    return end.minutes;
+    // Start the loop: all the days still to go, no minutes yet.
+    return ???;
+}
+
+/// Part 2. One trip, no loop: the total, `day` minutes later.
+fn practiceDay(minutes: zml.Tensor, day: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -126,10 +158,20 @@ pub fn main(init: std.process.Init) !void {
         var days_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
         defer days_buffer.deinit();
 
-        var result: zml.Buffer = try exe.eval(gpa, io, .{days_buffer});
+        var result: zml.Buffer = ???;
         defer result.deinit();
 
         try stdout.print("After {d} days, Phil has practiced {d} minutes.\n", .{ n, try result.getValue(i32, io) });
     }
+
+    // Part 2: the loop is in Zig, and the Exe does one day per call.
+    //
+    // TODO: two placeholders and `day_exe`, compiled from `practiceDay`.
+    //
+    // TODO: `total`, a Buffer that starts at 0, and `calls`. Then
+    // the days 100, 99, ... 1, each one as a Buffer, through
+    // `day_exe`. What comes out is the next `total`.
+
+    try stdout.print("By hand, 100 days: {d} minutes, in {d} calls. The loop Exe needs 1.\n", .{ try total.getValue(i32, io), calls });
     try stdout.flush();
 }

@@ -1,15 +1,24 @@
 --- exercises/01_shape_shifters/004_the_lonely_sock.zig
 +++ answers/01_shape_shifters/004_the_lonely_sock.zig
-@@ -46,10 +46,10 @@
+@@ -47,11 +47,11 @@
      const stdout = &stdout_writer.interface;
  
      // One sock. No box. Rank 0.
 -    const sock = zml.Shape.init(.{1}, .u8);
 +    const sock = zml.Shape.init(.{}, .u8);
  
-     // One sock, in a box, in a crate, in a container. Rank 3.
--    const paranoid_sock = zml.Shape.init(.{}, .u8);
-+    const paranoid_sock = zml.Shape.init(.{ 1, 1, 1 }, .u8);
+     // One sock in one box: the vector of length one from the
+     // lesson. Same dtype as the others. Write the whole Shape.
+-    const boxed_sock = ???;
++    const boxed_sock = zml.Shape.init(.{1}, .u8);
  
-     try stdout.print("sock:          rank {d}, count {d}, dims {any}\n", .{ sock.rank(), sock.count(), sock.dims() });
-     try stdout.print("paranoid sock: rank {d}, count {d}, dims {any}\n", .{ paranoid_sock.rank(), paranoid_sock.count(), paranoid_sock.dims() });
+     // One sock, in a box, in a crate, in a container. Rank 3.
+     const paranoid_sock = zml.Shape.init(.{ 1, 1, 1 }, .u8);
+@@ -65,6 +65,6 @@
+ 
+     // Compare the sock with a scalar shape of the same dtype,
+     // built with the shortcut from the lesson.
+-    try stdout.print("Is the sock a scalar? {}\n", .{sock.eql(???)});
++    try stdout.print("Is the sock a scalar? {}\n", .{sock.eql(zml.Shape.scalar(.u8))});
+     try stdout.flush();
+ }

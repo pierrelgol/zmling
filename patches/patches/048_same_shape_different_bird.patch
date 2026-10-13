@@ -1,6 +1,6 @@
 --- exercises/07_origami_club/048_same_shape_different_bird.zig
 +++ answers/07_origami_club/048_same_shape_different_bird.zig
-@@ -73,7 +73,7 @@
+@@ -88,12 +88,13 @@
  
  /// One row per member in, one row per round out.
  fn scoreboard(scores: zml.Tensor) zml.Tensor {
@@ -8,4 +8,30 @@
 +    return scores.transpose(.{ .rounds, .members });
  }
  
+ /// For each round, best score minus worst score: {rounds=3}.
+ fn gaps(scores: zml.Tensor) zml.Tensor {
+-    return ???;
++    const board = scoreboard(scores);
++    return board.max(.members).sub(board.min(.members)).squeeze(.members);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -123,10 +124,17 @@
+     defer result.deinit();
+ 
+     // A nested Zig array is row-major too: one row per ROUND.
+-    const board = try result.getValue([2][3]i32, io);
++    const board = try result.getValue([3][2]i32, io);
+ 
+     // The same three steps for `gaps`: an Exe called `gaps_exe`,
+     // its result, and the three numbers in an array called `gap`.
++    var gaps_exe = try platform.compileFn(gpa, io, gaps, .{scores}, .{});
++    defer gaps_exe.deinit();
++
++    var gaps_result: zml.Buffer = try gaps_exe.eval(gpa, io, .{scores_buffer});
++    defer gaps_result.deinit();
++
++    const gap = try gaps_result.getValue([3]i32, io);
+ 
+     try stdout.print("Scoreboard {f}\n", .{exe.output_shapes[0]});
+     for (board, 1..) |round, i| {

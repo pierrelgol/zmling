@@ -1,6 +1,6 @@
 --- exercises/05_broadcast_news/036_the_fine_print.zig
 +++ answers/05_broadcast_news/036_the_fine_print.zig
-@@ -75,7 +75,7 @@
+@@ -97,12 +97,12 @@
      // {anchor=3} -> {anchor=3,night=1}
      const column = budget.appendAxes(.{.night});
  
@@ -8,4 +8,28 @@
 +    return column.broad(spent.shape()).sub(spent).div(column);
  }
  
+ /// Dollars over budget, each night. Never negative.
+ fn overspend(spent: zml.Tensor, budget: zml.Tensor) zml.Tensor {
+-    return ???;
++    return spent.sub(budget.appendAxes(.{.night})).relu();
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -124,6 +124,8 @@
+ 
+     // The second table: `overspend`, compiled for the same two
+     // placeholders.
++    var over_exe = try platform.compileFn(gpa, io, overspend, .{ spent, budget }, .{});
++    defer over_exe.deinit();
+ 
+     const anchors = [_][]const u8{ "Brock", "Linda", "Gail" };
+ 
+@@ -143,6 +145,8 @@
+     defer result.deinit();
+ 
+     // Run the second Exe, and keep its result in `over_result`.
++    var over_result: zml.Buffer = try over_exe.eval(gpa, io, .{ spent_buffer, budget_buffer });
++    defer over_result.deinit();
+ 
+     const left = try result.getValue([3][4]f32, io);
+     const over = try over_result.getValue([3][4]f32, io);

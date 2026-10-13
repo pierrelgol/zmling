@@ -53,9 +53,17 @@
 // forever, and `exe.input_shapes.len` is 1. To relive eight you
 // compile another Exe.
 //
-// Phil's mood halves with every repeated day. Complete `relive`
-// so that it halves the mood once per day (`x.scale(0.5)`, you
-// know that one), then compile it for THREE days.
+// Phil's mood halves with every repeated day (`x.scale(0.5)`,
+// you know that one). Three things to do:
+//
+//   1. Write `relive`: one trip per day, and every trip rings
+//      the alarm (`alarm_rings += 1`) and halves the mood.
+//   2. Compile it for THREE days. Somebody copied the 7 from
+//      the example above.
+//   3. In the loop of `main`, this morning's mood has to become
+//      a scalar Buffer and go through the Exe. That is chapter
+//      02, and from this chapter on it is more and more often
+//      yours to write.
 //
 // `alarm_rings` is an ordinary Zig global, counting how often
 // the loop body really runs. Look at what it says after the Exe
@@ -67,12 +75,8 @@ const zml = @import("zml");
 var alarm_rings: usize = 0;
 
 fn relive(mood: zml.Tensor, days: usize) zml.Tensor {
-    var m = mood;
-    for (0..days) |_| {
-        alarm_rings += 1;
-        m = ???;
-    }
-    return m;
+    // One trip per day. Every trip rings the alarm and halves the mood.
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -89,16 +93,18 @@ pub fn main(init: std.process.Init) !void {
     const mood: zml.Tensor = .init(.{}, .f32);
 
     // One tensor, and one plain Zig number: three days.
-    var exe = try platform.compileFn(gpa, io, relive, .{ mood, ??? }, .{});
+    var exe = try platform.compileFn(gpa, io, relive, .{ mood, 7 }, .{});
     defer exe.deinit();
 
     try stdout.print("The Exe has {d} input. While tracing, the alarm rang {d} times.\n", .{ exe.input_shapes.len, alarm_rings });
 
     for ([_]f32{ 80, 64, 8, 0 }) |morning_mood| {
-        var mood_buffer: zml.Buffer = try .scalar(io, platform, morning_mood, .f32);
+        // This morning's mood, as a scalar Buffer.
+        var mood_buffer: zml.Buffer = ???;
         defer mood_buffer.deinit();
 
-        var result: zml.Buffer = try exe.eval(gpa, io, .{mood_buffer});
+        // One day in the life of an Exe.
+        var result: zml.Buffer = ???;
         defer result.deinit();
 
         try stdout.print("Phil wakes up at {d} and goes to bed at {d}.\n", .{ morning_mood, try result.getValue(f32, io) });

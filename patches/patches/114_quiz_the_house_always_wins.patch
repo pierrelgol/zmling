@@ -1,8 +1,15 @@
 --- exercises/16_casino_royale/114_quiz_the_house_always_wins.zig
 +++ answers/16_casino_royale/114_quiz_the_house_always_wins.zig
-@@ -81,12 +81,17 @@
-     head: zml.nn.Linear,
+@@ -119,12 +119,15 @@
+ const night_shift = 500;
  
+ const Sign = struct {
+-    // A token embedding and a linear head.
+-    ???,
++    embed: zml.nn.TokenEmbedding,
++    head: zml.nn.Linear,
+ 
+     /// The model, with placeholders made from the file.
      pub fn init(view: zml.io.TensorStore.View) Sign {
 -        return ???;
 +        return .{
@@ -12,15 +19,18 @@
      }
  
      /// token: {} i32 -> the next token: {} i32, and the Rng.
-     pub fn forward(self: Sign, token: zml.Tensor, rng: zml.Tensor.Rng) struct { zml.Tensor, zml.Tensor.Rng } {
+@@ -134,7 +137,9 @@
+         strategy: zml.nn.SamplingStrategy,
+         rng: zml.Tensor.Rng,
+     ) struct { zml.Tensor, zml.Tensor.Rng } {
 -        return ???;
 +        const meaning = self.embed.forward(token);
 +        const logits = self.head.forward(meaning, .f32);
-+        return zml.nn.sampleTokens(logits, .{ .topk = 1 }, rng);
++        return zml.nn.sampleTokens(logits, strategy, rng);
      }
  
-     pub fn load(
-@@ -96,7 +101,15 @@
+     /// The weights, from the file to the device.
+@@ -145,12 +150,21 @@
          platform: *const zml.Platform,
          store: *const zml.io.TensorStore,
      ) !zml.Bufferized(Sign) {
@@ -36,48 +46,102 @@
 +        return buffers;
      }
  
+     /// Frees what `load` returned.
      pub fn unload(buffers: *zml.Bufferized(Sign)) void {
-@@ -126,19 +139,19 @@
-     var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
-     defer store.deinit();
+-        ???;
++        buffers.embed.weight.deinit();
++        buffers.head.weight.deinit();
+     }
+ };
  
--    const sign: Sign = ???;
+@@ -165,15 +179,81 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // The file, the model, the placeholders, two Exes, the weights,
+-    // the dice. Then the motto, printed with these three lines (the
+-    // "." token itself is never printed as a word: the last line
+-    // stands for it). Then the night shift, counted.
+-    //
+-    //     try stdout.print("{s}", .{words[@intCast(first_token)]});
+-    //     try stdout.print(" {s}", .{words[@intCast(next_token)]});
+-    //     try stdout.print(".\n", .{});
+-    ???;
++    // The weights: header, key cabinet, model.
++    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
++    defer gpa.free(path);
++
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++    defer store.deinit();
++
 +    const sign: Sign = .init(store.view());
- 
-     // The placeholders: one token (a scalar), and the dice.
--    const token: zml.Tensor = ???;
--    const rng: zml.Tensor.Rng = ???;
++
++    // The placeholders: one token (a scalar), and the dice.
 +    const token: zml.Tensor = .init(.{}, .i32);
 +    const rng: zml.Tensor.Rng = .init();
- 
--    var exe = ???;
-+    var exe = try platform.compile(gpa, io, sign, .forward, .{ token, rng }, .{});
-     defer exe.deinit();
- 
-     var sign_buffers = try sign.load(gpa, io, platform, &store);
-     defer Sign.unload(&sign_buffers);
- 
--    var rng_buffer = ???;
-+    var rng_buffer = try rng.initBuffer(io, platform, 2024);
-     defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
- 
-     var runner = try exe.runner(gpa);
-@@ -153,11 +166,13 @@
-     // The sign would go on forever: stop at the end of the
-     // sentence (or after 20 tokens, if the model has other ideas).
-     for (0..20) |_| {
--        // Run the model on `token_buffer`. The token that comes out
--        // is the token that goes in next: free the old Buffer (it
--        // was not donated, it is still yours) and keep the new one.
--        // And mind the dice.
--        ???
-+        var next_buffer: zml.Buffer = undefined;
-+        runner.run(io, .{ sign_buffers, token_buffer, rng_buffer }, .{ &next_buffer, &rng_buffer }, .{ .wait = true });
 +
-+        // The token that came out is the token that goes in next.
-+        // (The old one was not donated: it is ours to free.)
-+        token_buffer.deinit();
-+        token_buffer = next_buffer;
++    // Two moods, two Exes, one set of weights.
++    var sober_exe = try platform.compile(gpa, io, sign, .forward, .{ token, zml.nn.SamplingStrategy{}, rng }, .{});
++    defer sober_exe.deinit();
++    var tipsy_exe = try platform.compile(gpa, io, sign, .forward, .{ token, zml.nn.SamplingStrategy{ .topk = 3 }, rng }, .{});
++    defer tipsy_exe.deinit();
++
++    var sign_buffers = try sign.load(gpa, io, platform, &store);
++    defer Sign.unload(&sign_buffers);
++
++    var rng_buffer = try rng.initBuffer(io, platform, 2024);
++    defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
++
++    // 1. The motto.
++    {
++        var runner = try sober_exe.runner(gpa);
++        defer runner.deinit(gpa);
++
++        // `token_buffer` always holds the last token.
++        var token_buffer: zml.Buffer = try .scalar(io, platform, first_token, .i32);
++        defer token_buffer.deinit();
++
++        try stdout.print("{s}", .{words[@intCast(first_token)]});
++        for (0..20) |_| {
++            var next_buffer: zml.Buffer = undefined;
++            runner.run(io, .{ sign_buffers, token_buffer, rng_buffer }, .{ &next_buffer, &rng_buffer }, .{ .wait = true });
++
++            // The token that came out is the token that goes in next.
++            // (The old one was not donated: it is ours to free.)
++            token_buffer.deinit();
++            token_buffer = next_buffer;
++
++            const next_token = try token_buffer.getValue(i32, io);
++            if (next_token == end_token) break;
++            try stdout.print(" {s}", .{words[@intCast(next_token)]});
++        }
++        try stdout.print(".\n", .{});
++    }
++
++    // 2. The night shift.
++    var on_script: usize = 0;
++    {
++        var runner = try tipsy_exe.runner(gpa);
++        defer runner.deinit(gpa);
++
++        var token_buffer: zml.Buffer = try .scalar(io, platform, first_token, .i32);
++        defer token_buffer.deinit();
++
++        var last_token = first_token;
++        for (0..night_shift) |_| {
++            var next_buffer: zml.Buffer = undefined;
++            runner.run(io, .{ sign_buffers, token_buffer, rng_buffer }, .{ &next_buffer, &rng_buffer }, .{ .wait = true });
++            token_buffer.deinit();
++            token_buffer = next_buffer;
++
++            const next_token = try token_buffer.getValue(i32, io);
++            if (next_token == script[@intCast(last_token)]) on_script += 1;
++            last_token = next_token;
++        }
++    }
  
-         const next_token = try token_buffer.getValue(i32, io);
-         if (next_token == end_token) break;
+     // `on_script`: how many of the `night_shift` tokens followed the motto.
+     try stdout.print("After a few drinks, the sign went off script: {}\n", .{on_script < night_shift});

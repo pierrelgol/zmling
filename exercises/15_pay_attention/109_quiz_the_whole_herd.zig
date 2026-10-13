@@ -24,8 +24,10 @@
 //     positions 0, 1, 2... Not the values.
 //
 //  3. Scaled dot product attention, with a causal mask: no
-//     llama hears the ones behind her. The sequence plays
-//     both roles, so it must be given both names.
+//     llama hears the ones behind her. Bring back your mask
+//     from exercise 104 (there is a place for it below). The
+//     sequence plays both roles, so it must be given both
+//     names.
 //
 //  4. Glue the heads back together into one `.d` axis, and
 //     call the sequence `.s` again.
@@ -48,19 +50,42 @@
 // message names the shapes it got. Read them, the answer is
 // usually right there.
 //
-// The weights are tiny and hand-made, so that you can follow
-// a llama through the layer with a pencil if you feel brave.
-// Then compile the model and let the herd talk.
+// Then `main`, which is yours too. In the order you learned
+// them:
+//
+//  - the model: a `SelfAttention` value whose Linears hold
+//    placeholders, `{.dout = 4, .d = 4}` f32, no bias, with 2
+//    heads (chapter 13);
+//  - a placeholder for the herd, `{.s = 4, .d = 4}` f32, and
+//    the Exe of `forward`;
+//  - the Buffers. The numbers are below, hand-made, so that you
+//    can follow a llama through the layer with a pencil if you
+//    feel brave. Four weights, gathered in a
+//    `zml.Bufferized(SelfAttention)` (exercise 94: only the
+//    Tensors are in there), and the herd;
+//  - THREE rounds of gossip. The output of a round has the
+//    shape of its input, so nothing stops you from feeding it
+//    back in: what the herd is after round one is what goes
+//    into round two. One Exe, called three times, and after
+//    each round a call to `printHerd`. That is three layers
+//    stacked (sharing their weights), driven from `main`. Mind
+//    the Buffers: each round makes a new one, and each of them
+//    has to be freed exactly once.
 //
 const std = @import("std");
 const zml = @import("zml");
 
+/// The causal mask {.q = len, .k = len}, f32: 0 where the listener may
+/// hear the speaker, -inf elsewhere. Yours, from exercise 104.
+fn causalMask(len: i64) zml.Tensor {
+    return ???;
+}
+
+/// One layer of causal self-attention, with RoPE and a residual.
 const SelfAttention = struct {
-    q_proj: zml.nn.Linear,
-    k_proj: zml.nn.Linear,
-    v_proj: zml.nn.Linear,
-    o_proj: zml.nn.Linear,
-    heads: u32,
+    // Four Linear layers, `q_proj`, `k_proj`, `v_proj`, `o_proj`,
+    // and `heads`, a plain number.
+    ???,
 
     /// x: {.s, .d} -> {.s, .d}
     pub fn forward(self: SelfAttention, x: zml.Tensor) zml.Tensor {
@@ -68,7 +93,58 @@ const SelfAttention = struct {
     }
 };
 
+/// The weights, {.dout = 4, .d = 4}.
+/// "I want to hear about what I am": the identity.
+const q_weight = [4][4]f32{
+    .{ 1, 0, 0, 0 },
+    .{ 0, 1, 0, 0 },
+    .{ 0, 0, 1, 0 },
+    .{ 0, 0, 0, 1 },
+};
+
+/// "I know about the opposite of what I am": the two halves, swapped.
+const k_weight = [4][4]f32{
+    .{ 0, 0, 1, 0 },
+    .{ 0, 0, 0, 1 },
+    .{ 1, 0, 0, 0 },
+    .{ 0, 1, 0, 0 },
+};
+
+/// "What I say is what I am, only louder at the end."
+const v_weight = [4][4]f32{
+    .{ 1, 0, 0, 0 },
+    .{ 0, 2, 0, 0 },
+    .{ 0, 0, 3, 0 },
+    .{ 0, 0, 0, 4 },
+};
+
+/// What was heard counts for half.
+const o_weight = [4][4]f32{
+    .{ 0.5, 0, 0, 0 },
+    .{ 0, 0.5, 0, 0 },
+    .{ 0, 0, 0.5, 0 },
+    .{ 0, 0, 0, 0.5 },
+};
+
+/// Four llamas, four numbers each: {.s = 4, .d = 4}.
+const herd = [4][4]f32{
+    .{ 0, 0, 1, 0 }, // Tina
+    .{ 1, 0, 0, 0 }, // Kuzco
+    .{ 1, 0, 1, 0 }, // Paca
+    .{ 0, 1, 0, 1 }, // Dolly
+};
+
 const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
+
+/// To be called after each round, with the herd as it is by then.
+fn printHerd(stdout: *std.Io.Writer, round: usize, shape: zml.Shape, rows: [4][4]f32) !void {
+    try stdout.print("after {d} round(s) of gossip {f}:\n", .{ round, shape });
+    for (names, rows) |name, row| {
+        try stdout.print("  {s}", .{name});
+        for (row) |r| try stdout.print(" {d:6.3}", .{r});
+        try stdout.print("\n", .{});
+    }
+}
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -81,81 +157,9 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const weight_shape: zml.Shape = .init(.{ .dout = 4, .d = 4 }, .f32);
-    const layer: SelfAttention = .{
-        .q_proj = .init(.fromShape(weight_shape), null, .d),
-        .k_proj = .init(.fromShape(weight_shape), null, .d),
-        .v_proj = .init(.fromShape(weight_shape), null, .d),
-        .o_proj = .init(.fromShape(weight_shape), null, .d),
-        .heads = 2,
-    };
+    // The model, the placeholder, the Exe, the Buffers, and three
+    // rounds of gossip, with a `printHerd` after each.
+    ???;
 
-    // Four llamas, four numbers each.
-    const x: zml.Tensor = .init(.{ .s = 4, .d = 4 }, .f32);
-
-    var exe = ???;
-    defer exe.deinit();
-
-    // "I want to hear about what I am": the identity.
-    var q_weight: zml.Buffer = try .fromBytes(io, platform, weight_shape, std.mem.sliceAsBytes(&[4][4]f32{
-        .{ 1, 0, 0, 0 },
-        .{ 0, 1, 0, 0 },
-        .{ 0, 0, 1, 0 },
-        .{ 0, 0, 0, 1 },
-    }));
-    defer q_weight.deinit();
-
-    // "I know about the opposite of what I am": the two halves, swapped.
-    var k_weight: zml.Buffer = try .fromBytes(io, platform, weight_shape, std.mem.sliceAsBytes(&[4][4]f32{
-        .{ 0, 0, 1, 0 },
-        .{ 0, 0, 0, 1 },
-        .{ 1, 0, 0, 0 },
-        .{ 0, 1, 0, 0 },
-    }));
-    defer k_weight.deinit();
-
-    // "What I say is what I am, only louder at the end."
-    var v_weight: zml.Buffer = try .fromBytes(io, platform, weight_shape, std.mem.sliceAsBytes(&[4][4]f32{
-        .{ 1, 0, 0, 0 },
-        .{ 0, 2, 0, 0 },
-        .{ 0, 0, 3, 0 },
-        .{ 0, 0, 0, 4 },
-    }));
-    defer v_weight.deinit();
-
-    // What was heard counts for half.
-    var o_weight: zml.Buffer = try .fromBytes(io, platform, weight_shape, std.mem.sliceAsBytes(&[4][4]f32{
-        .{ 0.5, 0, 0, 0 },
-        .{ 0, 0.5, 0, 0 },
-        .{ 0, 0, 0.5, 0 },
-        .{ 0, 0, 0, 0.5 },
-    }));
-    defer o_weight.deinit();
-
-    // Only the Tensors: `heads` and the tags stayed in the Exe.
-    const layer_buffers: zml.Bufferized(SelfAttention) = .{
-        .q_proj = .{ .weight = q_weight, .quantization = null },
-        .k_proj = .{ .weight = k_weight, .quantization = null },
-        .v_proj = .{ .weight = v_weight, .quantization = null },
-        .o_proj = .{ .weight = o_weight, .quantization = null },
-    };
-
-    var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[4][4]f32{
-        .{ 0, 0, 1, 0 }, // Tina
-        .{ 1, 0, 0, 0 }, // Kuzco
-        .{ 1, 0, 1, 0 }, // Paca
-        .{ 0, 1, 0, 1 }, // Dolly
-    }));
-    defer x_buffer.deinit();
-
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ layer_buffers, x_buffer });
-    defer result.deinit();
-
-    try stdout.print("after one round of gossip {f}:\n", .{result.shape()});
-    for (names, try result.getValue([4][4]f32, io)) |name, row| {
-        try stdout.print("  {s}", .{name});
-        for (row) |r| try stdout.print(" {d:6.3}", .{r});
-        try stdout.print("\n", .{});
-    }
     try stdout.flush();
 }

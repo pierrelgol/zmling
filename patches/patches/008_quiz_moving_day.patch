@@ -1,31 +1,41 @@
 --- exercises/01_shape_shifters/008_quiz_moving_day.zig
 +++ answers/01_shape_shifters/008_quiz_moving_day.zig
-@@ -45,23 +45,23 @@
+@@ -54,31 +54,31 @@
      const stdout = &stdout_writer.interface;
  
      // 1.
--    const archive = zml.Shape.init(???, ???);
+-    const archive = ???;
 +    const archive = zml.Shape.init(.{ .n = 32, .h = 480, .w = 640, .c = 3 }, .u8);
      try stdout.print("archive:    {f}, {d} MiB\n", .{ archive, archive.byteSize() / MiB });
  
      // 2.
--    const studio = archive.transpose(???);
+-    const studio = ???;
 +    const studio = archive.transpose(.{ .n, .c, .h, .w });
      try stdout.print("studio:     {f}\n", .{studio});
  
      // 3.
--    const floats = studio.???;
+-    const floats = ???;
 +    const floats = studio.withDtype(.f32);
      try stdout.print("floats:     {f}, {d} MiB\n", .{ floats, floats.byteSize() / MiB });
  
      // 4.
--    const thumbnails = floats.???;
+-    const thumbnails = ???;
 +    const thumbnails = floats.remove(.c).setDim(.h, 48).setDim(.w, 64);
      try stdout.print("thumbnails: {f}\n", .{thumbnails});
  
      // 5.
--    const cabinet = thumbnails.reshape(???);
+-    const cabinet = ???;
 +    const cabinet = thumbnails.reshape(.{ .n = 32, .pixels = .auto });
      try stdout.print("cabinet:    {f}, {d} pixels per photo\n", .{ cabinet, cabinet.dim(-1) });
+ 
+     // 6.
+-    const invoice = ???;
++    const invoice = zml.Shape.init(.{ .n = cabinet.dim(.n) }, zml.DataType.fromZigType(u16));
+     try stdout.print("invoice:    {f}, {d} bytes\n", .{ invoice, invoice.byteSize() });
+ 
+     // 7.
+-    const total = ???;
++    const total = zml.Shape.scalar(.f64);
+     try stdout.print("total:      {f}, rank {d}, {d} bytes\n", .{ total, total.rank(), total.byteSize() });
      try stdout.flush();
  }

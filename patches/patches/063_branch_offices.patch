@@ -1,6 +1,12 @@
 --- exercises/09_dot_com_bubble/063_branch_offices.zig
 +++ answers/09_dot_com_bubble/063_branch_offices.zig
-@@ -68,7 +68,7 @@
+@@ -72,17 +72,17 @@
+ 
+ /// Dollars per office and per day.
+ fn localRevenue(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return ???;
++    return orders.dot(prices, .products);
+ }
  
  /// For every (office, partner) pair, the dot product of their price lists.
  fn synergyMatrix(prices: zml.Tensor) zml.Tensor {
@@ -8,4 +14,32 @@
 +    return prices.dot(prices.rename(.{ .office = .partner }), .products);
  }
  
+ /// Dollars per office, all days together: {office}.
+ fn officeTotals(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return ???;
++    return localRevenue(orders, prices).sum(.days).squeeze(.days);
+ }
+ 
  pub fn main(init: std.process.Init) !void {
+@@ -103,8 +103,8 @@
+     defer revenue_exe.deinit();
+     var synergy_exe = try platform.compileFn(gpa, io, synergyMatrix, .{prices}, .{});
+     defer synergy_exe.deinit();
+-
+-    // The accountants are waiting: `officeTotals` needs an Exe too.
++    var totals_exe = try platform.compileFn(gpa, io, officeTotals, .{ orders, prices }, .{});
++    defer totals_exe.deinit();
+ 
+     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[2][3][4]f32{
+         // San Francisco
+@@ -123,8 +123,8 @@
+     defer revenue.deinit();
+     var synergy: zml.Buffer = try synergy_exe.eval(gpa, io, .{prices_buffer});
+     defer synergy.deinit();
+-
+-    // Run it. The second print reads a Buffer called `totals`.
++    var totals: zml.Buffer = try totals_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
++    defer totals.deinit();
+ 
+     try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([2][3]f32, io) });
+     try stdout.print("totals {f}: {any}\n", .{ totals.shape(), try totals.getValue([2]f32, io) });

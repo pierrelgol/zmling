@@ -1,15 +1,28 @@
 --- exercises/06_reduction_kitchen/044_plating.zig
 +++ answers/06_reduction_kitchen/044_plating.zig
-@@ -67,12 +67,12 @@
+@@ -98,22 +98,23 @@
  
- /// For each guest, the probability of ordering each dish.
+ /// 1. Softmax along .dish, straight from the formula.
+ fn byHand(logits: zml.Tensor) zml.Tensor {
+-    return ???;
++    const e = logits.exp();
++    return e.div(e.sum(.dish));
+ }
+ 
+ /// 2. The same, after shifting each guest's row by its max.
+ fn byHandStable(logits: zml.Tensor) zml.Tensor {
+-    return ???;
++    return byHand(logits.sub(logits.max(.dish)));
+ }
+ 
+ /// 3. For each guest, the probability of ordering each dish.
  fn cravings(logits: zml.Tensor) zml.Tensor {
 -    return logits.softmax(.guest);
 +    return logits.softmax(.dish);
  }
  
- /// The same thing: exp(x - logSumExp(x)).
- fn cravingsByHand(logits: zml.Tensor) zml.Tensor {
+ /// 4. The same thing: exp(x - logSumExp(x)).
+ fn viaLogSumExp(logits: zml.Tensor) zml.Tensor {
 -    return logits.sub(logits.???(.dish)).exp();
 +    return logits.sub(logits.logSumExp(.dish)).exp();
  }

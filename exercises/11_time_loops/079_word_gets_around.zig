@@ -81,11 +81,18 @@
 // order. (The message has its two shapes the wrong way around:
 // the first one is what went IN.)
 //
-// The task. `spreadUnrolled` works. `spreadLooped` should do the
-// same with `days` as a run-time input, but it panics during
-// tracing. Read the message, then look at how the unrolled
-// version starts its crowd. (`x.broad(shape)` is from chapter
-// 05: it stretches x to the given shape.)
+// The task. `spreadLooped` should do the same as
+// `spreadUnrolled`, with `days` as a run-time input.
+//
+//   1. `spreadUnrolled` starts its crowd well, and then the
+//      rumor goes nowhere.
+//   2. `Rumor` has lost its field, its `cond` and its `body`.
+//      `days_left` counts down to zero, like Phil's piano days.
+//   3. `main` never compiles `spreadLooped`, and never runs it.
+//   4. With all that written, `spreadLooped` panics during
+//      tracing. Read the message, then look at how the unrolled
+//      version starts its crowd. (`x.broad(shape)` is from
+//      chapter 05: it stretches x to the given shape.)
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -93,12 +100,12 @@ const zml = @import("zml");
 fn spreadUnrolled(factor: zml.Tensor, days: usize) zml.Tensor {
     // On day 0, one person per street knows: Phil.
     var crowd = zml.Tensor.scalar(1, .i32).broad(factor.shape());
-    for (0..days) |_| crowd = crowd.mul(factor);
+    for (0..days) |_| crowd = ???;
     return crowd;
 }
 
 const Rumor = struct {
-    factor: zml.Tensor,
+    // TODO: the field. What does every trip need, that no trip changes?
 
     pub const State = struct {
         days_left: zml.Tensor,
@@ -107,14 +114,12 @@ const Rumor = struct {
 
     pub fn cond(self: Rumor, state: State) zml.Tensor {
         _ = self;
-        return state.days_left.cmp(.GT, zml.Tensor.scalar(0, .i32));
+        return ???;
     }
 
     pub fn body(self: Rumor, state: State) State {
-        return .{
-            .days_left = state.days_left.addConstant(-1),
-            .crowd = state.crowd.mul(self.factor),
-        };
+        // One day less to go, and the crowd grows on every street.
+        return ???;
     }
 };
 
@@ -152,14 +157,14 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("unrolled, {d} input,  5 days: {any}\n", .{ unrolled_exe.input_shapes.len, try unrolled.getValue([3]i32, io) });
 
     // Looped: the days are an input like any other. Two inputs.
-    var looped_exe = try platform.compileFn(gpa, io, spreadLooped, .{ factor, days }, .{});
+    var looped_exe = ???;
     defer looped_exe.deinit();
 
     for ([_]i32{ 0, 5, 12 }) |n| {
-        var days_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
+        var days_buffer: zml.Buffer = ???;
         defer days_buffer.deinit();
 
-        var looped: zml.Buffer = try looped_exe.eval(gpa, io, .{ factor_buffer, days_buffer });
+        var looped: zml.Buffer = ???;
         defer looped.deinit();
         try stdout.print("looped,   {d} inputs, {d} days: {any}\n", .{ looped_exe.input_shapes.len, n, try looped.getValue([3]i32, io) });
     }

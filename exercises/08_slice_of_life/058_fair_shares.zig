@@ -59,11 +59,21 @@
 //     (everything else), in that order around the pizza. Serve
 //     them biggest share first: return the cousin's slices,
 //     then the brother's, then the toddler's, on one axis.
+//     Luigi cut it, and Luigi served it. Two complaints.
 //
 //   - `twins`: the twins get exactly half each, and each will
 //     check the other's plate. Return, position by position,
 //     how many more olives the first twin got than the second
 //     (`a.sub(b)`). Result: {slices=4}.
+//
+//   - `tally`: the parents want numbers. Same three shares as
+//     `bigFirst`; return how many olives each child got in
+//     total, toddler first: {slices=3}. Yours to write. You
+//     know from the Reduction Kitchen (exercise 040) that
+//     `sum` leaves an axis of size 1 behind. For once, that is
+//     exactly what you want: don't skim it off, glue.
+//
+// And in `main`, the Exes are compiled but nobody runs them.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -72,13 +82,18 @@ fn bigFirst(pizza: zml.Tensor) zml.Tensor {
     // Toddler, brother, cousin.
     const shares = pizza.split(.slices, &.{ 1, 3, 3 });
 
-    return zml.Tensor.concatenate(&.{ shares[2], shares[1], shares[0] }, .slices);
+    return zml.Tensor.concatenate(&.{ shares[0], shares[1], shares[2] }, .slices);
 }
 
 fn twins(pizza: zml.Tensor) zml.Tensor {
     const first, const second = ???;
 
     return first.sub(second);
+}
+
+/// Olives per child: toddler, brother, cousin. Result: {slices=3}.
+fn tally(pizza: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -99,11 +114,12 @@ pub fn main(init: std.process.Init) !void {
     var pizza_buffer: zml.Buffer = try .fromBytes(io, platform, pizza.shape(), std.mem.sliceAsBytes(&olives));
     defer pizza_buffer.deinit();
 
-    inline for (.{ bigFirst, twins }, .{ "bigFirst:", "twins:   " }) |order, name| {
+    inline for (.{ bigFirst, twins, tally }, .{ "bigFirst:", "twins:   ", "tally:   " }) |order, name| {
         var exe = try platform.compileFn(gpa, io, order, .{pizza}, .{});
         defer exe.deinit();
 
-        var result: zml.Buffer = try exe.eval(gpa, io, .{pizza_buffer});
+        // Run it on the pizza.
+        var result: zml.Buffer = ???;
         defer result.deinit();
 
         const plate: zml.Slice = try result.toSliceAlloc(gpa, io);

@@ -1,11 +1,29 @@
 --- exercises/15_pay_attention/107_spin_the_llama.zig
 +++ answers/15_pay_attention/107_spin_the_llama.zig
-@@ -80,14 +80,14 @@
- 
+@@ -106,20 +106,31 @@
  /// The herd, each llama turned according to her place in the line.
+ /// x: {.s, .hd} -> {.s, .hd}
  fn spin(x: zml.Tensor) zml.Tensor {
--    return zml.nn.rope(x, ???, .{});
+-    return ???;
 +    return zml.nn.rope(x, null, .{});
+ }
+ 
+ /// The same, without `rope`. Only for `.hd = 2`: the first number
+ /// is the x of the formula, the second one its y.
+ fn spinByHand(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    const real = x.slice(.hd, .{ .end = 1 });
++    const imag = x.slice(.hd, .{ .start = 1 });
++
++    // One angle per llama: 1 radian per position.
++    const angle = zml.Tensor.arange(.{ .end = x.dim(.s) }, .f32).withTags(.{.s});
++    const cos = angle.cos().broad(real.shape());
++    const sin = angle.sin().broad(real.shape());
++
++    return zml.Tensor.concatenate(&.{
++        real.mul(cos).sub(imag.mul(sin)),
++        real.mul(sin).add(imag.mul(cos)),
++    }, .hd);
  }
  
  /// The score of each listener for each speaker, {.q, .k}, when the
@@ -17,3 +35,43 @@
      return q.dot(k, .hd);
  }
  
+@@ -163,9 +174,15 @@
+         var herd_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&north_east));
+         defer herd_buffer.deinit();
+ 
+-        // `by_hand` and `official`: this herd through `spinByHand`,
+-        // and through `spin`.
+-        ???;
++        var by_hand_exe = try platform.compileFn(gpa, io, spinByHand, .{x}, .{});
++        defer by_hand_exe.deinit();
++        var official_exe = try platform.compileFn(gpa, io, spin, .{x}, .{});
++        defer official_exe.deinit();
++
++        var by_hand: zml.Buffer = try by_hand_exe.eval(gpa, io, .{herd_buffer});
++        defer by_hand.deinit();
++        var official: zml.Buffer = try official_exe.eval(gpa, io, .{herd_buffer});
++        defer official.deinit();
+ 
+         try stdout.print("facing (3, 4), spun by hand, and by rope:\n", .{});
+         for (try by_hand.getValue([4][2]f32, io), try official.getValue([4][2]f32, io), 0..) |mine, theirs, p| {
+@@ -173,13 +190,15 @@
+         }
+     }
+ 
+-    // One Exe for `scoresAt`, used for both lines of llamas.
+-    ???;
++    var exe = try platform.compileFn(gpa, io, scoresAt, .{ x, positions }, .{});
++    defer exe.deinit();
+ 
+     for ([_][4]i32{ .{ 0, 1, 2, 3 }, .{ 100, 101, 102, 103 } }) |line| {
+-        // `line` holds the positions: they need a Buffer. Then
+-        // run: `scores` is what gets printed.
+-        ???;
++        var positions_buffer: zml.Buffer = try .fromBytes(io, platform, positions.shape(), std.mem.sliceAsBytes(&line));
++        defer positions_buffer.deinit();
++
++        var scores: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, positions_buffer });
++        defer scores.deinit();
+ 
+         try stdout.print("scores at positions {any}:\n", .{line});
+         for (try scores.getValue([4][4]f32, io)) |row| {

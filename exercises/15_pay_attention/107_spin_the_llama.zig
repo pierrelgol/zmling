@@ -65,22 +65,54 @@
 // With `.hd = 2` there is a single pair, turning by 1 radian
 // per position. So if every llama starts out facing east,
 // (1, 0), the llama at position p ends up at (cos p, sin p).
-// The program shows three things:
+//
+// In general, turning a vector (x, y) by an angle a gives
+//
+//     ( x cos a - y sin a ,  x sin a + y cos a )
+//
+// which is all there is inside `rope`, and you can check it,
+// because you own every op in that formula: `cos` and `sin`
+// (exercise 19), `slice` to take the x's and the y's apart and
+// `concatenate` to put them back (exercises 54 and 57), an
+// `arange` for the positions (it can count in floats), and a
+// `broad` so that one angle per llama meets her numbers.
+//
+// The program shows four things:
 //
 //  - the herd after the spin, and the length of each vector;
+//  - a less tidy herd, everyone facing (3, 4), spun by hand and
+//    by `rope`: the two columns must agree;
 //  - the scores between the llamas at positions 0, 1, 2, 3;
 //  - the same scores with the herd at 100, 101, 102, 103.
 //
-// The two tables must be identical, and constant along each
-// diagonal: same distance, same score. Right now, nothing
-// compiles, and then the tables won't match.
+// The two tables of scores must be identical, and constant
+// along each diagonal: same distance, same score.
+//
+// To do:
+//
+//  1. Write `spin`, with `rope` and the positions 0, 1, 2...
+//
+//  2. Write `spinByHand`, with the formula. No `rope` in there.
+//
+//  3. `scoresAt` runs, and gives two tables that don't match.
+//     A score depends on the distance only if... what?
+//
+//  4. In `main`, the second and third blocks have lost their
+//     plumbing. The first one is intact, if you need a model.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 /// The herd, each llama turned according to her place in the line.
+/// x: {.s, .hd} -> {.s, .hd}
 fn spin(x: zml.Tensor) zml.Tensor {
-    return zml.nn.rope(x, ???, .{});
+    return ???;
+}
+
+/// The same, without `rope`. Only for `.hd = 2`: the first number
+/// is the x of the formula, the second one its y.
+fn spinByHand(x: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 /// The score of each listener for each speaker, {.q, .k}, when the
@@ -125,15 +157,29 @@ pub fn main(init: std.process.Init) !void {
         }
     }
 
-    var exe = try platform.compileFn(gpa, io, scoresAt, .{ x, positions }, .{});
-    defer exe.deinit();
+    {
+        // A less tidy herd.
+        const north_east: [4][2]f32 = @splat(.{ 3, 4 });
+        var herd_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&north_east));
+        defer herd_buffer.deinit();
+
+        // `by_hand` and `official`: this herd through `spinByHand`,
+        // and through `spin`.
+        ???;
+
+        try stdout.print("facing (3, 4), spun by hand, and by rope:\n", .{});
+        for (try by_hand.getValue([4][2]f32, io), try official.getValue([4][2]f32, io), 0..) |mine, theirs, p| {
+            try stdout.print("  position {d}: ({d:6.3}, {d:6.3})  ({d:6.3}, {d:6.3})\n", .{ p, mine[0], mine[1], theirs[0], theirs[1] });
+        }
+    }
+
+    // One Exe for `scoresAt`, used for both lines of llamas.
+    ???;
 
     for ([_][4]i32{ .{ 0, 1, 2, 3 }, .{ 100, 101, 102, 103 } }) |line| {
-        var positions_buffer: zml.Buffer = try .fromBytes(io, platform, positions.shape(), std.mem.sliceAsBytes(&line));
-        defer positions_buffer.deinit();
-
-        var scores: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, positions_buffer });
-        defer scores.deinit();
+        // `line` holds the positions: they need a Buffer. Then
+        // run: `scores` is what gets printed.
+        ???;
 
         try stdout.print("scores at positions {any}:\n", .{line});
         for (try scores.getValue([4][4]f32, io)) |row| {

@@ -57,12 +57,43 @@
 // buttery, how crunchy.
 //
 // An order comes in: "A croissant, two eclairs, and a macaron."
-// The till has two bugs. One of them, ZML will tell you about.
+// The till handles it three times over:
+//
+//  1. FROM THE PANTRY: the TokenEmbedding, alone. Somebody
+//     declared the order wrong (ZML will tell you about it, read
+//     the panic), and nobody typed the order in.
+//
+//  2. BY HAND: write `lookUp`, the gather of exercise 070, with
+//     no layer around it. The table arrives tagged `{voc, d}`.
+//     Compile it and run it: the program checks that it returns
+//     the very same rows.
+//
+//  3. THE WHOLE ORDER: a `Till` is a model with a menu inside.
+//     Its `forward` looks the items up and answers with ONE
+//     flavor vector for the whole order: the average of its
+//     items (chapter 6: reduce the axis, then get rid of it).
+//     Write it, and the Buffers of a Till: structs in structs,
+//     as in chapter 12.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 const menu_names = [_][]const u8{ "croissant", "baguette", "eclair", "macaron", "brownie" };
+
+/// The embedding, by hand: the rows of `table` {voc, d} that
+/// `ids` asks for. Returns the axes of `ids`, then `.d`.
+fn lookUp(table: zml.Tensor, ids: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+const Till = struct {
+    menu: zml.nn.TokenEmbedding,
+
+    /// order: {.s} item ids -> {.d}, the average flavor of the order.
+    pub fn forward(self: Till, order: zml.Tensor) zml.Tensor {
+        return ???;
+    }
+};
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -83,6 +114,13 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compile(gpa, io, menu, .forward, .{order}, .{});
     defer exe.deinit();
 
+    // TODO: `hand_exe`, the same lookup by hand: `lookUp` is a
+    // function of the table and the ids.
+
+    // The till: a model that has the menu as a field.
+    const till: Till = .{ .menu = menu };
+    // TODO: `till_exe`.
+
     var weight_buffer: zml.Buffer = try .fromBytes(io, platform, menu.weight.shape(), std.mem.sliceAsBytes(&[5][3]f32{
         //  sweet, buttery, crunchy
         .{ 0.2, 0.9, 0.7 }, // 0: croissant
@@ -94,6 +132,7 @@ pub fn main(init: std.process.Init) !void {
     defer weight_buffer.deinit();
 
     const menu_buffers: zml.Bufferized(zml.nn.TokenEmbedding) = .{ .weight = weight_buffer };
+    const till_buffers: zml.Bufferized(Till) = ???;
 
     // "A croissant, two eclairs, and a macaron."
     const items = [4]i32{ ???, ???, ???, ??? };
@@ -107,5 +146,15 @@ pub fn main(init: std.process.Init) !void {
     for (items, try result.getValue([4][3]f32, io)) |item, flavor| {
         try stdout.print("  {s:<9}  sweet {d:.1}  buttery {d:.1}  crunchy {d:.1}\n", .{ menu_names[@intCast(item)], flavor[0], flavor[1], flavor[2] });
     }
+
+    var by_hand: zml.Buffer = try hand_exe.eval(gpa, io, .{ weight_buffer, order_buffer });
+    defer by_hand.deinit();
+    const same = std.meta.eql(try result.getValue([4][3]f32, io), try by_hand.getValue([4][3]f32, io));
+    try stdout.print("By hand {f}: {s}\n", .{ by_hand.shape(), if (same) "the same twelve numbers." else "NOT the same numbers!" });
+
+    var taste: zml.Buffer = try till_exe.eval(gpa, io, .{ till_buffers, order_buffer });
+    defer taste.deinit();
+    const flavor = try taste.getValue([3]f32, io);
+    try stdout.print("The whole order {f}: sweet {d:.3}  buttery {d:.3}  crunchy {d:.3}\n", .{ taste.shape(), flavor[0], flavor[1], flavor[2] });
     try stdout.flush();
 }

@@ -57,6 +57,17 @@
 // the next exercise.) The cabin boy sorted the wrong way round
 // in one of them, and didn't rename in the other.
 //
+// The ship's surgeon would like one more number: the average
+// age of the THREE richest pirates. That is the front of the pay
+// line (a slice, chapter 8), turned into .f32 because a mean of
+// integers is an integer, and reduced to a single number with
+// no axis left. `ageOfTheTopThree` is yours.
+//
+// The cabin boy has also dropped the middle of `main` over
+// board. The placeholders and the numbers survived, and so did
+// the prints. In between: three Exes, two Buffers, and three
+// results called `richest`, `ages` and `average`.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -69,6 +80,11 @@ fn richestFirst(loot: zml.Tensor) zml.Tensor {
 fn agesInLine(loot: zml.Tensor, age: zml.Tensor) zml.Tensor {
     const order = loot.argsort(.pirate, .{ .descending = true });
     return age.gather(.{ .pirate = order }, .{});
+}
+
+/// The average age of the first three in the pay line: one .f32, no axis.
+fn ageOfTheTopThree(loot: zml.Tensor, age: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -85,23 +101,16 @@ pub fn main(init: std.process.Init) !void {
     const loot: zml.Tensor = .init(.{ .pirate = 5 }, .i32);
     const age: zml.Tensor = .init(.{ .pirate = 5 }, .i32);
 
-    var richest_exe = try platform.compileFn(gpa, io, richestFirst, .{loot}, .{});
-    defer richest_exe.deinit();
-    var ages_exe = try platform.compileFn(gpa, io, agesInLine, .{ loot, age }, .{});
-    defer ages_exe.deinit();
-
     // In the order they signed on: Anne, Bart, Calico, Dread, Edna.
-    var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 80, 5, 80, 12 }));
-    defer loot_buffer.deinit();
-    var age_buffer: zml.Buffer = try .fromBytes(io, platform, age.shape(), std.mem.sliceAsBytes(&[_]i32{ 41, 19, 63, 27, 35 }));
-    defer age_buffer.deinit();
+    const loot_data = [_]i32{ 30, 80, 5, 80, 12 };
+    const age_data = [_]i32{ 41, 19, 63, 27, 35 };
 
-    var richest: zml.Buffer = try richest_exe.eval(gpa, io, .{loot_buffer});
-    defer richest.deinit();
-    var ages: zml.Buffer = try ages_exe.eval(gpa, io, .{ loot_buffer, age_buffer });
-    defer ages.deinit();
+    // Over board: three Exes, a Buffer for each of the two lists
+    // above, and three results called `richest`, `ages` and
+    // `average`.
 
     try stdout.print("the pay line {f}: {any}\n", .{ richest.shape(), try richest.getValue([5]i32, io) });
     try stdout.print("their ages   {f}: {any}\n", .{ ages.shape(), try ages.getValue([5]i32, io) });
+    try stdout.print("the first three are {d:.1} years old on average.\n", .{try average.getValue(f32, io)});
     try stdout.flush();
 }

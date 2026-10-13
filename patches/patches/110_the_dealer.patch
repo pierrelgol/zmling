@@ -1,6 +1,6 @@
 --- exercises/16_casino_royale/110_the_dealer.zig
 +++ answers/16_casino_royale/110_the_dealer.zig
-@@ -86,8 +86,8 @@
+@@ -102,10 +102,10 @@
      const hand: zml.Shape = .init(.{ .card = 5 }, .f32);
  
      // A float in [1, 14), rounded down: 1, 2, ... 13.
@@ -9,14 +9,36 @@
 +    const rng_after_first, const first = rng.uniform(hand, .{ .min = 1, .max = 14 });
 +    _, const second = rng_after_first.uniform(hand, .{ .min = 1, .max = 14 });
  
-     return zml.Tensor.stack(&.{ first, second }, 0, .hand).floor().convert(.i32);
+-    return ???;
++    return zml.Tensor.stack(&.{ first, second }, 0, .hand).floor().convert(.i32);
  }
-@@ -104,7 +104,7 @@
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -120,17 +120,22 @@
      defer platform.deinit(gpa, io);
  
      // A placeholder for the state of the generator.
 -    const rng: zml.Tensor.Rng = ???;
 +    const rng: zml.Tensor.Rng = .init();
  
-     var exe = try platform.compileFn(gpa, io, deal, .{rng}, .{});
-     defer exe.deinit();
+-    // The Exe of `deal`.
+-    ???;
++    var exe = try platform.compileFn(gpa, io, deal, .{rng}, .{});
++    defer exe.deinit();
+ 
+     // Three evenings at table 4. The first two start from the
+     // same seed, the third from another one.
+     var evenings: [3][2][5]i32 = undefined;
+     for ([_]u128{ 1234, 1234, 777 }, &evenings) |seed, *evening| {
+-        // A state from `seed`, one run, and the cards in `evening.*`.
+-        ???;
++        var rng_buffer = try rng.initBuffer(io, platform, seed);
++        defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
++
++        var result: zml.Buffer = try exe.eval(gpa, io, .{rng_buffer});
++        defer result.deinit();
++
++        evening.* = try result.getValue([2][5]i32, io);
+     }
+ 
+     const first_hand, const second_hand = evenings[0];

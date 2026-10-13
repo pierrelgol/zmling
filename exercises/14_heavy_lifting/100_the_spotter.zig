@@ -68,9 +68,24 @@
 // file, and that is all the Loader cares about.
 //
 // Coach Magnus points at the bar, then at you. "LOAD IT."
-// Write the body of `load`. Everything you need is above, and
-// the rest of the program already knows what to do with the
-// result.
+//
+//  1. THE KEYS. Write `Rack.init`: the plates are the entry
+//     "plates", tagged `.plate`; the combination is the entry
+//     "locker_combination", tagged `.turn`. And in `main`, the
+//     registry and the key cabinet: exercises 098 and 099, from
+//     memory.
+//
+//  2. THE LIFT. Write `Rack.load`, the two moves above. Then
+//     call it, and free what it gives you when you are done:
+//     two Buffers, both yours.
+//
+//  3. THE POINT. A Buffer that came from a file is a Buffer like
+//     any other, and the placeholder that came from the store is
+//     a placeholder like any other. So: write `onTheBar` (the
+//     diner and the reduction kitchen have all you need),
+//     compile it for the plates of the rack, and run it on the
+//     plates you loaded. Coach puts TWO of each plate on a bar
+//     that weighs 20 kg by itself. He wants ONE number.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -82,10 +97,7 @@ const Rack = struct {
     combination: zml.Tensor,
 
     pub fn init(view: zml.io.TensorStore.View) Rack {
-        return .{
-            .plates = view.createReplicatedTensor("plates", .{.plate}),
-            .combination = view.createReplicatedTensor("locker_combination", .{.turn}),
-        };
+        return ???;
     }
 
     /// Brings every tensor of the rack from the file to the device.
@@ -101,6 +113,12 @@ const Rack = struct {
     }
 };
 
+/// plates: {.plate}, in kg. The weight of the bar (20 kg) with two
+/// of each plate on it: one number, no axis left.
+fn onTheBar(plates: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
     const io = init.io;
@@ -115,17 +133,12 @@ pub fn main(init: std.process.Init) !void {
     const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
     defer gpa.free(path);
 
-    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
-    defer registry.deinit();
-
-    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
-    defer store.deinit();
+    // TODO: `registry`, the logbook of the file at `path`, and
+    // `store`, the key cabinet on top of it.
 
     const rack: Rack = .init(store.view());
 
-    var rack_buffers: zml.Bufferized(Rack) = try rack.load(gpa, io, platform, &store);
-    defer rack_buffers.plates.deinit();
-    defer rack_buffers.combination.deinit();
+    // TODO: `rack_buffers`, the rack, loaded. Free what you own.
 
     // Real Buffers, on the device. Bring them back to look at them.
     try stdout.print("plates      {f}: {any}\n", .{
@@ -136,5 +149,10 @@ pub fn main(init: std.process.Init) !void {
         rack_buffers.combination.shape(),
         try rack_buffers.combination.getValue([3]i32, io),
     });
+
+    // TODO: `onTheBar`, compiled for the plates of the rack, and
+    // run on the plates you loaded. The result goes in `total`.
+
+    try stdout.print("on the bar  {f}: {d} kg\n", .{ total.shape(), try total.getValue(f32, io) });
     try stdout.flush();
 }

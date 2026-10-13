@@ -64,33 +64,48 @@
 // the scores by tag (with `broad`), so `{.q, .k}` is all it
 // needs: the same mask is used for every head.
 //
-// Below, `byHand` is the previous exercise (complete, and
-// trusted). `official` should return the very same numbers by
-// calling `zml.nn.sdpa`. At the moment it hands over tensors
-// with the wrong tags, and it lets everybody read tomorrow's
-// newspaper.
+// To do, and it is nearly the whole file:
+//
+//  1. `causalMask`: bring back your mask from exercise 104, by
+//     hand or from the shelf, as you like. No window this time,
+//     and the size of the herd is an argument.
+//
+//  2. `byHand`: exercises 103 and 104 in one function, with two
+//     differences. The roles are yours to assign, with the
+//     renames above. And the tensors have an `.h` axis, which
+//     `dot` treats as a batching axis (exercise 63) without
+//     being asked, but which the mask does not have: a table
+//     `{.q, .k}` has to meet scores `{.h, .q, .k}`, and that
+//     is chapter 5.
+//
+//  3. `official`: the very same numbers, by calling
+//     `zml.nn.sdpa`.
+//
+//  4. In `main`, each recipe has to be compiled and run.
+//
+//  5. Then `sdpa` will have something to say about the herd
+//     that `main` hands over. Read its panic to the end.
 //
 const std = @import("std");
 const zml = @import("zml");
 
+/// The causal mask {.q = len, .k = len}: 0 where the listener may hear
+/// the speaker (she stands in front, or is the listener herself), -inf
+/// elsewhere.
+fn causalMask(len: i64) zml.Tensor {
+    return ???;
+}
+
 /// Causal self-attention, the long way.
 /// q, k, v: {.h, .s, .hd} -> {.h, .s, .hd}
 fn byHand(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor) zml.Tensor {
-    const hd: f32 = @floatFromInt(q.dim(.hd));
-    const listeners = q.rename(.{ .s = .q });
-    const speakers = k.rename(.{ .s = .k });
-
-    const scores = listeners.dot(speakers, .hd).scale(1.0 / @sqrt(hd));
-    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.s), .k = k.dim(.s) }, q.dtype(), null);
-    const weights = scores.add(mask.broad(scores.shape())).softmax(.k);
-
-    return weights.dot(v.rename(.{ .s = .k }), .k).rename(.{ .q = .s });
+    return ???;
 }
 
 /// Causal self-attention, the short way.
 /// q, k, v: {.h, .s, .hd} -> {.h, .s, .hd}
 fn official(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor) zml.Tensor {
-    return zml.nn.sdpa(q, k, v, .{});
+    return ???;
 }
 
 const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
@@ -106,10 +121,10 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    // One head, four llamas, two numbers.
-    const q: zml.Tensor = .init(.{ .h = 1, .s = 4, .hd = 2 }, .f32);
-    const k: zml.Tensor = .init(.{ .h = 1, .s = 4, .hd = 2 }, .f32);
-    const v: zml.Tensor = .init(.{ .h = 1, .s = 4, .hd = 2 }, .f32);
+    // Four llamas, two numbers.
+    const q: zml.Tensor = .init(.{ .s = 4, .hd = 2 }, .f32);
+    const k: zml.Tensor = .init(.{ .s = 4, .hd = 2 }, .f32);
+    const v: zml.Tensor = .init(.{ .s = 4, .hd = 2 }, .f32);
 
     // Same herd as before.
     var q_buffer: zml.Buffer = try .fromBytes(io, platform, q.shape(), std.mem.sliceAsBytes(&[4][2]f32{ .{ 1, 0 }, .{ 0, 1 }, .{ 1, 1 }, .{ 0, 0 } }));
@@ -125,11 +140,8 @@ pub fn main(init: std.process.Init) !void {
     }) |row| {
         const title, const recipe = row;
 
-        var exe = try platform.compileFn(gpa, io, recipe, .{ q, k, v }, .{});
-        defer exe.deinit();
-
-        var heard: zml.Buffer = try exe.eval(gpa, io, .{ q_buffer, k_buffer, v_buffer });
-        defer heard.deinit();
+        // Compile `recipe`, run it: `heard` is what gets printed.
+        ???;
 
         try stdout.print("{s} {f}:\n", .{ title, heard.shape() });
         for (names, (try heard.getValue([1][4][2]f32, io))[0]) |name, heard_by| {

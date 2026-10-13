@@ -63,14 +63,31 @@
 //                      else could possibly be of use to it.
 //
 // So: a different eps means a new Exe, and different WEIGHTS
-// mean... nothing at all. Same Exe, other Buffers. Below, one
-// compiled cake is baked with the weekday recipe and then with
-// the Sunday recipe, without recompiling anything.
+// mean... nothing at all. Same Exe, other Buffers. And the other
+// way around: a different OVEN means a new Exe, fed with the
+// very same Buffers. You will do both:
 //
-// The program also prints the field names of the Bufferized
-// structs, with `@typeInfo`, so you never have to take a
-// comment's word for it. Believe the compiler, then delete
-// what it tells you doesn't exist.
+//  1. Write `Cake.forward`: the base, the oven, then the level.
+//     (A Linear wants to know the dtype of its output: the one
+//     of its input will do.)
+//
+//  2. One compiled cake, baked with the weekday recipe and then
+//     with the Sunday recipe. The weekday Buffers were filled in
+//     by somebody who copied the model field by field. Believe
+//     the compiler, delete what it tells you doesn't exist, and
+//     add what it tells you is missing. Then write the Sunday
+//     ones, and the run inside the loop.
+//
+//  3. Monsieur Perte wants the Sunday cake again, from a gentler
+//     oven: a leaky relu with a slope of 0.5. Everything else
+//     stays as it is. Decide what must be made again and what
+//     can be reused. (A struct is a value: `var copy = cake;`
+//     and then change one field, as you did with Scally's doubt
+//     in exercise 088.)
+//
+// The program starts by printing the field names of the
+// Bufferized structs, with `@typeInfo`, so you never have to
+// take a comment's word for it.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -81,8 +98,7 @@ const Cake = struct {
     level: zml.nn.LayerNorm,
 
     pub fn forward(self: Cake, x: zml.Tensor) zml.Tensor {
-        const baked = self.oven.forward(self.base.forward(x, x.dtype()));
-        return self.level.forward(baked);
+        return ???;
     }
 };
 
@@ -129,27 +145,35 @@ pub fn main(init: std.process.Init) !void {
     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[2]f32{ 1, 3 }));
     defer x_buffer.deinit();
 
-    // Baked twice, with two sets of weights.
-    for ([_][]const u8{ "weekday", "sunday " }, [_]zml.Buffer{ weekday_base, sunday_base }) |day, base_weight| {
-        const cake_buffers: zml.Bufferized(Cake) = .{
-            .base = .{
-                .weight = base_weight,
-                .tag = .d,
-                .quantization = null,
-            },
-            .oven = .relu,
-            .level = .{
-                .weight = level_weight,
-                .eps = 1e-5,
-            },
-        };
+    const weekday: zml.Bufferized(Cake) = .{
+        .base = .{
+            .weight = weekday_base,
+            .tag = .d,
+        },
+        .oven = .relu,
+        .level = .{
+            .weight = level_weight,
+            .eps = 1e-5,
+        },
+    };
+    // The same, with the Sunday base. The level does not change.
+    const sunday: zml.Bufferized(Cake) = ???;
 
-        var result: zml.Buffer = try exe.eval(gpa, io, .{ cake_buffers, x_buffer });
+    // Baked twice, with two sets of weights.
+    for ([_][]const u8{ "weekday", "sunday " }, [_]zml.Bufferized(Cake){ weekday, sunday }) |day, cake_buffers| {
+        var result: zml.Buffer = ???;
         defer result.deinit();
 
         try stdout.print("{s}", .{day});
         for (try result.getValue([3]f32, io)) |v| try stdout.print(" {d:6.3}", .{v});
         try stdout.print("\n", .{});
     }
+
+    // TODO: the gentler oven. Whatever you make here, free it. The
+    // result goes in `gentle`, a zml.Buffer.
+
+    try stdout.print("sunday, gentle oven", .{});
+    for (try gentle.getValue([3]f32, io)) |v| try stdout.print(" {d:6.3}", .{v});
+    try stdout.print("\n", .{});
     try stdout.flush();
 }

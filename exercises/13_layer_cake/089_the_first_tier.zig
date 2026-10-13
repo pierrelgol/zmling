@@ -96,11 +96,38 @@
 // in, two numbers out: a Linear with `.d = 3` and `.dout = 2`.
 // The recipe card (the weights) is already on the wall.
 //
-// The previous apprentice left this half done. (He also left
-// in a hurry.)
+// "Before you take anything off MY shelf," says Chef Babette,
+// "you show me you can make it yourself." So the tier gets baked
+// twice:
+//
+//  1. BY HAND. Write `byHand`: the dot and the bias, as in the
+//     `layer` helper of exercise 067. Three tensors go in, in the
+//     order of the signature. It is compiled with `compileFn`.
+//
+//  2. FROM THE PANTRY. The same placeholders, wrapped in a
+//     `zml.nn.Linear`, compiled with `platform.compile`, and run
+//     with a `zml.Bufferized(zml.nn.Linear)`. That struct has a
+//     third field, `quantization`: the machinery we said we'd
+//     ignore. It has no default value, and it still wants its
+//     `null`.
+//
+// The two must agree to the last crumb, and the last line of the
+// program checks that they do.
+//
+// The previous apprentice left this half done. (He also left in
+// a hurry.) What is missing, top to bottom: the body of
+// `byHand`, the tag of the layer, the labels on the cakes, the
+// Exe of the pantry tier, something in its Buffers, and the run
+// of the hand-made one.
 //
 const std = @import("std");
 const zml = @import("zml");
+
+/// The tier, by hand: {.cake, .d} through {.dout, .d}, plus the
+/// bias {.dout}. Returns {.cake, .dout}.
+fn byHand(x: zml.Tensor, weight: zml.Tensor, bias: zml.Tensor) zml.Tensor {
+    return ???;
+}
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -122,8 +149,11 @@ pub fn main(init: std.process.Init) !void {
     // Three cakes, three measurements each: flour, sugar, butter.
     const cakes: zml.Tensor = .init(.{ 3, 3 }, .f32);
 
-    var exe = try platform.compile(gpa, io, tier, .forward, .{ cakes, .f32 }, .{});
-    defer exe.deinit();
+    var hand_exe = try platform.compileFn(gpa, io, byHand, .{ cakes, weight, bias }, .{});
+    defer hand_exe.deinit();
+
+    // TODO: `exe`, the pantry tier, compiled: a model, its method,
+    // and the arguments of that method.
 
     var weight_buffer: zml.Buffer = try .fromBytes(io, platform, weight.shape(), std.mem.sliceAsBytes(&[2][3]f32{
         .{ 0, 2, 0.5 }, // sweetness: sugar counts double, butter helps
@@ -134,12 +164,10 @@ pub fn main(init: std.process.Init) !void {
     var bias_buffer: zml.Buffer = try .fromBytes(io, platform, bias.shape(), std.mem.sliceAsBytes(&[2]f32{ 1, -1 }));
     defer bias_buffer.deinit();
 
-    // One Buffer per Tensor of the layer. (`quantization` is the
-    // machinery we said we'd ignore. It still wants its `null`.)
+    // One Buffer per Tensor of the layer, and one `null`.
     const tier_buffers: zml.Bufferized(zml.nn.Linear) = .{
         .weight = weight_buffer,
         .bias = bias_buffer,
-        .quantization = null,
     };
 
     var cakes_buffer: zml.Buffer = try .fromBytes(io, platform, cakes.shape(), std.mem.sliceAsBytes(&[3][3]f32{
@@ -152,10 +180,16 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{ tier_buffers, cakes_buffer });
     defer result.deinit();
 
+    // The hand-made tier takes its three Buffers one by one.
+    var by_hand: zml.Buffer = ???;
+    defer by_hand.deinit();
+
     try stdout.print("scores {f}\n", .{result.shape()});
     const names = [_][]const u8{ "sponge  ", "brioche ", "meringue" };
     for (names, try result.getValue([3][2]f32, io)) |name, scores| {
         try stdout.print("  {s}  sweetness {d:5.2}  richness {d:5.2}\n", .{ name, scores[0], scores[1] });
     }
+    const same = std.meta.eql(try result.getValue([3][2]f32, io), try by_hand.getValue([3][2]f32, io));
+    try stdout.print("By hand {f}: {s}\n", .{ by_hand.shape(), if (same) "the same six numbers." else "NOT the same numbers!" });
     try stdout.flush();
 }

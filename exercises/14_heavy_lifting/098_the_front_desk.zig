@@ -75,6 +75,22 @@
 // Denise opens the logbook. "Read it back to me. Slowly. And
 // find the real address first, the new kid never does."
 //
+// What she wants, in order:
+//
+//  1. the registry. It is there, and it fails: see the quirk;
+//  2. the total size of the data;
+//  3. the table: one line per entry. The loop and the printing
+//     are written, the name and the logbook entry of each line
+//     are not;
+//  4. "And how much of this is Magnus?" In the same loop, count
+//     the entries of the coach and add up their sizes. Names are
+//     plain text, and the coach's all start with "coach."
+//     (`std.mem.startsWith(u8, text, prefix)` returns a bool);
+//  5. two lookups by name: the plates, which are there (in
+//     exercise 097 you computed where they start: does Denise
+//     agree?), and a bias for layer 0 of the coach, which may or
+//     may not be. `get` returns an optional for a reason.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -100,11 +116,16 @@ pub fn main(init: std.process.Init) !void {
         ???,
     });
 
+    var coach_tensors: usize = 0;
+    var coach_bytes: u64 = 0;
+
     try stdout.print("name                 shape       bytes   at\n", .{});
     var it = registry.iterator();
     while (it.next()) |entry| {
-        const name = entry.key_ptr.*;
-        const locker = entry.value_ptr.*;
+        const name: []const u8 = ???;
+        const locker: zml.safetensors.Tensor = ???;
+        // TODO: if this one belongs to the coach, count it, and add
+        // its size to the coach's bytes.
         // A Shape is too proud to be padded by `print`, so we
         // format it into a small buffer first.
         var shape_buffer: [32]u8 = undefined;
@@ -112,9 +133,15 @@ pub fn main(init: std.process.Init) !void {
         try stdout.print("{s:<20} {s:<11} {d:>5}   {d}\n", .{ name, shape, locker.byteSize(), locker.offset });
     }
 
+    try stdout.print("\nThe coach: {d} tensors, {d} bytes.\n", .{ coach_tensors, coach_bytes });
+
     // In exercise 097 you computed where the plates start. Does
     // Denise agree?
-    const plates = registry.tensors.get("plates").?;
-    try stdout.print("\nThe plates start at byte {d} of the file.\n", .{plates.offset});
+    const plates: zml.safetensors.Tensor = ???;
+    try stdout.print("The plates start at byte {d} of the file.\n", .{plates.offset});
+
+    // Not every layer has a bias. Denise knows without looking.
+    const has_bias: bool = ???;
+    try stdout.print("coach.0.bias: {s}.\n", .{if (has_bias) "in the logbook" else "not in the logbook"});
     try stdout.flush();
 }

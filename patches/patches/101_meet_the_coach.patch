@@ -1,6 +1,6 @@
 --- exercises/14_heavy_lifting/101_meet_the_coach.zig
 +++ answers/14_heavy_lifting/101_meet_the_coach.zig
-@@ -85,7 +85,7 @@
+@@ -95,7 +95,7 @@
  fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
      return .init(
          view.createReplicatedTensor("weight", .{ .dout, .d }),
@@ -9,7 +9,41 @@
          .d,
      );
  }
-@@ -129,9 +129,9 @@
+@@ -106,12 +106,17 @@
+ 
+     /// `view` must stand on the coach: its layers are "0" and "1".
+     pub fn init(view: zml.io.TensorStore.View) Coach {
+-        return ???;
++        return .{
++            .hunches = linear(view.withLayer(0)),
++            .verdict = linear(view.withLayer(1)),
++        };
+     }
+ 
+     /// lifts: {.lifter, .d} -> {.lifter} index of the verdict
+     pub fn forward(self: Coach, lifts: zml.Tensor) zml.Tensor {
+-        return ???;
++        const hunches = self.hunches.forward(lifts, .f32).relu().rename(.{ .dout = .d });
++        const scores = self.verdict.forward(hunches, .f32);
++        return scores.argMax(.dout).indices.squeeze(.dout);
+     }
+ 
+     pub fn load(
+@@ -121,14 +126,22 @@
+         platform: *const zml.Platform,
+         store: *const zml.io.TensorStore,
+     ) !zml.Bufferized(Coach) {
+-        return ???;
++        var buffers = try zml.mem.bufferize(gpa, Coach, self);
++
++        var loader: zml.io.Loader = try .init(gpa, platform, .default);
++        defer loader.deinit();
++
++        try loader.load(io, Coach, self, &buffers, store, .{});
++        try loader.await(io);
++
++        return buffers;
+     }
  
      pub fn unload(buffers: *zml.Bufferized(Coach)) void {
          buffers.hunches.weight.deinit();
@@ -21,7 +55,7 @@
      }
  };
  
-@@ -156,7 +156,7 @@
+@@ -153,13 +166,14 @@
      defer store.deinit();
  
      // The coach is one of several things kept in this locker.
@@ -30,3 +64,20 @@
  
      // Three lifters, three lifts each.
      const lifts: zml.Tensor = .init(.{ .lifter = 3, .d = 3 }, .f32);
+ 
+     // Shapes are enough to compile...
+-    // TODO: `exe`.
++    var exe = try platform.compile(gpa, io, coach, .forward, .{lifts}, .{});
++    defer exe.deinit();
+ 
+     // ...numbers are needed to run.
+     var coach_buffers = try coach.load(gpa, io, platform, &store);
+@@ -174,7 +188,7 @@
+     }));
+     defer lifts_buffer.deinit();
+ 
+-    var result: zml.Buffer = ???;
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ coach_buffers, lifts_buffer });
+     defer result.deinit();
+ 
+     const verdicts = [_][]const u8{

@@ -56,14 +56,24 @@
 // depends on which activation the customer is. The program prints
 // each reaction to the same five steaks.
 //
-// Two of the recipes are "by hand" versions and must print the
-// same numbers as the built-in ones, using only operations you
-// already know:
+// Three of the recipes are "by hand" versions and must print the
+// same numbers as the built-in row above them, using only
+// operations you already know:
 //
 //   - leaky relu with slope 0.1. (Hint for the napkin: for a
 //     slope below 1, which is larger, x or 0.1 * x? When?)
 //
+//   - sigmoid, from its formula. There is no "one divided by x"
+//     method. Exercise 018 has a constant form that does it
+//     anyway: what is x to the power of -1?
+//
 //   - silu.
+//
+// Two more things before the steaks get cold. The menu says the
+// leaky relu has a slope of 0.1, and whoever typed the built-in
+// `leaky` recipe was in a hurry. And `cook` is the helper of the
+// previous exercise, for five steaks this time: the step that
+// turns a recipe into an Exe fell off the ticket.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -75,7 +85,7 @@ fn relu(x: zml.Tensor) zml.Tensor {
 }
 
 fn leaky(x: zml.Tensor) zml.Tensor {
-    return x.leakyReLU(0.1);
+    return x.leakyReLU(0.01);
 }
 
 fn sigmoid(x: zml.Tensor) zml.Tensor {
@@ -96,14 +106,17 @@ fn gelu(x: zml.Tensor) zml.Tensor {
 
 /// Leaky relu with a slope of 0.1, without calling `leakyReLU`.
 fn leakyByHand(x: zml.Tensor) zml.Tensor {
-    // TODO
-    return x;
+    return ???;
+}
+
+/// 1 / (1 + e^-x), without calling `sigmoid`.
+fn sigmoidByHand(x: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 /// silu, without calling `silu`.
 fn siluByHand(x: zml.Tensor) zml.Tensor {
-    // TODO
-    return x;
+    return ???;
 }
 
 /// Compiles `recipe` for five f32, runs it on the steaks.
@@ -115,8 +128,7 @@ fn cook(
 ) ![5]f32 {
     const x: zml.Tensor = .init(.{ .steaks = 5 }, .f32);
 
-    var exe = try platform.compileFn(gpa, io, recipe, .{x}, .{});
-    defer exe.deinit();
+    // Compile `recipe` for `x`.
 
     var input: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&steaks));
     defer input.deinit();
@@ -149,6 +161,7 @@ pub fn main(init: std.process.Init) !void {
         .{ "leaky  ", leaky },
         .{ "by hand", leakyByHand },
         .{ "sigmoid", sigmoid },
+        .{ "by hand", sigmoidByHand },
         .{ "tanh   ", tanh },
         .{ "silu   ", silu },
         .{ "by hand", siluByHand },

@@ -22,13 +22,10 @@
 //     {.s, .d = 4}    ->    {.s, .h = 2, .hd = 2}
 //
 // and this is where the name "head dimension" finally makes
-// sense: hd = d / heads. You know the op that does this, it is
-// the `splitAxis` of chapter 7:
-//
-//     x.splitAxis(.d, .{ .h = 2, .hd = .auto })
-//
-// (`.auto`: "you do the division".) Nothing is moved or copied.
-// The same numbers get a second axis.
+// sense: hd = d / heads. You have done exactly this to a sheet
+// of paper in chapter 7 (exercise 49): one axis split in two,
+// with `.auto` for "you do the division", and nothing moved or
+// copied. The same numbers get a second axis.
 //
 // And then... you call `sdpa`, exactly as before. It was
 // expecting `.h` all along. In its `dot` calls, `.h` is present
@@ -39,10 +36,8 @@
 //
 // `sdpa` returns its result laid out like the queries, here
 // `{.q, .h, .hd}`. The rest of the model wants plain vectors
-// again, so the heads are glued back with the inverse of the
-// split, `merge`:
-//
-//     heard.merge(.{ .d = .{ .h, .hd } })       -> {.q, .d}
+// again, `{.s, .d}`, so the heads are glued back with the
+// inverse of the split. Same exercise 49.
 //
 // To see the effect, `listen` takes the number of heads as a
 // plain argument and gets compiled twice. To keep things bare,
@@ -59,25 +54,25 @@
 // get the same thin blur of everybody. With two, one ear is
 // nearly all Kuzco and the other nearly all Tina.
 //
+// To do:
+//
+//  1. Write `listen`: split, assign the roles (exercise 105),
+//     `sdpa` without a mask, glue back, and give the sequence
+//     its name back. Five tags pass through your hands: `.s`,
+//     `.d`, `.h`, `.hd`, and the `.q` / `.k` pair.
+//
+//  2. In `main`, compile it for each number of heads, and run.
+//
+//  3. Then read what ZML thinks of the herd's anatomy, and
+//     correct whoever wrote that loop.
+//
 const std = @import("std");
 const zml = @import("zml");
 
 /// Self-attention with `heads` heads. x, v: {.s, .d} -> {.s, .d}
 /// x is used for the queries and for the keys, v for the values.
 fn listen(x: zml.Tensor, v: zml.Tensor, heads: u32) zml.Tensor {
-    // {.s, .d} -> {.s, .h, .hd}
-    const x_heads = x.splitAxis(.d, ???);
-    const v_heads = v.splitAxis(.d, ???);
-
-    const heard = zml.nn.sdpa(
-        x_heads.rename(.{ .s = .q }),
-        x_heads.rename(.{ .s = .k }),
-        v_heads.rename(.{ .s = .k }),
-        .{},
-    );
-
-    // {.q, .h, .hd} -> {.s, .d}
-    return heard.merge(???).rename(.{ .q = .s });
+    return ???;
 }
 
 const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
@@ -114,12 +109,10 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer v_buffer.deinit();
 
-    for ([_]u32{ 1, 2 }) |heads| {
-        var exe = try platform.compileFn(gpa, io, listen, .{ x, v, heads }, .{});
-        defer exe.deinit();
-
-        var heard: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, v_buffer });
-        defer heard.deinit();
+    for ([_]u32{ 1, 3 }) |heads| {
+        // Compile `listen` for this many heads, and run it:
+        // `heard` is what gets printed.
+        ???;
 
         try stdout.print("{d} head(s), heard {f}:\n", .{ heads, heard.shape() });
         try stdout.print("         Tina  Kuzco | Tina  Kuzco\n", .{});

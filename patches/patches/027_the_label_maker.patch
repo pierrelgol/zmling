@@ -1,6 +1,6 @@
 --- exercises/04_luggage_tags/027_the_label_maker.zig
 +++ answers/04_luggage_tags/027_the_label_maker.zig
-@@ -71,19 +71,19 @@
+@@ -73,19 +73,19 @@
  
      // The customs form calls flights "departures" and bags
      // "items". Both at once, with the careful method.
@@ -21,5 +21,14 @@
 -    const archive = complete.renameTag(.departures, .items);
 +    const archive = complete.rename(.{ .departures = .flights });
      try stdout.print("Archive:  {f}, {d} items per flight.\n", .{ archive, archive.dim(.items) });
+ 
+     // Transfers: how many bags go from each of 3 flights to each
+@@ -93,7 +93,7 @@
+     // places. Kevin asked the careful method for a swap; the
+     // lesson says what it thinks of that, and what to use.
+     const transfers = zml.Tensor.init(.{ .from = 3, .to = 5 }, .f32);
+-    const returns = transfers.rename(.{ .from = .to, .to = .from });
++    const returns = transfers.withTags(.{ .to, .from });
+     try stdout.print("Returns:  {f}, back to {d} flights.\n", .{ returns, returns.dim(.to) });
      try stdout.flush();
  }

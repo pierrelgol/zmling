@@ -11,7 +11,7 @@
 //                                     picture of 2 by 2 pixels.
 //                                     It is not a good camera.
 //
-// Three corrections stand between this and something you can
+// Four corrections stand between this and something you can
 // put on air:
 //
 //   1. TINT. One number per color channel, added to every pixel
@@ -38,25 +38,39 @@
 //      "NO broadcast function for the exposure. Not `broad`, not
 //      `broadcastAnything`. Read the fine print. - D."
 //
+//   4. LEGAL RANGE. The transmitter is as old as the camera:
+//      below 35 it shows static, above 160 it starts to smoke.
+//      Every value under 35 becomes 35, every value over 160
+//      becomes 160. This one has a ritual of its own, `legal`,
+//      which `onAir` calls last. No new function is needed: you
+//      compared tensors element by element at the Manor and at
+//      the diner (exercise 017), and exercise 023 showed how to
+//      get a constant to compare with.
+//
 // All together:
 //
-//     on_air = (frames + tint) * vignette / exposure
+//     on_air = legal( (frames + tint) * vignette / exposure )
 //
-// Everything you need is in exercises 033 to 037. Mind which
-// side of each operation the small tensor is on.
+// Everything you need for 1 to 3 is in exercises 033 to 037.
+// Mind which side of each operation the small tensor is on.
+//
+// Both rituals are empty. And since Doug is not back, so is a
+// good part of `main`: the four placeholders, the compilation,
+// the Buffer with the exposures, and the call that runs the Exe.
+// The comments say what goes where. The data and the printing
+// are done, so that you know when you got it right.
 //
 const std = @import("std");
 const zml = @import("zml");
 
+/// 4. Nothing below 35, nothing above 160. Same shape as `picture`.
+fn legal(picture: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
+/// Corrections 1 to 3, in that order, and then `legal`.
 fn onAir(frames: zml.Tensor, tint: zml.Tensor, vignette: zml.Tensor, exposure: zml.Tensor) zml.Tensor {
-    // 1. One value per channel.
-    const tinted = frames.add(???);
-
-    // 2. One value per pixel position, untagged.
-    const shaded = tinted.mul(???);
-
-    // 3. One value per frame. Mind Doug's note.
-    return shaded.div(???);
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -76,8 +90,7 @@ pub fn main(init: std.process.Init) !void {
     const vignette: zml.Tensor = ???;
     const exposure: zml.Tensor = ???;
 
-    var exe = try platform.compileFn(gpa, io, onAir, .{ frames, tint, vignette, exposure }, .{});
-    defer exe.deinit();
+    // Compile `onAir` into `exe`.
 
     // Frame 1 is frame 0 with the studio lights at full power.
     var frames_buffer: zml.Buffer = try .fromBytes(io, platform, frames.shape(), std.mem.sliceAsBytes(&[2][3][2][2]f32{
@@ -104,11 +117,9 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer vignette_buffer.deinit();
 
-    var exposure_buffer: zml.Buffer = try .fromBytes(io, platform, exposure.shape(), std.mem.sliceAsBytes(&[_]f32{ 1, 4 }));
-    defer exposure_buffer.deinit();
+    // The exposures: 1 for frame 0, and 4 for frame 1.
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ frames_buffer, tint_buffer, vignette_buffer, exposure_buffer });
-    defer result.deinit();
+    // Run it: the picture goes into `result`.
 
     const picture = try result.getValue([2][3][2][2]f32, io);
 

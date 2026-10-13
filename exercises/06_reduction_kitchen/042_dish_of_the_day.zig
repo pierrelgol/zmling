@@ -57,12 +57,26 @@
 // complaint, and then... well, read the first line it prints.
 // Jean-Luc wants a plain list, one entry per day.
 //
+// He also wants to chalk the number of portions next to each
+// name ("duck, 16 sold" makes the neighbours order duck). That
+// is the other half of the same answer, so it gets a ritual of
+// its own, `winningSales`: a plain list again, one entry per
+// day. The ritual is empty, and although its Exe is compiled,
+// nobody runs it: `main` reads a Buffer called `sold` that
+// doesn't exist yet. (Zig refuses to build anything while those
+// two holes are open, so `eval`'s complaint comes after them.)
+//
 const std = @import("std");
 const zml = @import("zml");
 
 /// For each day, the index of the dish that sold the most: {day=5}.
 fn dishOfTheDay(sales: zml.Tensor) zml.Tensor.ArgMaxRes {
     return sales.argMax(.dish);
+}
+
+/// For each day, how many portions the winner sold: {day=5}.
+fn winningSales(sales: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -81,6 +95,9 @@ pub fn main(init: std.process.Init) !void {
     var exe = try platform.compileFn(gpa, io, dishOfTheDay, .{sales}, .{});
     defer exe.deinit();
 
+    var sold_exe = try platform.compileFn(gpa, io, winningSales, .{sales}, .{});
+    defer sold_exe.deinit();
+
     const days = [_][]const u8{ "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
     const dishes = [_][]const u8{ "soup", "duck", "risotto", "tart" };
 
@@ -97,11 +114,14 @@ pub fn main(init: std.process.Init) !void {
     var result: zml.Buffer = try exe.eval(gpa, io, .{sales_buffer});
     defer result.deinit();
 
+    // Run `sold_exe` on the same sales: that's `sold`.
+
     const winners = try result.getValue([5]i32, io);
+    const portions = try sold.getValue([5]f32, io);
 
     try stdout.print("The blackboard is a {f}.\n", .{result.shape()});
-    for (days, winners) |day, winner| {
-        try stdout.print("{s}: {s}\n", .{ day, dishes[@intCast(winner)] });
+    for (days, winners, portions) |day, winner, n| {
+        try stdout.print("{s}: {s}, {d} sold\n", .{ day, dishes[@intCast(winner)], n });
     }
     try stdout.flush();
 }

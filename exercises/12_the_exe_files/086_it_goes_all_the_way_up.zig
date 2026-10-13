@@ -72,28 +72,38 @@
 // next layer wants a .d. (`t.withTags(.{.d})` relabels the axes
 // of t, chapter 04.)
 //
-// Two things are wrong: the layers' Buffers are never created,
-// and whoever wrote the cleanup hadn't read this far.
+// The file is thin. From the bottom of the chain to the top:
+//
+// 1. `Layer` is an empty struct. It needs its two fields and
+//    its `forward`.
+//
+// 2. `Network.forward`.
+//
+// 3. The placeholders. Every layer needs its OWN weight and
+//    bias: a placeholder serves one input. The two Shapes are
+//    there; `zml.Tensor.fromShape(shape)` makes a fresh
+//    placeholder from a Shape (chapter 02).
+//
+// 4. The compile call.
+//
+// 5. Each layer's two Buffers.
+//
+// 6. And whoever wrote the cleanup hadn't read this far.
 //
 const std = @import("std");
 const zml = @import("zml");
 
 const Layer = struct {
-    weight: zml.Tensor,
-    bias: zml.Tensor,
-
-    pub fn forward(self: Layer, x: zml.Tensor) zml.Tensor {
-        return self.weight.dot(x, .d).add(self.bias).relu().withTags(.{.d});
-    }
+    // TODO: the two fields, and
+    //     pub fn forward(self: Layer, x: zml.Tensor) zml.Tensor
+    // which hands the next layer an axis called .d
 };
 
 const Network = struct {
     layers: []const Layer,
 
     pub fn forward(self: Network, x: zml.Tensor) zml.Tensor {
-        var h = x;
-        for (self.layers) |layer| h = layer.forward(h);
-        return h;
+        return ???;
     }
 };
 
@@ -114,14 +124,11 @@ pub fn main(init: std.process.Init) !void {
     // Every layer needs its OWN placeholders: a placeholder may
     // only be used for one input.
     var layers: [3]Layer = undefined;
-    for (&layers) |*layer| layer.* = .{
-        .weight = .fromShape(weight_shape),
-        .bias = .fromShape(bias_shape),
-    };
+    for (&layers) |*layer| layer.* = ???;
     const network: Network = .{ .layers = &layers };
     const x: zml.Tensor = .init(.{ .d = 2 }, .f32);
 
-    var exe = try platform.compile(gpa, io, network, .forward, .{x}, .{});
+    var exe = ???;
     defer exe.deinit();
 
     try stdout.print("{d} layers, {d} inputs.\n", .{ network.layers.len, exe.input_shapes.len });
@@ -140,7 +147,7 @@ pub fn main(init: std.process.Init) !void {
 
     var layer_buffers: [3]zml.Bufferized(Layer) = undefined;
     for (&layer_buffers, &weight_data, &bias_data) |*layer_buffer, *w, *b| {
-        // TODO: this layer's two Buffers, made from `w` and `b`.
+        // This layer's two Buffers, made from `w` and `b`.
         layer_buffer.* = ???;
     }
 

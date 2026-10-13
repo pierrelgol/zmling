@@ -46,6 +46,19 @@
 //
 // Kevin wrote `dilute`, and tested it. On the old machine.
 //
+// And this morning a third one arrived: a handheld scanner, for
+// the bags that don't fit on the belt. One image at a time, no
+// colors: its scans are just 2 rows of 5 pixels, tagged like the
+// others. `dilute` must not notice the difference. Describe its
+// layout in main().
+//
+// The testing helper, `firstPixel`, was Kevin's too, and it lost
+// both ends on the way to your desk. Sizes are not known when you
+// write this function (they come with `layout`), so a Zig array
+// won't do: it is the photograph of exercise 013, both ways.
+// Host memory for one scan with every pixel set to 10 going in,
+// and the first pixel of the result coming out.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -63,9 +76,7 @@ fn firstPixel(gpa: std.mem.Allocator, io: std.Io, platform: *const zml.Platform,
     var exe = try platform.compileFn(gpa, io, dilute, .{scan}, .{});
     defer exe.deinit();
 
-    const pixels: zml.Slice = try .alloc(gpa, layout);
-    defer pixels.free(gpa);
-    for (pixels.items(f32)) |*p| p.* = 10;
+    // One scan in host memory, every pixel is 10.
 
     var scan_buffer: zml.Buffer = try .fromSlice(io, platform, pixels);
     defer scan_buffer.deinit();
@@ -73,10 +84,8 @@ fn firstPixel(gpa: std.mem.Allocator, io: std.Io, platform: *const zml.Platform,
     var result: zml.Buffer = try exe.eval(gpa, io, .{scan_buffer});
     defer result.deinit();
 
-    const diluted: zml.Slice = try result.toSliceAlloc(gpa, io);
-    defer diluted.free(gpa);
-
-    return diluted.constItems(f32)[0];
+    // The result, back in host memory; its first pixel.
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -93,8 +102,10 @@ pub fn main(init: std.process.Init) !void {
     // One image of 2 by 5 pixels, 3 channels. Tiny bags.
     const old_machine = zml.Shape.init(.{ .n = 1, .h = 2, .w = 5, .c = 3 }, .f32);
     const new_machine = zml.Shape.init(.{ .n = 1, .c = 3, .h = 2, .w = 5 }, .f32);
+    // 2 rows of 5 pixels, and nothing else.
+    const handheld: zml.Shape = ???;
 
-    // 10 pixels per image, every pixel is 10: both must print 1.
+    // 10 pixels per image, every pixel is 10: all must print 1.
     try stdout.print("Old machine {f}: a pixel of 10 becomes {d:.3}\n", .{
         old_machine,
         try firstPixel(gpa, io, platform, old_machine),
@@ -102,6 +113,10 @@ pub fn main(init: std.process.Init) !void {
     try stdout.print("New machine {f}: a pixel of 10 becomes {d:.3}\n", .{
         new_machine,
         try firstPixel(gpa, io, platform, new_machine),
+    });
+    try stdout.print("Handheld    {f}: a pixel of 10 becomes {d:.3}\n", .{
+        handheld,
+        try firstPixel(gpa, io, platform, handheld),
     });
     try stdout.flush();
 }

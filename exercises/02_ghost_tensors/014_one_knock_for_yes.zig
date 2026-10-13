@@ -46,6 +46,13 @@
 // were promised.
 //
 // Tonight's spirit knocks, and the apprentice controls how loud.
+// The compiler will stop at the blanks first. Once they are
+// filled in, the panic described above is waiting for you.
+//
+// Then comes a second, tiny séance: a whisper goes in, its echo
+// comes out. One scalar each way. The ritual and the placeholder
+// are there; every other step is yours to write. The first
+// séance, right above it, is your model.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -53,6 +60,11 @@ const zml = @import("zml");
 /// Every knock, `volume` times as loud.
 fn amplify(knocks: zml.Tensor, volume: zml.Tensor) zml.Tensor {
     return knocks.mul(volume);
+}
+
+/// The echo of a whisper is the whisper, squared.
+fn echo(whisper: zml.Tensor) zml.Tensor {
+    return whisper.mul(whisper);
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -78,7 +90,8 @@ pub fn main(init: std.process.Init) !void {
 
     // Same Exe, three different volumes, no recompilation.
     for ([_]f32{ 0.5, 1, 10 }) |v| {
-        var volume_buffer: zml.Buffer = try .scalar(io, platform, v, .f32);
+        // This round's volume, `v`, as a body.
+        var volume_buffer: zml.Buffer = ???;
         defer volume_buffer.deinit();
 
         var result: zml.Buffer = try exe.eval(gpa, io, .{ knocks_buffer, volume_buffer });
@@ -86,5 +99,25 @@ pub fn main(init: std.process.Init) !void {
 
         try stdout.print("volume {d}: {any}\n", .{ v, try result.getValue([3]f32, io) });
     }
+
+    // The second seance. One rank 0 placeholder...
+    const whisper: zml.Tensor = .init(.{}, .f32);
+
+    // ...compiled with the `echo` ritual...
+    var echo_exe = ???;
+    defer echo_exe.deinit();
+
+    // ...a body holding the number 3, as an f32...
+    var whisper_buffer: zml.Buffer = ???;
+    defer whisper_buffer.deinit();
+
+    // ...run through the Exe...
+    var echo_buffer: zml.Buffer = ???;
+    defer echo_buffer.deinit();
+
+    // ...and brought back as a plain Zig number.
+    const loudness: f32 = ???;
+
+    try stdout.print("A whisper of 3 echoes back as {d}.\n", .{loudness});
     try stdout.flush();
 }

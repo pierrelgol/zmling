@@ -54,17 +54,40 @@
 //     it, and `dot` panics while looking for a `.d` axis.
 //
 //  2. THE VERDICT. The last layer gives one score per class
-//     (the "logits"). The answer is the index of the highest
-//     one, and you know how to ask for that: `argMax(.dout)`
-//     returns `.values` and `.indices`, the indices are i32,
-//     and the reduced axis is kept with a size of 1, so
-//     `squeeze` it away.
+//     (the "logits"). Scores are not an answer yet. Every
+//     classifier you will ever meet finishes with the same two
+//     moves, and you have known both since the reduction
+//     kitchen:
 //
-// The Taster below was assembled in a hurry. Its `forward`
-// goes straight from one Linear into the next, and it has no
-// oven at all. You will meet the panic first. Fix it, and you
-// get to see what a two-tier cake without an oven is worth.
-// (Exercise 090 warned you.)
+//      - `softmax` over the classes (exercise 044) turns the
+//        scores into probabilities that add up to 1;
+//      - `argMax` over the classes (exercise 042) returns
+//        `.values` and `.indices`: the highest probability, and
+//        WHERE it is. The index is the class, an i32. The value
+//        is how sure the network is of it. The reduced axis is
+//        kept with a size of 1, so `squeeze` it away.
+//
+// That makes TWO results per filling, so `forward` returns a
+// struct of Tensors, and the Exe has two outputs. `exe.eval`
+// only knows how to return one Buffer. You need the runner of
+// exercise 083, and a `zml.Bufferized` of the result struct for
+// it to fill.
+//
+// The Taster below was assembled in a hurry:
+//
+//  - its `forward` goes straight from one Linear into the next,
+//    and it has no oven at all. You will meet the panic first.
+//    Fix it, and you get to see what a two-tier cake without an
+//    oven is worth. (Exercise 090 warned you.)
+//  - the end of `forward`, the two moves above, is not written;
+//  - neither are the placeholders of the two Linears (each has
+//    a weight AND a bias; the sizes are in the arrays below, and
+//    you know the convention for the tags), the Exe, the
+//    Buffers of the Taster, and the run.
+//
+// The printing at the bottom tells you which names it expects.
+// Chef Babette, it turns out, is exactly as sure of everything.
+// She has been since 1987.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -73,11 +96,19 @@ const Taster = struct {
     hidden: zml.nn.Linear,
     verdict: zml.nn.Linear,
 
-    /// fillings: {.cake, .d} -> the index of the best class for each cake: {.cake}, i32.
-    pub fn forward(self: Taster, fillings: zml.Tensor) zml.Tensor {
+    pub const Verdict = struct {
+        /// {.cake}, i32: the index of the most likely class.
+        class: zml.Tensor,
+        /// {.cake}, f32: the probability of that class.
+        confidence: zml.Tensor,
+    };
+
+    /// fillings: {.cake, .d} -> for each cake, a class and a confidence.
+    pub fn forward(self: Taster, fillings: zml.Tensor) Verdict {
         const hidden = self.hidden.forward(fillings, fillings.dtype());
         const logits = self.verdict.forward(hidden, hidden.dtype());
-        return logits.argMax(.dout).indices.squeeze(.dout);
+        // The two moves: probabilities, then the best one.
+        return ???;
     }
 };
 
@@ -92,14 +123,12 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const taster: Taster = .{
-        .hidden = .init(.init(.{ .dout = 2, .d = 2 }, .f32), .init(.{ .dout = 2 }, .f32), .d),
-        .verdict = .init(.init(.{ .dout = 2, .d = 2 }, .f32), .init(.{ .dout = 2 }, .f32), .d),
-    };
+    // Two Linears: 2 flavors in, 2 hunches out; 2 hunches in, 2
+    // classes out. Both with a bias.
+    const taster: Taster = ???;
     const fillings: zml.Tensor = .init(.{ .cake = 4, .d = 2 }, .f32);
 
-    var exe = try platform.compile(gpa, io, taster, .forward, .{fillings}, .{});
-    defer exe.deinit();
+    // TODO: `exe`.
 
     // h0 = s + t, h1 = s + t - 1 (the relu is in `forward`)
     var w1: zml.Buffer = try .fromBytes(io, platform, taster.hidden.weight.shape(), std.mem.sliceAsBytes(&[2][2]f32{ .{ 1, 1 }, .{ 1, 1 } }));
@@ -113,10 +142,7 @@ pub fn main(init: std.process.Init) !void {
     var b2: zml.Buffer = try .fromBytes(io, platform, taster.verdict.bias.?.shape(), std.mem.sliceAsBytes(&[2]f32{ 0.5, 0 }));
     defer b2.deinit();
 
-    const taster_buffers: zml.Bufferized(Taster) = .{
-        .hidden = .{ .weight = w1, .bias = b1, .quantization = null },
-        .verdict = .{ .weight = w2, .bias = b2, .quantization = null },
-    };
+    const taster_buffers: zml.Bufferized(Taster) = ???;
 
     const names = [_][]const u8{ "plain", "strawberry", "olive", "salted caramel" };
     //                          sweet, salty
@@ -124,13 +150,15 @@ pub fn main(init: std.process.Init) !void {
     var fillings_buffer: zml.Buffer = try .fromBytes(io, platform, fillings.shape(), std.mem.sliceAsBytes(&flavors));
     defer fillings_buffer.deinit();
 
-    var result: zml.Buffer = try exe.eval(gpa, io, .{ taster_buffers, fillings_buffer });
-    defer result.deinit();
+    // TODO: two outputs. A runner, and `verdicts`, a struct of
+    // Buffers for it to fill. Both of those Buffers are yours to
+    // free.
 
-    try stdout.print("verdicts {f}\n", .{result.shape()});
+    try stdout.print("verdicts {f}, confidence {f}\n", .{ verdicts.class.shape(), verdicts.confidence.shape() });
     const classes = [_][]const u8{ "rejected", "served" };
-    for (names, try result.getValue([4]i32, io)) |name, class| {
-        try stdout.print("  {s:<14} -> {s}\n", .{ name, classes[@intCast(class)] });
+    const confidences = try verdicts.confidence.getValue([4]f32, io);
+    for (names, try verdicts.class.getValue([4]i32, io), confidences) |name, class, confidence| {
+        try stdout.print("  {s:<14} -> {s:<8} ({d:.1}% sure)\n", .{ name, classes[@intCast(class)], confidence * 100 });
     }
     try stdout.flush();
 }

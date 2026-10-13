@@ -37,6 +37,9 @@
 // be mutated in place. Zig, bless its heart, refuses to let a
 // return value be silently thrown away.
 //
+// That is the first of four things to fix. The last one is a
+// line the nephew never wrote at all.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -64,8 +67,15 @@ pub fn main(init: std.process.Init) !void {
     // On the highway, boxes fly off the back. All of them. That
     // axis is gone; and what remains is counted in 64-bit signed
     // regrets.
-    const aftermath = truck.remove(.rows).withDtype(.i64);
+    const aftermath = truck.remove(.boxes).withDtype(.i64);
 
     try stdout.print("Aftermath: {f}.\n", .{aftermath});
+
+    // Back at the depot, what is left gets strapped onto pallets:
+    // a new axis of size 6, tagged .pallets, in FRONT of all the
+    // others. Start from the aftermath and write the whole line.
+    const depot = ???;
+
+    try stdout.print("Depot: {f}, rank {d}.\n", .{ depot, depot.rank() });
     try stdout.flush();
 }

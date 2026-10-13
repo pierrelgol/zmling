@@ -1,6 +1,6 @@
 --- exercises/02_ghost_tensors/014_one_knock_for_yes.zig
 +++ answers/02_ghost_tensors/014_one_knock_for_yes.zig
-@@ -68,7 +68,7 @@
+@@ -80,7 +80,7 @@
  
      const knocks: zml.Tensor = .init(.{ .knocks = 3 }, .f32);
      // The volume is ONE number. No box around it.
@@ -9,3 +9,36 @@
  
      var exe = try platform.compileFn(gpa, io, amplify, .{ knocks, volume }, .{});
      defer exe.deinit();
+@@ -91,7 +91,7 @@
+     // Same Exe, three different volumes, no recompilation.
+     for ([_]f32{ 0.5, 1, 10 }) |v| {
+         // This round's volume, `v`, as a body.
+-        var volume_buffer: zml.Buffer = ???;
++        var volume_buffer: zml.Buffer = try .scalar(io, platform, v, .f32);
+         defer volume_buffer.deinit();
+ 
+         var result: zml.Buffer = try exe.eval(gpa, io, .{ knocks_buffer, volume_buffer });
+@@ -104,19 +104,19 @@
+     const whisper: zml.Tensor = .init(.{}, .f32);
+ 
+     // ...compiled with the `echo` ritual...
+-    var echo_exe = ???;
++    var echo_exe = try platform.compileFn(gpa, io, echo, .{whisper}, .{});
+     defer echo_exe.deinit();
+ 
+     // ...a body holding the number 3, as an f32...
+-    var whisper_buffer: zml.Buffer = ???;
++    var whisper_buffer: zml.Buffer = try .scalar(io, platform, 3, .f32);
+     defer whisper_buffer.deinit();
+ 
+     // ...run through the Exe...
+-    var echo_buffer: zml.Buffer = ???;
++    var echo_buffer: zml.Buffer = try echo_exe.eval(gpa, io, .{whisper_buffer});
+     defer echo_buffer.deinit();
+ 
+     // ...and brought back as a plain Zig number.
+-    const loudness: f32 = ???;
++    const loudness: f32 = try echo_buffer.getValue(f32, io);
+ 
+     try stdout.print("A whisper of 3 echoes back as {d}.\n", .{loudness});
+     try stdout.flush();

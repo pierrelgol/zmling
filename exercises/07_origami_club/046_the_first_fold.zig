@@ -72,6 +72,12 @@
 // Look at the numbers in the output once it works. That's the
 // whole lesson.
 //
+// Four things stand between you and that output: a number Coach
+// would not approve of, a fold with no instruction, a fold
+// with no name, and a hole in `main` where the strip's Buffer
+// should be. You have been making Buffers since exercise 011.
+// From this chapter on, nobody holds the paper for you.
+//
 const std = @import("std");
 const zml = @import("zml");
 
@@ -81,10 +87,12 @@ fn grid(strip: zml.Tensor) zml.Tensor {
 }
 
 fn booklet(strip: zml.Tensor) zml.Tensor {
-    return grid(strip).reshape(.{ .pages = 2, .rows = .auto, .cols = 2 });
+    // 2 pages, rows of 2 squares, and ZML counts the rows.
+    return grid(strip).reshape(???);
 }
 
 fn unfold(strip: zml.Tensor) zml.Tensor {
+    // The shortcut, please.
     return booklet(strip).???;
 }
 
@@ -104,8 +112,9 @@ pub fn main(init: std.process.Init) !void {
     var squares: [12]i32 = undefined;
     for (&squares, 0..) |*square, i| square.* = @intCast(i);
 
-    var strip_buffer: zml.Buffer = try .fromBytes(io, platform, strip.shape(), std.mem.sliceAsBytes(&squares));
-    defer strip_buffer.deinit();
+    // The paper: a Buffer with the placeholder's shape, holding
+    // `squares`. Call it `strip_buffer`, and release it when
+    // `main` is done.
 
     // One Exe per fold. (`inline for`, because compileFn needs
     // to know each function at compile time.)

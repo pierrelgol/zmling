@@ -48,8 +48,13 @@
 //
 // The apprentice photographed five ghosts and wrote down their
 // ages, in years, as integers. The séance (it makes everybody
-// one year older) wants floats. Run it first to enjoy the
-// result, then fix the paperwork.
+// one year older) wants floats.
+//
+// Before you can enjoy that, two lines are yours to write: the
+// séance itself (exercise 010 showed you how, and from now on
+// you'll be asked for it more and more often), and the trip back
+// to host memory at the very end. Then run it, admire the
+// result, and fix the paperwork.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -73,7 +78,9 @@ pub fn main(init: std.process.Init) !void {
 
     const ages: zml.Tensor = .init(.{ .ghosts = 5 }, .f32);
 
-    var exe = try platform.compileFn(gpa, io, birthday, .{ages}, .{});
+    // Hold the seance: compile `birthday` for the placeholder
+    // above.
+    var exe = ???;
     defer exe.deinit();
 
     // Host memory for 5 floats.
@@ -92,7 +99,7 @@ pub fn main(init: std.process.Init) !void {
     defer result.deinit();
 
     // Copy the result back to host memory, as a Slice we own.
-    const older: zml.Slice = try result.toSliceAlloc(gpa, io);
+    const older: zml.Slice = ???;
     defer older.free(gpa);
 
     try stdout.print("Result is a {f} slice. Happy birthday:", .{older.shape});

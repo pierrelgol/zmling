@@ -1,6 +1,6 @@
 --- exercises/14_heavy_lifting/098_the_front_desk.zig
 +++ answers/14_heavy_lifting/098_the_front_desk.zig
-@@ -91,13 +91,13 @@
+@@ -107,13 +107,13 @@
      const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
      defer gpa.free(path);
  
@@ -15,4 +15,35 @@
 +        registry.totalBytes(),
      });
  
+     var coach_tensors: usize = 0;
+@@ -122,10 +122,12 @@
      try stdout.print("name                 shape       bytes   at\n", .{});
+     var it = registry.iterator();
+     while (it.next()) |entry| {
+-        const name: []const u8 = ???;
+-        const locker: zml.safetensors.Tensor = ???;
+-        // TODO: if this one belongs to the coach, count it, and add
+-        // its size to the coach's bytes.
++        const name = entry.key_ptr.*;
++        const locker = entry.value_ptr.*;
++        if (std.mem.startsWith(u8, name, "coach.")) {
++            coach_tensors += 1;
++            coach_bytes += locker.byteSize();
++        }
+         // A Shape is too proud to be padded by `print`, so we
+         // format it into a small buffer first.
+         var shape_buffer: [32]u8 = undefined;
+@@ -137,11 +139,11 @@
+ 
+     // In exercise 097 you computed where the plates start. Does
+     // Denise agree?
+-    const plates: zml.safetensors.Tensor = ???;
++    const plates = registry.tensors.get("plates").?;
+     try stdout.print("The plates start at byte {d} of the file.\n", .{plates.offset});
+ 
+     // Not every layer has a bias. Denise knows without looking.
+-    const has_bias: bool = ???;
++    const has_bias = registry.tensors.get("coach.0.bias") != null;
+     try stdout.print("coach.0.bias: {s}.\n", .{if (has_bias) "in the logbook" else "not in the logbook"});
+     try stdout.flush();
+ }

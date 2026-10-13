@@ -10,8 +10,12 @@
 //                                     each table ordered
 //     prices   {dish=4,f32}           the price of one portion
 //
-// She wants four things. Each is one ritual, compiled into its
-// own Exe below; `main` is done, the rituals are yours.
+// She wants five things. Each is one ritual, compiled into its
+// own Exe below. The rituals are yours, all five, and so are a
+// few lines of `main` that she didn't get to: the two
+// placeholders, the Buffer with the prices, and everything that
+// happens to the fifth ritual between its definition and the
+// printing. The other four show the way.
 //
 //   1. THE BILLS. What each table owes: portions times price,
 //      added up over the dishes. A plain {table=3}.
@@ -29,6 +33,12 @@
 //      money per dish, then divide it by its own total. If you
 //      keep your size 1 axes until the last moment, the fine
 //      print of exercise 036 does that division for you.
+//
+//   5. AGAINST THE AVERAGE. Each bill divided by the average
+//      bill: 1 is an average table, 2 spent twice as much. A
+//      plain {table=3}. You have rituals for both halves, and
+//      one of them returns a true scalar: this is what true
+//      scalars are for.
 //
 // Things to keep in mind, from this chapter and the previous
 // one:
@@ -64,6 +74,11 @@ fn shares(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
     return ???;
 }
 
+/// 5. Each bill, divided by the average bill: {table=3}.
+fn againstAverage(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+    return ???;
+}
+
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
     const io = init.io;
@@ -75,8 +90,9 @@ pub fn main(init: std.process.Init) !void {
     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
     defer platform.deinit(gpa, io);
 
-    const orders: zml.Tensor = .init(.{ .table = 3, .dish = 4 }, .f32);
-    const prices: zml.Tensor = .init(.{ .dish = 4 }, .f32);
+    // The two placeholders. Shapes and dtypes are in the lesson.
+    const orders: zml.Tensor = ???;
+    const prices: zml.Tensor = ???;
 
     var bills_exe = try platform.compileFn(gpa, io, bills, .{ orders, prices }, .{});
     defer bills_exe.deinit();
@@ -87,6 +103,8 @@ pub fn main(init: std.process.Init) !void {
     var shares_exe = try platform.compileFn(gpa, io, shares, .{ orders, prices }, .{});
     defer shares_exe.deinit();
 
+    // The fifth Exe, `against_exe`, for `againstAverage`.
+
     const dishes = [_][]const u8{ "soup", "duck", "risotto", "tart" };
 
     var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[3][4]f32{
@@ -96,8 +114,7 @@ pub fn main(init: std.process.Init) !void {
     }));
     defer orders_buffer.deinit();
 
-    var prices_buffer: zml.Buffer = try .fromBytes(io, platform, prices.shape(), std.mem.sliceAsBytes(&[_]f32{ 8, 26, 18, 9 }));
-    defer prices_buffer.deinit();
+    // The menu: soup 8, duck 26, risotto 18, tart 9.
 
     var bills_result: zml.Buffer = try bills_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
     defer bills_result.deinit();
@@ -107,6 +124,8 @@ pub fn main(init: std.process.Init) !void {
     defer best_result.deinit();
     var shares_result: zml.Buffer = try shares_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
     defer shares_result.deinit();
+
+    // Run the fifth Exe: its result is `against_result`.
 
     try stdout.print("bills {f}: {any}\n", .{ bills_result.shape(), try bills_result.getValue([3]f32, io) });
     try stdout.print("average bill {f}: {d:.2}\n", .{ average_result.shape(), try average_result.getValue(f32, io) });
@@ -118,6 +137,10 @@ pub fn main(init: std.process.Init) !void {
     for (dishes, try shares_result.getValue([4]f32, io)) |dish, share| {
         try stdout.print(" {s} {d:.3}", .{ dish, share });
     }
+    try stdout.print("\n", .{});
+
+    try stdout.print("against the average {f}:", .{against_result.shape()});
+    for (try against_result.getValue([3]f32, io)) |ratio| try stdout.print(" {d:.3}", .{ratio});
     try stdout.print("\n", .{});
     try stdout.flush();
 }

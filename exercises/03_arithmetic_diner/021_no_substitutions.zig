@@ -60,12 +60,29 @@
 // suggestion. You'll meet both panics from above, one after the
 // other.
 //
+// Then Gus wants to know what that came to PER HOUR, in dollars
+// and cents this time: the envelope divided by the hours. Two
+// .i32 tensors in, an .f32 tensor out, and remember what `div`
+// does to integers (exercise 017). The recipe `hourly` is yours.
+//
+// main() runs it the way exercise 018 ran the register: the
+// envelopes are still on the device, so the `result` of the first
+// Exe is the first input of the second one, next to the hours
+// Buffer that is already there. Two lines of main() are for you:
+// the placeholder for the envelopes (what did `payday` return?),
+// and the run itself.
+//
 const std = @import("std");
 const zml = @import("zml");
 
 /// trunc(hours * 1.5 * wage) + bonus, as whole dollars.
 fn payday(hours: zml.Tensor, wage: zml.Tensor, bonus: zml.Tensor) zml.Tensor {
     return hours.scale(1.5).mul(wage).add(bonus);
+}
+
+/// pay / hours, in dollars and cents.
+fn hourly(pay: zml.Tensor, hours: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -101,5 +118,21 @@ pub fn main(init: std.process.Init) !void {
         exe.output_shapes[0],
         try result.getValue([3]i32, io),
     });
+
+    // Per hour. A placeholder for the envelopes, as `payday`
+    // returns them.
+    const pay: zml.Tensor = ???;
+
+    var hourly_exe = try platform.compileFn(gpa, io, hourly, .{ pay, hours }, .{});
+    defer hourly_exe.deinit();
+
+    // Run it on the envelopes and the hours. Both are on the
+    // device already.
+    var hourly_result: zml.Buffer = ???;
+    defer hourly_result.deinit();
+
+    try stdout.print("Per hour, as {f}:", .{hourly_exe.output_shapes[0]});
+    for (try hourly_result.getValue([3]f32, io)) |dollars| try stdout.print(" {d:.3}", .{dollars});
+    try stdout.print("\n", .{});
     try stdout.flush();
 }

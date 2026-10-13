@@ -1,15 +1,15 @@
 --- exercises/04_luggage_tags/026_half_a_label.zig
 +++ answers/04_luggage_tags/026_half_a_label.zig
-@@ -70,7 +70,7 @@
-     const xray: zml.Tensor = .init(.{ 7, 2, 5, 3 }, .f32);
+@@ -74,7 +74,7 @@
  
-     // Label what the manual still says: .bags, then .cm.
--    const scans = xray.???(.{ .bags, .cm });
-+    const scans = xray.withPartialTags(.{ .bags, .cm });
-     try stdout.print("{f}: fully tagged? {}\n", .{ scans, scans.shape().isFullyTagged() });
- 
-     // Is there a .bags axis? A .days axis?
-@@ -82,13 +82,13 @@
+ /// Labels the last two axes of any scan: .bags, then .cm.
+ fn labelScan(scan: zml.Tensor) zml.Tensor {
+-    return ???;
++    return scan.withPartialTags(.{ .bags, .cm });
+ }
+ pub fn main(init: std.process.Init) !void {
+     var buffer: [4096]u8 = undefined;
+@@ -96,13 +96,13 @@
      // Brenda remembers: the machine keeps one week of scans, so
      // the first axis is .days. Nobody knows about the second one.
      // (She suspects it's "left and right". Of what? Exactly.)
@@ -24,4 +24,13 @@
 +        week.dim(1),
          week.shape().tag(1),
      });
+ 
+@@ -111,7 +111,7 @@
+     // the loop is compiled separately, like in exercise 020.)
+     inline for (.{ .{ 5, 3 }, .{ 2, 5, 3 }, .{ 4, 7, 2, 5, 3 } }) |dims| {
+         const labeled = labelScan(zml.Tensor.init(dims, .f32));
+-        try stdout.print("{f}: bags on axis {d}\n", .{ labeled, 2 });
++        try stdout.print("{f}: bags on axis {d}\n", .{ labeled, labeled.axis(.bags) });
+     }
      try stdout.flush();
+ }

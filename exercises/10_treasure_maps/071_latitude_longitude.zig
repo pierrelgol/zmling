@@ -49,8 +49,15 @@
 // to ask for.
 //
 // The lookout has marked three X's, and he also knows the best
-// longitude at each latitude. The cabin boy wrote both
-// functions down. One of them panics; fix it and meet the other.
+// longitude at each latitude. The cabin boy wrote `dig`, which
+// panics, and one placeholder in `main`, which doesn't. Trick 2
+// he left to you: `bestOfEachLatitude` is empty.
+//
+// And since the crew can only dig one hole at a time: which X
+// first? `firstToDig` is the POSITION, along .x, of the X with
+// the most gold under it (the kitchen again, exercise 42): one
+// number, no axis. Write it, compile it, run it into a Buffer
+// called `first`.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -62,7 +69,12 @@ fn dig(sea: zml.Tensor, lats: zml.Tensor, lons: zml.Tensor) zml.Tensor {
 
 /// For each latitude, the gold at the lookout's favourite longitude.
 fn bestOfEachLatitude(sea: zml.Tensor, best_lon: zml.Tensor) zml.Tensor {
-    return sea.gather(.{ .lon = best_lon }, .{});
+    return ???;
+}
+
+/// The position, along .x, of the richest X. Rank 0.
+fn firstToDig(sea: zml.Tensor, lats: zml.Tensor, lons: zml.Tensor) zml.Tensor {
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -87,6 +99,8 @@ pub fn main(init: std.process.Init) !void {
     var best_exe = try platform.compileFn(gpa, io, bestOfEachLatitude, .{ sea, best_lon }, .{});
     defer best_exe.deinit();
 
+    // `firstToDig` needs an Exe as well.
+
     // Gold under each square of the sea.
     var sea_buffer: zml.Buffer = try .fromBytes(io, platform, sea.shape(), std.mem.sliceAsBytes(&[4][3]i32{
         .{ 0, 7, 0 },
@@ -95,9 +109,9 @@ pub fn main(init: std.process.Init) !void {
         .{ 8, 1, 0 },
     }));
     defer sea_buffer.deinit();
-    var lats_buffer: zml.Buffer = try .fromBytes(io, platform, lats.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 3, 0 }));
+    var lats_buffer: zml.Buffer = try .fromBytes(io, platform, lats.shape(), std.mem.sliceAsBytes(&[_]i32{ 3, 0, 1 }));
     defer lats_buffer.deinit();
-    var lons_buffer: zml.Buffer = try .fromBytes(io, platform, lons.shape(), std.mem.sliceAsBytes(&[_]i32{ 2, 0, 1 }));
+    var lons_buffer: zml.Buffer = try .fromBytes(io, platform, lons.shape(), std.mem.sliceAsBytes(&[_]i32{ 0, 1, 2 }));
     defer lons_buffer.deinit();
     var best_lon_buffer: zml.Buffer = try .fromBytes(io, platform, best_lon.shape(), std.mem.sliceAsBytes(&[_]i32{ 1, 2, 2, 0 }));
     defer best_lon_buffer.deinit();
@@ -107,7 +121,10 @@ pub fn main(init: std.process.Init) !void {
     var best: zml.Buffer = try best_exe.eval(gpa, io, .{ sea_buffer, best_lon_buffer });
     defer best.deinit();
 
+    // Run it into a Buffer called `first`.
+
     try stdout.print("under the X's {f}: {any}\n", .{ dug.shape(), try dug.getValue([3]i32, io) });
+    try stdout.print("dig X number {d} first.\n", .{try first.getValue(i32, io)});
     try stdout.print("best of each latitude {f}:", .{best.shape()});
     try stdout.flush();
 

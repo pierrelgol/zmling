@@ -1,6 +1,18 @@
 --- exercises/14_heavy_lifting/100_the_spotter.zig
 +++ answers/14_heavy_lifting/100_the_spotter.zig
-@@ -97,7 +97,15 @@
+@@ -97,7 +97,10 @@
+     combination: zml.Tensor,
+ 
+     pub fn init(view: zml.io.TensorStore.View) Rack {
+-        return ???;
++        return .{
++            .plates = view.createReplicatedTensor("plates", .{.plate}),
++            .combination = view.createReplicatedTensor("locker_combination", .{.turn}),
++        };
+     }
+ 
+     /// Brings every tensor of the rack from the file to the device.
+@@ -109,14 +112,22 @@
          platform: *const zml.Platform,
          store: *const zml.io.TensorStore,
      ) !zml.Bufferized(Rack) {
@@ -17,3 +29,46 @@
      }
  };
  
+ /// plates: {.plate}, in kg. The weight of the bar (20 kg) with two
+ /// of each plate on it: one number, no axis left.
+ fn onTheBar(plates: zml.Tensor) zml.Tensor {
+-    return ???;
++    return plates.sum(.plate).squeeze(.plate).scale(2).addConstant(20);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -133,12 +144,17 @@
+     const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
+     defer gpa.free(path);
+ 
+-    // TODO: `registry`, the logbook of the file at `path`, and
+-    // `store`, the key cabinet on top of it.
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++    defer store.deinit();
+ 
+     const rack: Rack = .init(store.view());
+ 
+-    // TODO: `rack_buffers`, the rack, loaded. Free what you own.
++    var rack_buffers: zml.Bufferized(Rack) = try rack.load(gpa, io, platform, &store);
++    defer rack_buffers.plates.deinit();
++    defer rack_buffers.combination.deinit();
+ 
+     // Real Buffers, on the device. Bring them back to look at them.
+     try stdout.print("plates      {f}: {any}\n", .{
+@@ -150,8 +166,11 @@
+         try rack_buffers.combination.getValue([3]i32, io),
+     });
+ 
+-    // TODO: `onTheBar`, compiled for the plates of the rack, and
+-    // run on the plates you loaded. The result goes in `total`.
++    var exe = try platform.compileFn(gpa, io, onTheBar, .{rack.plates}, .{});
++    defer exe.deinit();
++
++    var total: zml.Buffer = try exe.eval(gpa, io, .{rack_buffers.plates});
++    defer total.deinit();
+ 
+     try stdout.print("on the bar  {f}: {d} kg\n", .{ total.shape(), try total.getValue(f32, io) });
+     try stdout.flush();

@@ -1,18 +1,71 @@
 --- exercises/15_pay_attention/105_the_official_channel.zig
 +++ answers/15_pay_attention/105_the_official_channel.zig
-@@ -90,7 +90,14 @@
+@@ -93,19 +93,36 @@
+ /// the speaker (she stands in front, or is the listener herself), -inf
+ /// elsewhere.
+ fn causalMask(len: i64) zml.Tensor {
+-    return ???;
++    const table: zml.Shape = .init(.{ .q = len, .k = len }, .i32);
++    const listener = zml.Tensor.arange(.{ .end = len }, .i32).withTags(.{.q}).broad(table);
++    const speaker = zml.Tensor.arange(.{ .end = len }, .i32).withTags(.{.k}).broad(table);
++    return speaker.cmp(.LE, listener).select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
+ }
+ 
+ /// Causal self-attention, the long way.
+ /// q, k, v: {.h, .s, .hd} -> {.h, .s, .hd}
+ fn byHand(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor) zml.Tensor {
+-    return ???;
++    const hd: f32 = @floatFromInt(q.dim(.hd));
++    const listeners = q.rename(.{ .s = .q });
++    const speakers = k.rename(.{ .s = .k });
++
++    const scores = listeners.dot(speakers, .hd).scale(1.0 / @sqrt(hd));
++    const mask = causalMask(q.dim(.s));
++    const weights = scores.add(mask.broad(scores.shape())).softmax(.k);
++
++    return weights.dot(v.rename(.{ .s = .k }), .k).rename(.{ .q = .s });
+ }
+ 
  /// Causal self-attention, the short way.
  /// q, k, v: {.h, .s, .hd} -> {.h, .s, .hd}
  fn official(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor) zml.Tensor {
--    return zml.nn.sdpa(q, k, v, .{});
-+    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.s), .k = k.dim(.s) }, q.dtype(), null);
+-    return ???;
 +    const heard = zml.nn.sdpa(
 +        q.rename(.{ .s = .q }),
 +        k.rename(.{ .s = .k }),
 +        v.rename(.{ .s = .k }),
-+        .{ .attn_mask = mask },
++        .{ .attn_mask = causalMask(q.dim(.s)) },
 +    );
 +    return heard.rename(.{ .q = .s });
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
+@@ -121,10 +138,10 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // Four llamas, two numbers.
+-    const q: zml.Tensor = .init(.{ .s = 4, .hd = 2 }, .f32);
+-    const k: zml.Tensor = .init(.{ .s = 4, .hd = 2 }, .f32);
+-    const v: zml.Tensor = .init(.{ .s = 4, .hd = 2 }, .f32);
++    // One head, four llamas, two numbers.
++    const q: zml.Tensor = .init(.{ .h = 1, .s = 4, .hd = 2 }, .f32);
++    const k: zml.Tensor = .init(.{ .h = 1, .s = 4, .hd = 2 }, .f32);
++    const v: zml.Tensor = .init(.{ .h = 1, .s = 4, .hd = 2 }, .f32);
+ 
+     // Same herd as before.
+     var q_buffer: zml.Buffer = try .fromBytes(io, platform, q.shape(), std.mem.sliceAsBytes(&[4][2]f32{ .{ 1, 0 }, .{ 0, 1 }, .{ 1, 1 }, .{ 0, 0 } }));
+@@ -140,8 +157,11 @@
+     }) |row| {
+         const title, const recipe = row;
+ 
+-        // Compile `recipe`, run it: `heard` is what gets printed.
+-        ???;
++        var exe = try platform.compileFn(gpa, io, recipe, .{ q, k, v }, .{});
++        defer exe.deinit();
++
++        var heard: zml.Buffer = try exe.eval(gpa, io, .{ q_buffer, k_buffer, v_buffer });
++        defer heard.deinit();
+ 
+         try stdout.print("{s} {f}:\n", .{ title, heard.shape() });
+         for (names, (try heard.getValue([1][4][2]f32, io))[0]) |name, heard_by| {

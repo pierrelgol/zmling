@@ -50,8 +50,8 @@
 //     `x.maximum(zml.Tensor.scalar(3, .f32))`.
 //
 // Gus wants a "doneness score" for the four burners, and it is
-// two classic formulas glued together. Both show up, in one form
-// or another, in every modern neural network.
+// three classic formulas glued together. All of them show up, in
+// one form or another, in modern neural networks.
 //
 //   1. Standardize: how far is each temperature from the mean,
 //      in units of standard deviation?
@@ -65,8 +65,20 @@
 //
 //          softplus(z) = log(1 + e^z)
 //
+//   3. Mish, an activation made out of the other two:
+//
+//          mish(z) = z * tanh(softplus(z))
+//
 // Earl offered to type in the first one. Earl reads formulas
-// left to right, like a menu.
+// left to right, like a menu. The second one is yours, and so is
+// `doneness`, which is the third one applied to the standardized
+// temperatures. Count how many times z appears in it, and read
+// the first habit above again.
+//
+// In main(), two Buffers are missing: the mean and the variance,
+// one number each (exercise 014). The thermometer's manual gives
+// a mean of 375 degrees and a standard deviation of 50 degrees.
+// The recipe does not take a standard deviation.
 //
 const std = @import("std");
 const zml = @import("zml");
@@ -83,8 +95,10 @@ fn softplus(z: zml.Tensor) zml.Tensor {
     return ???;
 }
 
+/// mish(z) = z * tanh(softplus(z)), where z is the standardized
+/// temperature.
 fn doneness(temps: zml.Tensor, mean: zml.Tensor, variance: zml.Tensor) zml.Tensor {
-    return softplus(standardize(temps, mean, variance));
+    return ???;
 }
 
 pub fn main(init: std.process.Init) !void {
@@ -107,11 +121,8 @@ pub fn main(init: std.process.Init) !void {
 
     var temps_buffer: zml.Buffer = try .fromBytes(io, platform, temps.shape(), std.mem.sliceAsBytes(&[_]f32{ 300, 350, 400, 450 }));
     defer temps_buffer.deinit();
-    var mean_buffer: zml.Buffer = try .scalar(io, platform, 375, .f32);
-    defer mean_buffer.deinit();
-    // A standard deviation of 50 degrees.
-    var variance_buffer: zml.Buffer = try .scalar(io, platform, 2500, .f32);
-    defer variance_buffer.deinit();
+    // The mean, and the variance for a standard deviation of 50
+    // degrees.
 
     var result: zml.Buffer = try exe.eval(gpa, io, .{ temps_buffer, mean_buffer, variance_buffer });
     defer result.deinit();
