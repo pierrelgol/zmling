@@ -1,0 +1,20 @@
+--- exercises/02_ghost_tensors/010_the_seance.zig
++++ answers/02_ghost_tensors/010_the_seance.zig
+@@ -70,7 +70,7 @@
+ 
+ /// Every candle flame burns twice as bright.
+ fn flicker(candles: zml.Tensor) zml.Tensor {
+-    return ???;
++    return candles.add(candles);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -87,7 +87,7 @@
+     // One placeholder per parameter of the ritual.
+     const candles: zml.Tensor = .init(.{ .candles = 7 }, .f32);
+ 
+-    var exe = try platform.compileFn(gpa, io, flicker, .{???}, .{});
++    var exe = try platform.compileFn(gpa, io, flicker, .{candles}, .{});
+     defer exe.deinit();
+ 
+     try stdout.print("The seance takes {d} input {f} and returns {d} output {f}.\n", .{

@@ -6,7 +6,7 @@
 // ZML can only be built with Bazel, so instead of `zig run` this program:
 //   1. points the symlink `zml/zmling` at the exercise tree, which makes every
 //      chapter directory a Bazel package of the ZML workspace,
-//   2. runs `bazel build //zmling/<chapter>:<exercise>` (compiler errors go
+//   2. runs `bazel build //zmling/<chapter>:<number>` (compiler errors go
 //      straight to your terminal),
 //   3. runs the binary with `bazel run`, and compares its stdout with the
 //      expected output from the table at the bottom of this file.
@@ -53,7 +53,7 @@ pub const Exercise = struct {
         return std.fs.path.dirname(self.main_file).?;
     }
 
-    // Name of the main file with directory and .zig stripped. This is also the Bazel target name.
+    // Name of the main file with directory and .zig stripped.
     pub fn name(self: Exercise) []const u8 {
         return std.fs.path.stem(self.main_file);
     }
@@ -229,7 +229,8 @@ fn printProgress(num: usize, max: usize) void {
 fn runExe(ctx: Context, ex: Exercise) !void {
     const io = ctx.io;
     const arena = ctx.arena;
-    const target = std.fmt.allocPrint(arena, "//zmling/{s}:{s}", .{ ex.chapter(), ex.name() }) catch @panic("OOM");
+    // Binaries are named by number only, see exercises/harness/defs.bzl.
+    const target = std.fmt.allocPrint(arena, "//zmling/{s}:{d:0>3}", .{ ex.chapter(), ex.number() }) catch @panic("OOM");
 
     print("Compiling {s}...\n", .{ex.main_file});
 
@@ -385,6 +386,58 @@ const exercises = [_]Exercise{
         \\floats:     {n=32,c=3,h=480,w=640,f32}, 112 MiB
         \\thumbnails: {n=32,h=48,w=64,f32}
         \\cabinet:    {n=32,pixels=3072,f32}, 3072 pixels per photo
+        ,
+    },
+
+    // Chapter 02: Ghost Tensors
+    .{
+        .main_file = "02_ghost_tensors/009_the_ghost.zig",
+        .output =
+        \\Tensor({rooms=13,candles=7,f32}) haunts 13 rooms and 91 candle flames in total.
+        \\It would weigh 364 bytes, if it weighed anything.
+        ,
+    },
+    .{
+        .main_file = "02_ghost_tensors/010_the_seance.zig",
+        .output = "The seance takes 1 input {candles=7,f32} and returns 1 output {candles=7,f32}.",
+    },
+    .{
+        .main_file = "02_ghost_tensors/011_ectoplasm.zig",
+        .output = "The flames rise: { 2, 4, 6, 8, 10, 12, 14 }",
+        .hint = "The panic message has both byte counts. How big is an f32?\n",
+    },
+    .{
+        .main_file = "02_ghost_tensors/012_do_not_touch.zig",
+        .output = "A chill runs down your spine: { 7, 18, 29 }",
+        .hint =
+        \\Skip the first lines of the stack trace and look for the last
+        \\frame that is in YOUR file: that's the ghost being touched.
+        \\
+        ,
+    },
+    .{
+        .main_file = "02_ghost_tensors/013_a_slice_of_afterlife.zig",
+        .output = "Result is a {ghosts=5,f32} slice. Happy birthday: 101 201 301 401 501",
+        .hint = "Nothing crashed, and that's the scary part. `items(T)` believes you.\n",
+    },
+    .{
+        .main_file = "02_ghost_tensors/014_one_knock_for_yes.zig",
+        .output =
+        \\volume 0.5: { 0.5, 1, 1.5 }
+        \\volume 1: { 1, 2, 3 }
+        \\volume 10: { 10, 20, 30 }
+        ,
+        .hint = "A sock in a box is not a sock.\n",
+    },
+    .{
+        .main_file = "02_ghost_tensors/015_house_rules.zig",
+        .output = "Spookiest, hour by hour: { 5, 9, 4, 8 }",
+    },
+    .{
+        .main_file = "02_ghost_tensors/016_quiz_cold_spots.zig",
+        .output =
+        \\intensity 1: -40.0 32.0 50.0 98.6
+        \\intensity 2.5: -148.0 32.0 77.0 198.5
         ,
     },
 };

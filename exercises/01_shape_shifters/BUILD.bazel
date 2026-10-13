@@ -1,11 +1,3 @@
-load("@rules_zig//zig:defs.bzl", "zig_binary")
+load("//zmling/harness:defs.bzl", "zmling_exercises")
 
-# One self-contained binary per exercise: bazel run //zmling/01_shape_shifters:001_hello_shape
-[
-    zig_binary(
-        name = f[:-len(".zig")],
-        main = f,
-        deps = ["//zml"],
-    )
-    for f in glob(["*.zig"])
-]
+zmling_exercises()

@@ -1,0 +1,16 @@
+--- exercises/02_ghost_tensors/011_ectoplasm.zig
++++ answers/02_ghost_tensors/011_ectoplasm.zig
+@@ -88,11 +88,11 @@
+     defer flames_buffer.deinit();
+ 
+     // Run the seance on the body.
+-    var result: zml.Buffer = try exe.eval(gpa, io, .{???});
++    var result: zml.Buffer = try exe.eval(gpa, io, .{flames_buffer});
+     defer result.deinit();
+ 
+     // Bring the result back to the land of the living.
+-    const brighter = try result.getValue([6]f32, io);
++    const brighter = try result.getValue([7]f32, io);
+ 
+     try stdout.print("The flames rise: {any}\n", .{brighter});
+     try stdout.flush();

@@ -1,0 +1,18 @@
+--- exercises/02_ghost_tensors/009_the_ghost.zig
++++ answers/02_ghost_tensors/009_the_ghost.zig
+@@ -60,13 +60,13 @@
+     const floor_plan = zml.Shape.init(.{ .rooms = 13, .candles = 7 }, .f32);
+ 
+     // Summon a placeholder Tensor with the shape of the floor plan.
+-    const ghost = zml.Tensor.fromShape(???);
++    const ghost = zml.Tensor.fromShape(floor_plan);
+ 
+     try stdout.print("{f} haunts {d} rooms and {d} candle flames in total.\n", .{
+         ghost,
+         // The size of the .rooms axis. Tensors answer the same
+         // questions as their Shape.
+-        ghost.dim(???),
++        ghost.dim(.rooms),
+         ghost.count(),
+     });
+     try stdout.print("It would weigh {d} bytes, if it weighed anything.\n", .{ghost.byteSize()});

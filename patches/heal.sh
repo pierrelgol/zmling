@@ -17,7 +17,7 @@ fi
 rm -rf patches/healed
 cp -r exercises patches/healed
 
-for broken in exercises/*/*.zig; do
+for broken in exercises/*/[0-9]*.zig; do
     name=$(basename "$broken" .zig)
     chapter=$(basename "$(dirname "$broken")")
     patch_name="patches/patches/$name.patch"

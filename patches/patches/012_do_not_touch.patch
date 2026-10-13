@@ -1,0 +1,25 @@
+--- exercises/02_ghost_tensors/012_do_not_touch.zig
++++ answers/02_ghost_tensors/012_do_not_touch.zig
+@@ -50,10 +50,7 @@
+ 
+ /// cold + colder - warm
+ fn haunt(cold: zml.Tensor, colder: zml.Tensor, warm: zml.Tensor) zml.Tensor {
+-    // TODO: this is where the ghost-touching should happen.
+-    _ = colder;
+-    _ = warm;
+-    return cold;
++    return cold.add(colder).sub(warm);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -71,10 +68,6 @@
+     const colder: zml.Tensor = .init(.{3}, .f32);
+     const warm: zml.Tensor = .init(.{3}, .f32);
+ 
+-    // The apprentice's attempt. In the hallway!
+-    const chill = cold.add(colder).sub(warm);
+-    _ = chill;
+-
+     var exe = try platform.compileFn(gpa, io, haunt, .{ cold, colder, warm }, .{});
+     defer exe.deinit();
+ 

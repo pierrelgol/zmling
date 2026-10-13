@@ -1,0 +1,21 @@
+--- exercises/02_ghost_tensors/015_house_rules.zig
++++ answers/02_ghost_tensors/015_house_rules.zig
+@@ -68,16 +68,13 @@
+     const agatha: zml.Tensor = .init(.{ .hours = 4 }, .i32);
+     const bartholomew: zml.Tensor = .init(.{ .hours = 4 }, .i32);
+ 
+-    var exe = try platform.compileFn(gpa, io, spookiest, .{ agatha, agatha }, .{});
++    var exe = try platform.compileFn(gpa, io, spookiest, .{ agatha, bartholomew }, .{});
+     defer exe.deinit();
+ 
+     var agatha_buffer: zml.Buffer = try .fromBytes(io, platform, agatha.shape(), std.mem.sliceAsBytes(&[_]i32{ 3, 9, 4, 1 }));
+     defer agatha_buffer.deinit();
+ 
+-    // Bartholomew logged a fifth hour. Nobody asked him to; the
+-    // seance covers four. Drop his last entry.
+-    const bartholomew_log = bartholomew.shape().setDim(.hours, 5);
+-    var bartholomew_buffer: zml.Buffer = try .fromBytes(io, platform, bartholomew_log, std.mem.sliceAsBytes(&[_]i32{ 5, 2, 4, 8, 6 }));
++    var bartholomew_buffer: zml.Buffer = try .fromBytes(io, platform, bartholomew.shape(), std.mem.sliceAsBytes(&[_]i32{ 5, 2, 4, 8 }));
+     defer bartholomew_buffer.deinit();
+ 
+     var result: zml.Buffer = try exe.eval(gpa, io, .{ agatha_buffer, bartholomew_buffer });

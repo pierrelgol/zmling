@@ -1,0 +1,11 @@
+--- exercises/02_ghost_tensors/014_one_knock_for_yes.zig
++++ answers/02_ghost_tensors/014_one_knock_for_yes.zig
+@@ -65,7 +65,7 @@
+ 
+     const knocks: zml.Tensor = .init(.{ .knocks = 3 }, .f32);
+     // The volume is ONE number. No box around it.
+-    const volume: zml.Tensor = .init(.{1}, .f32);
++    const volume: zml.Tensor = .init(.{}, .f32);
+ 
+     var exe = try platform.compileFn(gpa, io, amplify, .{ knocks, volume }, .{});
+     defer exe.deinit();

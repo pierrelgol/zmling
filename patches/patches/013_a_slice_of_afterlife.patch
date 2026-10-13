@@ -1,0 +1,13 @@
+--- exercises/02_ghost_tensors/013_a_slice_of_afterlife.zig
++++ answers/02_ghost_tensors/013_a_slice_of_afterlife.zig
+@@ -81,8 +81,8 @@
+     defer photo.free(gpa);
+ 
+     // Ghost number i is (i + 1) centuries old.
+-    for (photo.items(i32), 1..) |*age, i| {
+-        age.* = @intCast(i * 100);
++    for (photo.items(f32), 1..) |*age, i| {
++        age.* = @floatFromInt(i * 100);
+     }
+ 
+     var ages_buffer: zml.Buffer = try .fromSlice(io, platform, photo);

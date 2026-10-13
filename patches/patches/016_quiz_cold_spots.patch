@@ -1,0 +1,41 @@
+--- exercises/02_ghost_tensors/016_quiz_cold_spots.zig
++++ answers/02_ghost_tensors/016_quiz_cold_spots.zig
+@@ -35,7 +35,7 @@
+ const zml = @import("zml");
+ 
+ fn toFahrenheit(celsius: zml.Tensor, intensity: zml.Tensor) zml.Tensor {
+-    return ???;
++    return celsius.mul(intensity).scale(1.8).addConstant(32);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -54,23 +54,23 @@
+     const readings = [_]f32{ -40, 0, 10, 37 };
+ 
+     // Placeholders: four f32 readings tagged .spots, and one f32 scalar.
+-    const celsius: zml.Tensor = ???;
+-    const intensity: zml.Tensor = ???;
++    const celsius: zml.Tensor = .init(.{ .spots = 4 }, .f32);
++    const intensity: zml.Tensor = .init(.{}, .f32);
+ 
+-    var exe = try platform.compileFn(gpa, io, toFahrenheit, ???, .{});
++    var exe = try platform.compileFn(gpa, io, toFahrenheit, .{ celsius, intensity }, .{});
+     defer exe.deinit();
+ 
+     var celsius_buffer: zml.Buffer = try .fromBytes(io, platform, celsius.shape(), std.mem.sliceAsBytes(&readings));
+     defer celsius_buffer.deinit();
+ 
+     for ([_]f32{ 1, 2.5 }) |i| {
+-        var intensity_buffer: zml.Buffer = ???;
++        var intensity_buffer: zml.Buffer = try .scalar(io, platform, i, .f32);
+         defer intensity_buffer.deinit();
+ 
+-        var result: zml.Buffer = try exe.eval(gpa, io, ???);
++        var result: zml.Buffer = try exe.eval(gpa, io, .{ celsius_buffer, intensity_buffer });
+         defer result.deinit();
+ 
+-        const fahrenheit = ???;
++        const fahrenheit = try result.getValue([4]f32, io);
+ 
+         try stdout.print("intensity {d}:", .{i});
+         for (fahrenheit) |f| try stdout.print(" {d:.1}", .{f});
