@@ -23,7 +23,7 @@ while [ "$n" -le "$last" ]; do
         bad="$bad $n"
     else
         # Show why it fails: a broken build setup must not pass for a broken exercise.
-        why=$(echo "$out" | grep -m1 -e ' error: ' -e ' panic: ' -e 'expected this output' -e '^ERROR' | cut -c1-150)
+        why=$(echo "$out" | grep -m1 -e ' error: ' -e ' panic: ' -e 'expected this output' | cut -c1-150)
         echo "ok: exercise $n is broken: $why"
     fi
     n=$((n + 1))
