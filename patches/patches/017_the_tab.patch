@@ -1,6 +1,6 @@
 --- exercises/03_arithmetic_diner/017_the_tab.zig
 +++ answers/03_arithmetic_diner/017_the_tab.zig
-@@ -61,7 +61,7 @@
+@@ -62,7 +62,7 @@
  /// What each guest owes: tab * interest^weeks / guests, but never
  /// more than the cap.
  fn settle(tab: zml.Tensor, interest: zml.Tensor, weeks: zml.Tensor, guests: zml.Tensor, cap: zml.Tensor) zml.Tensor {

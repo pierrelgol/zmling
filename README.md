@@ -18,7 +18,8 @@ You need:
 - [Zig](https://ziglang.org/download/) **0.17.0**
 - [Bazelisk](https://github.com/bazelbuild/bazelisk) installed as `bazel` (ZML is built with Bazel;
   Bazelisk downloads the right version)
-- Linux or macOS, about 20 GB of free disk space
+- about 30 GB of free disk space (Bazel's build of ZML and its dependencies)
+- Linux x86_64 is what zmling was tested on. ZML also supports macOS, so it should work there
 
 ```sh
 git clone --recursive https://github.com/pierrelgol/zmling
@@ -28,8 +29,10 @@ zig build
 
 (Forgot `--recursive`? `git submodule update --init`.)
 
-The **first** `zig build` compiles ZML's dependencies and takes a few minutes. After that, each
-exercise takes around 15 seconds to build.
+The **first** `zig build` downloads and compiles ZML's dependencies: count ten minutes or more,
+depending on your machine and connection. After that, each exercise takes around 15 seconds to
+build. Every exercise binary links all of ZML (about 1 GB!), so the runner deletes it once it has
+run.
 
 `zig build` runs the exercises in order and stops at the first one that fails:
 

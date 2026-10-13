@@ -39,6 +39,7 @@
 //   - same dtype on both sides, or ZML panics while tracing;
 //   - same shape on both sides, or ZML panics while tracing;
 //   - except that a rank 0 tensor (a scalar) goes with anything.
+//     (A later chapter, "Broadcast News", has the fine print.)
 //
 // One detail about `div`: on integer tensors it is an integer
 // division, and it truncates toward zero, like Zig's `@divTrunc`.

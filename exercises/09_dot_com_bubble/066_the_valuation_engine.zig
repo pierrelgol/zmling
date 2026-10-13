@@ -36,8 +36,8 @@
 // axis in front, where everybody expects it.
 //
 // Then the bias. `y.add(bias)` is {startup=2,d_out=2} plus
-// {d_out=2}, and you know what ZML thinks of that: only rank 0
-// tensors are broadcast automatically. It is one bias per
+// {d_out=2}, and you know what ZML thinks of that: the ranks
+// differ, so nothing gets stretched for you. It is one bias per
 // OUTPUT, repeated for every startup, and you have to say so:
 //
 //     y.add(bias.broad(y.shape()))

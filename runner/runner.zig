@@ -238,7 +238,7 @@ fn runExe(ctx: Context, ex: Exercise) !void {
     // the very first build of ZML takes a while, so progress must be visible.
     var build = Process.spawn(io, .{
         // `--disk_cache=` keeps the ~1 GB binary out of a disk cache, if you have one configured.
-        .argv = &.{ ctx.bazel_exe, "build", "--disk_cache=", "--ui_event_filters=-info", "--show_result=0", target },
+        .argv = &.{ ctx.bazel_exe, "build", "--disk_cache=", "--experimental_check_output_files", "--ui_event_filters=-info", "--show_result=0", target },
         .cwd = .{ .path = ctx.zml_path },
     }) catch |err| {
         print("{s}error:{s} unable to run '{s}': {s}\n", .{ C.red_bold, C.reset, ctx.bazel_exe, @errorName(err) });
@@ -250,12 +250,13 @@ fn runExe(ctx: Context, ex: Exercise) !void {
     print("Checking {s}...\n", .{ex.main_file});
 
     const result = try Process.run(arena, io, .{
-        .argv = &.{ ctx.bazel_exe, "run", "--disk_cache=", "--ui_event_filters=-info,-stdout,-stderr", "--noshow_progress", target },
+        .argv = &.{ ctx.bazel_exe, "run", "--disk_cache=", "--experimental_check_output_files", "--ui_event_filters=-info,-stdout,-stderr", "--noshow_progress", target },
         .cwd = .{ .path = ctx.zml_path },
     });
 
     // The binary links all of ZML statically and weighs about 1 GB. Bazel
-    // rebuilds it on demand, so don't keep a hundred of them around.
+    // rebuilds it on demand (that's what --experimental_check_output_files is
+    // for), so don't keep a hundred of them around.
     const binary = std.fmt.allocPrint(arena, "{s}/bazel-bin/zmling/{s}/{d:0>3}", .{ ctx.zml_path, ex.chapter(), ex.number() }) catch @panic("OOM");
     Io.Dir.cwd().deleteFile(io, binary) catch {};
 

@@ -18,11 +18,13 @@ bad=""
 
 n=$first
 while [ "$n" -le "$last" ]; do
-    if zig build -Dn="$n" > /dev/null 2>&1; then
+    if out=$(zig build -Dn="$n" 2>&1); then
         echo "NOT BROKEN: exercise $n passes as shipped"
         bad="$bad $n"
     else
-        echo "ok: exercise $n is broken"
+        # Show why it fails: a broken build setup must not pass for a broken exercise.
+        why=$(echo "$out" | grep -m1 -e ' error: ' -e ' panic: ' -e 'expected this output' -e '^ERROR' | cut -c1-150)
+        echo "ok: exercise $n is broken: $why"
     fi
     n=$((n + 1))
 done
