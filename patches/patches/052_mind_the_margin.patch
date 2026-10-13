@@ -1,0 +1,13 @@
+--- exercises/07_origami_club/052_mind_the_margin.zig
++++ answers/07_origami_club/052_mind_the_margin.zig
+@@ -74,8 +74,8 @@
+ 
+ fn mount(sheet: zml.Tensor) zml.Tensor {
+     return sheet.pad(0, .{
+-        .rows = .{ .low = 1, .high = 1 },
+-        .cols = .{ .low = 1 },
++        .rows = Pad{ .low = 1, .high = 1 },
++        .cols = Pad{ .low = 1, .high = 1 },
+     });
+ }
+ 

@@ -1,0 +1,73 @@
+--- exercises/14_heavy_lifting/102_quiz_the_smoothie_bar.zig
++++ answers/14_heavy_lifting/102_quiz_the_smoothie_bar.zig
+@@ -64,12 +64,18 @@
+ 
+     /// `view` stands on the machine: its blenders are "0", "1" and "2".
+     pub fn init(view: zml.io.TensorStore.View) Blendtron {
+-        return ???;
++        return .{
++            .chop = linear(view.withLayer(0)),
++            .blend = linear(view.withLayer(1)),
++            .pour = linear(view.withLayer(2)),
++        };
+     }
+ 
+     /// cups: {.order, .d} -> {.order, .dout} price and taste
+     pub fn forward(self: Blendtron, cups: zml.Tensor) zml.Tensor {
+-        return ???;
++        const chopped = self.chop.forward(cups, .f32).relu().rename(.{ .dout = .d });
++        const blended = self.blend.forward(chopped, .f32).relu().rename(.{ .dout = .d });
++        return self.pour.forward(blended, .f32);
+     }
+ 
+     /// Brings the six tensors of the machine from the file to the
+@@ -81,7 +87,15 @@
+         platform: *const zml.Platform,
+         store: *const zml.io.TensorStore,
+     ) !zml.Bufferized(Blendtron) {
+-        return ???;
++        var buffers = try zml.mem.bufferize(gpa, Blendtron, self);
++
++        var loader: zml.io.Loader = try .init(gpa, platform, .default);
++        defer loader.deinit();
++
++        try loader.load(io, Blendtron, self, &buffers, store, .{});
++        try loader.await(io);
++
++        return buffers;
+     }
+ 
+     pub fn unload(buffers: *zml.Bufferized(Blendtron)) void {
+@@ -107,19 +121,19 @@
+     defer gpa.free(path);
+ 
+     // The logbook, then the key cabinet.
+-    var registry: zml.safetensors.TensorRegistry = ???;
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
+     defer registry.deinit();
+ 
+-    var store: zml.io.TensorStore = ???;
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
+     defer store.deinit();
+ 
+     // The machine. Mind where its view stands.
+-    const blendtron: Blendtron = .init(???);
++    const blendtron: Blendtron = .init(store.view().withPrefix("bar"));
+ 
+     // Three orders: cups of banana, cups of spinach.
+     const cups: zml.Tensor = .init(.{ .order = 3, .d = 2 }, .f32);
+ 
+-    var exe = ???;
++    var exe = try platform.compile(gpa, io, blendtron, .forward, .{cups}, .{});
+     defer exe.deinit();
+ 
+     var blendtron_buffers = try blendtron.load(gpa, io, platform, &store);
+@@ -133,7 +147,7 @@
+     var cups_buffer: zml.Buffer = try .fromBytes(io, platform, cups.shape(), std.mem.sliceAsBytes(&orders));
+     defer cups_buffer.deinit();
+ 
+-    var result: zml.Buffer = try exe.eval(gpa, io, ???);
++    var result: zml.Buffer = try exe.eval(gpa, io, .{ blendtron_buffers, cups_buffer });
+     defer result.deinit();
+ 
+     try stdout.print("receipt {f}\n", .{result.shape()});

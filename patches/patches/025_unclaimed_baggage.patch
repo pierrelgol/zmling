@@ -1,0 +1,18 @@
+--- exercises/04_luggage_tags/025_unclaimed_baggage.zig
++++ answers/04_luggage_tags/025_unclaimed_baggage.zig
+@@ -78,13 +78,13 @@
+ 
+     // Carousels first, then bags. The weights are in kilograms,
+     // but a unit is not an axis.
+-    const weights = delivery.withTags(.{ .carousels, .bags, .kg });
++    const weights = delivery.withTags(.{ .carousels, .bags });
+     try stdout.print("Labeled:   {f}\n", .{weights});
+ 
+     // Use the labels, not the positions.
+     try stdout.print("{d} carousels, {d} bags on each. Bags are axis {d}.\n", .{
+         weights.dim(.carousels),
+-        weights.dim(???),
++        weights.dim(.bags),
+         weights.axis(.bags),
+     });
+ 

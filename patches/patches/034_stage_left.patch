@@ -1,0 +1,19 @@
+--- exercises/05_broadcast_news/034_stage_left.zig
++++ answers/05_broadcast_news/034_stage_left.zig
+@@ -82,13 +82,13 @@
+     const table = viewers.shape();
+ 
+     // One price per show: shows are the first axis.
+-    const price_table = price.???(table);
++    const price_table = price.broadcastRight(table);
+ 
+     // One multiplier per week: weeks are the last axis.
+-    const season_table = season.???(table);
++    const season_table = season.broadcastLeft(table);
+ 
+     // One sponsor per show, the do-it-yourself way.
+-    const sponsor_table = sponsor.broadcast(table, &.{???});
++    const sponsor_table = sponsor.broadcast(table, &.{0});
+ 
+     return viewers.mul(price_table).mul(season_table).add(sponsor_table);
+ }

@@ -1,0 +1,6 @@
+load("//zmling/harness:defs.bzl", "zmling_exercises")
+
+# The answers binaries read the very same file, hence the export.
+exports_files(glob(["*.safetensors"]))
+
+zmling_exercises(data = glob(["*.safetensors"]))

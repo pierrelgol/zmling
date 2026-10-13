@@ -1,0 +1,24 @@
+--- exercises/04_luggage_tags/028_row_seven.zig
++++ answers/04_luggage_tags/028_row_seven.zig
+@@ -71,18 +71,18 @@
+     try stdout.print("{f}\n", .{week});
+ 
+     // How many bags? Ask by tag.
+-    try stdout.print("Bags per scan: {d}\n", .{week.dim(???)});
++    try stdout.print("Bags per scan: {d}\n", .{week.dim(.bags)});
+ 
+     // At which position is the .cm axis? And which position is
+     // "second from the end"? Let ZML do the counting.
+     try stdout.print("cm is axis {d}; second from the end is axis {d}\n", .{ week.axis(.cm), week.axis(-2) });
+ 
+     // The size of the axis nobody named, by positional literal.
+-    try stdout.print("The mystery axis has size {d}\n", .{week.dim(._2)});
++    try stdout.print("The mystery axis has size {d}\n", .{week.dim(._1)});
+ 
+     // Mystery solved: the machine scans every bag from two
+     // sides. Label that one axis .sides, with `rename`.
+-    const solved = week.rename(.{ ._ = .sides });
++    const solved = week.rename(.{ ._1 = .sides });
+     try stdout.print("{f}: fully tagged? {}\n", .{ solved, solved.shape().isFullyTagged() });
+ 
+     // Total number of measurements in a week, from tags only.

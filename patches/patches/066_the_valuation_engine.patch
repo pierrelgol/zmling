@@ -1,0 +1,12 @@
+--- exercises/09_dot_com_bubble/066_the_valuation_engine.zig
++++ answers/09_dot_com_bubble/066_the_valuation_engine.zig
+@@ -54,7 +54,8 @@
+ 
+ /// y = W x + b, for every startup at once.
+ fn valuation(x: zml.Tensor, w: zml.Tensor, bias: zml.Tensor) zml.Tensor {
+-    return x.dot(w, .d_in).add(bias);
++    const y = x.dot(w, .d_in);
++    return y.add(bias.broad(y.shape()));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

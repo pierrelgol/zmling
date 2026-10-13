@@ -1,0 +1,20 @@
+--- exercises/08_slice_of_life/056_no_crust_please.zig
++++ answers/08_slice_of_life/056_no_crust_please.zig
+@@ -65,12 +65,15 @@
+ 
+ /// Everything but the border: {rows=2,cols=4}.
+ fn noCrust(pan: zml.Tensor) zml.Tensor {
+-    return pan.slices(.{ .rows, .cols }, ???);
++    return pan.slices(.{ .rows, .cols }, &.{
++        .{ .start = 1, .end = -1 },
++        .{ .start = 1, .end = -1 },
++    });
+ }
+ 
+ /// Column 0, every other row: {rows=2}.
+ fn leftEdge(pan: zml.Tensor) zml.Tensor {
+-    return pan.slices(.{ .rows, .cols }, &.{ .single(0), .{ .step = 2 } });
++    return pan.slices(.{ .cols, .rows }, &.{ .single(0), .{ .step = 2 } });
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

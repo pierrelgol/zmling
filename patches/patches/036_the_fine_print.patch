@@ -1,0 +1,11 @@
+--- exercises/05_broadcast_news/036_the_fine_print.zig
++++ answers/05_broadcast_news/036_the_fine_print.zig
+@@ -75,7 +75,7 @@
+     // {anchor=3} -> {anchor=3,night=1}
+     const column = budget.appendAxes(.{.night});
+ 
+-    return column.sub(spent).div(column);
++    return column.broad(spent.shape()).sub(spent).div(column);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

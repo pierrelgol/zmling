@@ -1,0 +1,11 @@
+--- exercises/04_luggage_tags/030_the_wrong_carousel.zig
++++ answers/04_luggage_tags/030_the_wrong_carousel.zig
+@@ -59,7 +59,7 @@
+ 
+ /// weights + surcharges, a row per flight.
+ fn owed(weights: zml.Tensor, surcharges: zml.Tensor) zml.Tensor {
+-    return weights.add(surcharges);
++    return weights.add(surcharges.transpose(.{ .flights, .bags }));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

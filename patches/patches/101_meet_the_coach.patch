@@ -1,0 +1,32 @@
+--- exercises/14_heavy_lifting/101_meet_the_coach.zig
++++ answers/14_heavy_lifting/101_meet_the_coach.zig
+@@ -85,7 +85,7 @@
+ fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
+     return .init(
+         view.createReplicatedTensor("weight", .{ .dout, .d }),
+-        null,
++        if (view.hasKey("bias")) view.createReplicatedTensor("bias", .{.dout}) else null,
+         .d,
+     );
+ }
+@@ -129,9 +129,9 @@
+ 
+     pub fn unload(buffers: *zml.Bufferized(Coach)) void {
+         buffers.hunches.weight.deinit();
+-        buffers.hunches.bias.deinit();
++        if (buffers.hunches.bias) |*bias| bias.deinit();
+         buffers.verdict.weight.deinit();
+-        buffers.verdict.bias.deinit();
++        if (buffers.verdict.bias) |*bias| bias.deinit();
+     }
+ };
+ 
+@@ -156,7 +156,7 @@
+     defer store.deinit();
+ 
+     // The coach is one of several things kept in this locker.
+-    const coach: Coach = .init(store.view());
++    const coach: Coach = .init(store.view().withPrefix("coach"));
+ 
+     // Three lifters, three lifts each.
+     const lifts: zml.Tensor = .init(.{ .lifter = 3, .d = 3 }, .f32);

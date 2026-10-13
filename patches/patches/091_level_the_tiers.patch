@@ -1,0 +1,22 @@
+--- exercises/13_layer_cake/091_level_the_tiers.zig
++++ answers/13_layer_cake/091_level_the_tiers.zig
+@@ -74,7 +74,7 @@
+     const bias: zml.Tensor = .init(.{ .d = 4 }, .f32);
+ 
+     // A flat cake must come out flat. Not as four NaN.
+-    const level: zml.nn.LayerNorm = .{ .weight = weight, .bias = bias, .eps = 0 };
++    const level: zml.nn.LayerNorm = .{ .weight = weight, .bias = bias, .eps = 1e-5 };
+ 
+     const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 4 }, .f32);
+ 
+@@ -82,8 +82,8 @@
+     defer exe.deinit();
+ 
+     // One number per tier. A mean of 10 and a spread of 2, please.
+-    const spread: [4]f32 = @splat(1);
+-    const mean: [4]f32 = @splat(0);
++    const spread: [4]f32 = @splat(2);
++    const mean: [4]f32 = @splat(10);
+ 
+     var weight_buffer: zml.Buffer = try .fromBytes(io, platform, weight.shape(), std.mem.sliceAsBytes(&spread));
+     defer weight_buffer.deinit();

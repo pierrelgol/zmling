@@ -1,0 +1,18 @@
+--- exercises/08_slice_of_life/059_surprise_me.zig
++++ answers/08_slice_of_life/059_surprise_me.zig
+@@ -82,13 +82,11 @@
+ const zml = @import("zml");
+ 
+ fn window(pizza: zml.Tensor, first: zml.Tensor) zml.Tensor {
+-    _ = first;
+-    return pizza.slice(.slices, .{ .start = 2, .end = 5 });
++    return pizza.slice(.slices, .dyn(first, 3));
+ }
+ 
+ fn pick(tray: zml.Tensor, which: zml.Tensor) zml.Tensor {
+-    _ = which;
+-    return tray.slice(.pizzas, .single(2));
++    return tray.slice(.pizzas, .dynSingle(which));
+ }
+ 
+ fn swap(tray: zml.Tensor, which: zml.Tensor, fresh: zml.Tensor) zml.Tensor {

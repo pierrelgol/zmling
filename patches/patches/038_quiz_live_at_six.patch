@@ -1,0 +1,34 @@
+--- exercises/05_broadcast_news/038_quiz_live_at_six.zig
++++ answers/05_broadcast_news/038_quiz_live_at_six.zig
+@@ -50,13 +50,13 @@
+ 
+ fn onAir(frames: zml.Tensor, tint: zml.Tensor, vignette: zml.Tensor, exposure: zml.Tensor) zml.Tensor {
+     // 1. One value per channel.
+-    const tinted = frames.add(???);
++    const tinted = frames.add(tint.broad(frames.shape()));
+ 
+     // 2. One value per pixel position, untagged.
+-    const shaded = tinted.mul(???);
++    const shaded = tinted.mul(vignette.broadcastLeft(frames.shape()));
+ 
+     // 3. One value per frame. Mind Doug's note.
+-    return shaded.div(???);
++    return shaded.div(exposure.appendAxes(.{ .c, .h, .w }));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -71,10 +71,10 @@
+     defer platform.deinit(gpa, io);
+ 
+     // Four placeholders, with the shapes listed above. All f32.
+-    const frames: zml.Tensor = ???;
+-    const tint: zml.Tensor = ???;
+-    const vignette: zml.Tensor = ???;
+-    const exposure: zml.Tensor = ???;
++    const frames: zml.Tensor = .init(.{ .n = 2, .c = 3, .h = 2, .w = 2 }, .f32);
++    const tint: zml.Tensor = .init(.{ .c = 3 }, .f32);
++    const vignette: zml.Tensor = .init(.{ 2, 2 }, .f32);
++    const exposure: zml.Tensor = .init(.{ .n = 2 }, .f32);
+ 
+     var exe = try platform.compileFn(gpa, io, onAir, .{ frames, tint, vignette, exposure }, .{});
+     defer exe.deinit();

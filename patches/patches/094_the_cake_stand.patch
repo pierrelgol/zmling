@@ -1,0 +1,16 @@
+--- exercises/13_layer_cake/094_the_cake_stand.zig
++++ answers/13_layer_cake/094_the_cake_stand.zig
+@@ -134,13 +134,10 @@
+         const cake_buffers: zml.Bufferized(Cake) = .{
+             .base = .{
+                 .weight = base_weight,
+-                .tag = .d,
+                 .quantization = null,
+             },
+-            .oven = .relu,
+             .level = .{
+                 .weight = level_weight,
+-                .eps = 1e-5,
+             },
+         };
+ 

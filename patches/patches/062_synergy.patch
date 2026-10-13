@@ -1,0 +1,17 @@
+--- exercises/09_dot_com_bubble/062_synergy.zig
++++ answers/09_dot_com_bubble/062_synergy.zig
+@@ -63,12 +63,12 @@
+ 
+ /// Dollars per day.
+ fn dailyRevenue(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return orders.dot(prices, .days);
++    return orders.dot(prices, .products);
+ }
+ 
+ /// For each day, how many of each part the warehouse must ship.
+ fn partsNeeded(orders: zml.Tensor, recipes: zml.Tensor) zml.Tensor {
+-    return recipes.dot(orders, .products);
++    return orders.dot(recipes, .products);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

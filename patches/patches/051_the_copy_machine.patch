@@ -1,0 +1,15 @@
+--- exercises/07_origami_club/051_the_copy_machine.zig
++++ answers/07_origami_club/051_the_copy_machine.zig
+@@ -71,10 +71,10 @@
+ 
+ fn garland(motif: zml.Tensor) zml.Tensor {
+     // 1. Every bead twice in a row.
+-    const doubled = motif.repeat1d(.beads, 2);
++    const doubled = motif.stutter1d(0, 2);
+ 
+     // 2. Mirrored.
+-    const mirrored = doubled;
++    const mirrored = doubled.reverse(.{.beads});
+ 
+     // 3. The whole thing twice.
+     return mirrored.repeat1d(.beads, 2);

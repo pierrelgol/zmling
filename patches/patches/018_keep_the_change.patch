@@ -1,0 +1,11 @@
+--- exercises/03_arithmetic_diner/018_keep_the_change.zig
++++ answers/03_arithmetic_diner/018_keep_the_change.zig
+@@ -62,7 +62,7 @@
+ 
+ /// Flo's pancake formula: ((d^2 * 0.25) - 1) / 2 + 0.5
+ fn pancakePrice(diameters: zml.Tensor) zml.Tensor {
+-    return diameters.scale(0.25).powByConst(2).subConstant(1).???(2).addConstant(0.5);
++    return diameters.powByConst(2).scale(0.25).subConstant(1).divByConst(2).addConstant(0.5);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

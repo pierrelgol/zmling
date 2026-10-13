@@ -1,0 +1,11 @@
+--- exercises/10_treasure_maps/073_the_three_best.zig
++++ answers/10_treasure_maps/073_the_three_best.zig
+@@ -69,7 +69,7 @@
+ 
+ /// The three richest chests: their values, and where they are.
+ fn threeBest(loot: zml.Tensor) zml.Tensor.SortRes {
+-    return loot.topK(.chest, 3, .{ .descending = false });
++    return loot.topK(.{ .best = .chest }, 3, .{});
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

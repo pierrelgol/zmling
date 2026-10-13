@@ -1,0 +1,15 @@
+--- exercises/05_broadcast_news/035_make_room.zig
++++ answers/05_broadcast_news/035_make_room.zig
+@@ -75,10 +75,10 @@
+     const table = zml.Shape.init(.{ .anchor = fees.dim(.anchor), .segment = minutes.dim(.segment) }, .f32);
+ 
+     // {anchor=3} -> {anchor=3,segment=1}
+-    const column = fees.appendAxes(???);
++    const column = fees.appendAxes(.{.segment});
+ 
+     // {segment=4} -> {anchor=1,segment=4}
+-    const row = minutes.insertAxes(???, ???);
++    const row = minutes.insertAxes(.segment, .{.anchor});
+ 
+     return column.broad(table).mul(row.broad(table));
+ }

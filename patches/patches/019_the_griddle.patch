@@ -1,0 +1,24 @@
+--- exercises/03_arithmetic_diner/019_the_griddle.zig
++++ answers/03_arithmetic_diner/019_the_griddle.zig
+@@ -61,18 +61,17 @@
+ 
+ /// Distance of each burner from 350 degrees, never negative.
+ fn offBy(burners: zml.Tensor) zml.Tensor {
+-    return burners.subConstant(350).???();
++    return burners.subConstant(350).abs();
+ }
+ 
+ /// 20 + 60 * e^(-minutes / 10)
+ fn coffee(minutes: zml.Tensor) zml.Tensor {
+-    // TODO: Newton is waiting. So is the coffee.
+-    return minutes;
++    return minutes.scale(-0.1).exp().scale(60).addConstant(20);
+ }
+ 
+ /// Whole dollars. A half dollar rounds up, like in school.
+ fn wholeDollars(tips: zml.Tensor) zml.Tensor {
+-    return tips.round();
++    return tips.roundNearestAfz();
+ }
+ 
+ /// Compiles `recipe` for four f32, runs it on `ingredients`.

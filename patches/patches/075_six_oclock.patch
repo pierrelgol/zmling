@@ -1,0 +1,20 @@
+--- exercises/11_time_loops/075_six_oclock.zig
++++ answers/11_time_loops/075_six_oclock.zig
+@@ -70,7 +70,7 @@
+     var m = mood;
+     for (0..days) |_| {
+         alarm_rings += 1;
+-        m = ???;
++        m = m.scale(0.5);
+     }
+     return m;
+ }
+@@ -89,7 +89,7 @@
+     const mood: zml.Tensor = .init(.{}, .f32);
+ 
+     // One tensor, and one plain Zig number: three days.
+-    var exe = try platform.compileFn(gpa, io, relive, .{ mood, ??? }, .{});
++    var exe = try platform.compileFn(gpa, io, relive, .{ mood, 3 }, .{});
+     defer exe.deinit();
+ 
+     try stdout.print("The Exe has {d} input. While tracing, the alarm rang {d} times.\n", .{ exe.input_shapes.len, alarm_rings });

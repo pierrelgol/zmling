@@ -1,0 +1,19 @@
+--- exercises/11_time_loops/078_piano_lessons.zig
++++ answers/11_time_loops/078_piano_lessons.zig
+@@ -85,14 +85,14 @@
+     /// Keep going as long as there are days left.
+     pub fn cond(self: Practice, state: State) zml.Tensor {
+         _ = self;
+-        return ???;
++        return state.day.cmp(.GT, zml.Tensor.scalar(0, .i32));
+     }
+ 
+     pub fn body(self: Practice, state: State) State {
+         _ = self;
+         return .{
+             .day = state.day.addConstant(-1),
+-            .minutes = ???,
++            .minutes = state.minutes.add(state.day),
+         };
+     }
+ };

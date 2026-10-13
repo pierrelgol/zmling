@@ -1,0 +1,72 @@
+--- exercises/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
++++ answers/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
+@@ -61,7 +61,11 @@
+     };
+ 
+     pub fn forward(self: Agent, x: zml.Tensor) Verdict {
+-        return ???;
++        const score = self.output.forward(self.hidden.forward(x).relu());
++        return .{
++            .score = score,
++            .alien = score.cmp(.GT, zml.Tensor.scalar(self.doubt, .f32)),
++        };
+     }
+ };
+ 
+@@ -90,16 +94,50 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // TODO: the two agents and the case file, as placeholders.
+-    // TODO: `molder_exe` and `scally_exe`.
+-    // TODO: the weights, uploaded once, and freed at the end.
+-    // TODO: a runner for each Exe.
++    const molder: Agent = .{
++        .hidden = .{ .weight = .init(.{ .d_out = 2, .d = 3 }, .f32), .bias = .init(.{ .d_out = 2 }, .f32) },
++        .output = .{ .weight = .init(.{ .d_out = 1, .d = 2 }, .f32), .bias = .init(.{ .d_out = 1 }, .f32) },
++        .doubt = 0,
++    };
++    var scally = molder;
++    scally.doubt = 10;
++    const x: zml.Tensor = .init(.{ .d = 3 }, .f32);
++
++    var molder_exe = try platform.compile(gpa, io, molder, .forward, .{x}, .{});
++    defer molder_exe.deinit();
++    var scally_exe = try platform.compile(gpa, io, scally, .forward, .{x}, .{});
++    defer scally_exe.deinit();
++
++    var weights: zml.Bufferized(Agent) = .{
++        .hidden = .{
++            .weight = try .fromBytes(io, platform, molder.hidden.weight.shape(), std.mem.sliceAsBytes(&hidden_weight)),
++            .bias = try .fromBytes(io, platform, molder.hidden.bias.shape(), std.mem.sliceAsBytes(&hidden_bias)),
++        },
++        .output = .{
++            .weight = try .fromBytes(io, platform, molder.output.weight.shape(), std.mem.sliceAsBytes(&output_weight)),
++            .bias = try .fromBytes(io, platform, molder.output.bias.shape(), std.mem.sliceAsBytes(&output_bias)),
++        },
++    };
++    defer zml.Buffer.deinitAll(Agent, &weights);
++
++    var molder_runner = try molder_exe.runner(gpa);
++    defer molder_runner.deinit(gpa);
++    var scally_runner = try scally_exe.runner(gpa);
++    defer scally_runner.deinit(gpa);
+ 
+     try stdout.print("Each agent's Exe has {d} inputs and {d} outputs.\n", .{ molder_exe.input_shapes.len, molder_exe.output_shapes.len });
+ 
+     for (cases, 1..) |case, n| {
+-        // TODO: this case as a Buffer; then ask both agents, and
+-        // put their answers in `molder_says` and `scally_says`.
++        var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&case));
++        defer x_buffer.deinit();
++
++        var molder_says: zml.Bufferized(Agent.Verdict) = undefined;
++        molder_runner.run(io, .{ weights, x_buffer }, .{&molder_says}, .{ .wait = true });
++        defer zml.Buffer.deinitAll(Agent.Verdict, &molder_says);
++
++        var scally_says: zml.Bufferized(Agent.Verdict) = undefined;
++        scally_runner.run(io, .{ weights, x_buffer }, .{&scally_says}, .{ .wait = true });
++        defer zml.Buffer.deinitAll(Agent.Verdict, &scally_says);
+ 
+         const score = try molder_says.score.getValue([1]f32, io);
+         const molder_believes = try molder_says.alien.getValue([1]bool, io);

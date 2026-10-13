@@ -1,0 +1,24 @@
+--- exercises/07_origami_club/047_turn_the_paper.zig
++++ answers/07_origami_club/047_turn_the_paper.zig
+@@ -64,18 +64,18 @@
+ 
+ /// Rows become columns.
+ fn turn(sheet: zml.Tensor) zml.Tensor {
+-    return sheet.transpose(???);
++    return sheet.transpose(.{ .cols, .rows });
+ }
+ 
+ /// Coach wants {rows, cols, sheets}. Timmy insisted on using
+ /// indices, "like a professional".
+ fn restack(pile: zml.Tensor) zml.Tensor {
+-    return pile.transpose(.{ 2, 0, 1 });
++    return pile.transpose(.{ 1, 2, 0 });
+ }
+ 
+ /// Exchange .sheets and .rows, don't touch .cols.
+ fn flip(pile: zml.Tensor) zml.Tensor {
+-    return pile.swapAxes(???, ???);
++    return pile.swapAxes(.sheets, .rows);
+ }
+ 
+ /// All the axes, backwards.

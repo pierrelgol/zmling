@@ -1,0 +1,11 @@
+--- exercises/13_layer_cake/095_sweet_or_salty.zig
++++ answers/13_layer_cake/095_sweet_or_salty.zig
+@@ -75,7 +75,7 @@
+ 
+     /// fillings: {.cake, .d} -> the index of the best class for each cake: {.cake}, i32.
+     pub fn forward(self: Taster, fillings: zml.Tensor) zml.Tensor {
+-        const hidden = self.hidden.forward(fillings, fillings.dtype());
++        const hidden = self.hidden.forward(fillings, fillings.dtype()).relu().rename(.{ .dout = .d });
+         const logits = self.verdict.forward(hidden, hidden.dtype());
+         return logits.argMax(.dout).indices.squeeze(.dout);
+     }

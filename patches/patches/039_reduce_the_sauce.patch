@@ -1,0 +1,20 @@
+--- exercises/06_reduction_kitchen/039_reduce_the_sauce.zig
++++ answers/06_reduction_kitchen/039_reduce_the_sauce.zig
+@@ -62,7 +62,7 @@
+ 
+ /// How many portions of each dish, all tables together?
+ fn toFire(orders: zml.Tensor) zml.Tensor {
+-    return orders.sum(???);
++    return orders.sum(.table);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -92,7 +92,7 @@
+     defer result.deinit();
+ 
+     // Two axes, but how many numbers?
+-    const portions = try result.getValue([???]i32, io);
++    const portions = try result.getValue([4]i32, io);
+ 
+     try stdout.print("{f} reduced to {f}\n", .{ orders.shape(), result.shape() });
+     for ([_][]const u8{ "soup", "duck", "risotto", "tart" }, portions) |dish, n| {

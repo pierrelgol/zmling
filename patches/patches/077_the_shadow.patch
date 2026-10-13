@@ -1,0 +1,19 @@
+--- exercises/11_time_loops/077_the_shadow.zig
++++ answers/11_time_loops/077_the_shadow.zig
+@@ -95,12 +95,14 @@
+ };
+ 
+ fn prediction(sunshine: zml.Tensor, temps: zml.Tensor) zml.Tensor {
+-    return zml.ops.@"if"(Burrow, .{ .temps = temps }, sunshine);
++    const shadow = sunshine.cmp(.GT, zml.Tensor.scalar(0, .i32));
++    return zml.ops.@"if"(Burrow, .{ .temps = temps }, shadow);
+ }
+ 
+ /// Same prediction, with `zml.ops.if2` and no struct.
+ fn prediction2(sunshine: zml.Tensor, temps: zml.Tensor) zml.Tensor {
+-    return ???;
++    const shadow = sunshine.cmp(.GT, zml.Tensor.scalar(0, .i32));
++    return zml.ops.if2(shadow, temps.addConstant(-10), temps.addConstant(5));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

@@ -1,0 +1,11 @@
+--- exercises/09_dot_com_bubble/061_no_matmul.zig
++++ answers/09_dot_com_bubble/061_no_matmul.zig
+@@ -53,7 +53,7 @@
+ 
+ /// Total dollars: sum over products of price * units.
+ fn revenue(prices: zml.Tensor, units: zml.Tensor) zml.Tensor {
+-    return prices.matmul(units);
++    return prices.dot(units, .products);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

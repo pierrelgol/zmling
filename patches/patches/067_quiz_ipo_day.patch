@@ -1,0 +1,35 @@
+--- exercises/09_dot_com_bubble/067_quiz_ipo_day.zig
++++ answers/09_dot_com_bubble/067_quiz_ipo_day.zig
+@@ -40,12 +40,14 @@
+ 
+ /// One linear layer: contract `x` and `w` over `tag`, add the bias.
+ fn layer(x: zml.Tensor, w: zml.Tensor, bias: zml.Tensor, comptime tag: @EnumLiteral()) zml.Tensor {
+-    return ???;
++    const y = x.dot(w, tag);
++    return y.add(bias.broad(y.shape()));
+ }
+ 
+ /// Two layers and a ReLU: {startup,features} -> {startup,verdict}.
+ fn analyst(x: zml.Tensor, w1: zml.Tensor, b1: zml.Tensor, w2: zml.Tensor, b2: zml.Tensor) zml.Tensor {
+-    return ???;
++    const hidden = layer(x, w1, b1, .features).relu();
++    return layer(hidden, w2, b2, .hidden);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -60,12 +62,12 @@
+     defer platform.deinit(gpa, io);
+ 
+     const x: zml.Tensor = .init(.{ .startup = 3, .features = 2 }, .f32);
+-    const w1: zml.Tensor = ???;
++    const w1: zml.Tensor = .init(.{ .hidden = 3, .features = 2 }, .f32);
+     const b1: zml.Tensor = .init(.{ .hidden = 3 }, .f32);
+-    const w2: zml.Tensor = ???;
++    const w2: zml.Tensor = .init(.{ .verdict = 2, .hidden = 3 }, .f32);
+     const b2: zml.Tensor = .init(.{ .verdict = 2 }, .f32);
+ 
+-    var exe = try platform.compileFn(gpa, io, analyst, ???, .{});
++    var exe = try platform.compileFn(gpa, io, analyst, .{ x, w1, b1, w2, b2 }, .{});
+     defer exe.deinit();
+ 
+     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[3][2]f32{

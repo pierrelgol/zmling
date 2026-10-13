@@ -1,0 +1,11 @@
+--- exercises/05_broadcast_news/037_technical_difficulties.zig
++++ answers/05_broadcast_news/037_technical_difficulties.zig
+@@ -68,7 +68,7 @@
+ 
+ /// The national feed, corrected by somebody who has been outside.
+ fn forecast(feed: zml.Tensor, correction: zml.Tensor) zml.Tensor {
+-    const column = correction.insertAxes(.city, .{.day});
++    const column = correction.appendAxes(.{.day});
+ 
+     return feed.add(column.broad(feed.shape()));
+ }

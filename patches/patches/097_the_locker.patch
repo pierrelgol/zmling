@@ -1,0 +1,20 @@
+--- exercises/14_heavy_lifting/097_the_locker.zig
++++ answers/14_heavy_lifting/097_the_locker.zig
+@@ -87,7 +87,7 @@
+     // 1. The first eight bytes are the length of the header.
+     var length_bytes: [8]u8 = undefined;
+     _ = try file.readPositionalAll(io, &length_bytes, 0);
+-    const header_length: usize = @intCast(std.mem.readInt(u64, &length_bytes, ???));
++    const header_length: usize = @intCast(std.mem.readInt(u64, &length_bytes, .little));
+ 
+     // 2. The header comes right after them.
+     var header_bytes: [2048]u8 = undefined;
+@@ -100,7 +100,7 @@
+ 
+     // 3. The header says: "plates" is 4 F32, data_offsets [0, 16].
+     //    Where is byte 0 of the data in the file?
+-    const plates_offset = 0;
++    const plates_offset = 8 + header_length + 0;
+ 
+     // Read the 16 bytes straight into four floats: the file holds
+     // exactly the bytes an [4]f32 is made of. (On a little-endian

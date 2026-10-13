@@ -1,0 +1,27 @@
+--- exercises/12_the_exe_files/081_the_envelope.zig
++++ answers/12_the_exe_files/081_the_envelope.zig
+@@ -101,10 +101,10 @@
+     defer platform.deinit(gpa, io);
+ 
+     const evidence: Evidence = .{
+-        .photo = ???,
+-        .tape = ???,
++        .photo = .init(.{ .frames = 4, .pixels = 6 }, .f32),
++        .tape = .init(.{ .seconds = 10 }, .f32),
+     };
+-    const sensitivity: zml.Tensor = ???;
++    const sensitivity: zml.Tensor = .init(.{}, .f32);
+ 
+     // Three arguments: a struct, a Tensor, a bool.
+     var exe = try platform.compileFn(gpa, io, analyze, .{ evidence, sensitivity, true }, .{});
+@@ -115,8 +115,8 @@
+         try stdout.print("  input {d}: {f}\n", .{ i, shape });
+     }
+ 
+-    try stdout.print("and gives back {d}:\n", .{???});
+-    for (???, 0..) |shape, i| {
++    try stdout.print("and gives back {d}:\n", .{exe.output_shapes.len});
++    for (exe.output_shapes, 0..) |shape, i| {
+         try stdout.print("  output {d}: {f}\n", .{ i, shape });
+     }
+     try stdout.flush();

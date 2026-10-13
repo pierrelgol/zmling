@@ -1,0 +1,18 @@
+--- exercises/06_reduction_kitchen/043_running_low.zig
++++ answers/06_reduction_kitchen/043_running_low.zig
+@@ -61,13 +61,13 @@
+ 
+ /// Butter in the fridge after each hour, in kg: {hour=8}.
+ fn stock(log: zml.Tensor) zml.Tensor {
+-    return log.sum(.hour).addConstant(start_of_service);
++    return log.cumulativeSum(.hour).addConstant(start_of_service);
+ }
+ 
+ /// The lowest the stock ever got, as a true scalar.
+ fn lowest(log: zml.Tensor) zml.Tensor {
+     // A ritual is a Zig function. It can call other functions.
+-    return stock(log).max(.hour).squeeze(.hour);
++    return stock(log).min(.hour).squeeze(.hour);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

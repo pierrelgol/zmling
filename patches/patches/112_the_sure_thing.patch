@@ -1,0 +1,20 @@
+--- exercises/16_casino_royale/112_the_sure_thing.zig
++++ answers/16_casino_royale/112_the_sure_thing.zig
+@@ -81,7 +81,7 @@
+ 
+ /// Greedy decoding, by hand: {.reel, .voc} -> {.reel}
+ fn greedy(logits: zml.Tensor) zml.Tensor {
+-    return ???;
++    return logits.argMax(.voc).indices.squeeze(.voc);
+ }
+ 
+ /// The same, the official way.
+@@ -103,7 +103,7 @@
+     const symbols = [_][]const u8{ "cherry", "lemon", "bell", "bar", "seven", "skull" };
+ 
+     // Three reels, one score per symbol.
+-    const logits: zml.Tensor = .init(.{ .reel = 3, .symbol = 6 }, .f32);
++    const logits: zml.Tensor = .init(.{ .reel = 3, .voc = 6 }, .f32);
+     const rng: zml.Tensor.Rng = .init();
+ 
+     var logits_buffer: zml.Buffer = try .fromBytes(io, platform, logits.shape(), std.mem.sliceAsBytes(&[3][6]f32{

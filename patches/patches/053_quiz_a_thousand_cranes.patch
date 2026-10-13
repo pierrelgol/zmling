@@ -1,0 +1,17 @@
+--- exercises/07_origami_club/053_quiz_a_thousand_cranes.zig
++++ answers/07_origami_club/053_quiz_a_thousand_cranes.zig
+@@ -53,8 +53,12 @@
+ const zml = @import("zml");
+ 
+ fn relay(sheet: zml.Tensor) zml.Tensor {
+-    // Timmy's proposal. Replace it with Ingrid's napkin.
+-    return sheet.reshape(.{ .patches = 4, .squares = 4 });
++    return sheet
++        .splitAxis(.rows, .{ .patch_row = 2, .row = 2 })
++        .splitAxis(.cols, .{ .patch_col = 2, .col = 2 })
++        .transpose(.{ .patch_row, .patch_col, .row, .col })
++        .merge(.{ .patches = .{ .patch_row, .patch_col }, .squares = .{ .row, .col } })
++        .reverse(.{.patches});
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

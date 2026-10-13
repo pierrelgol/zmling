@@ -1,0 +1,18 @@
+--- exercises/14_heavy_lifting/098_the_front_desk.zig
++++ answers/14_heavy_lifting/098_the_front_desk.zig
+@@ -91,13 +91,13 @@
+     const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
+     defer gpa.free(path);
+ 
+-    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, weights_path);
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
+     defer registry.deinit();
+ 
+     try stdout.print("{d} tensors, {d} bytes of weights.\n\n", .{
+         registry.tensors.count(),
+         // The size of all the tensor data. Denise knows the total.
+-        ???,
++        registry.totalBytes(),
+     });
+ 
+     try stdout.print("name                 shape       bytes   at\n", .{});

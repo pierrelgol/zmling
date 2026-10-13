@@ -1,0 +1,13 @@
+--- exercises/10_treasure_maps/068_the_parrot.zig
++++ answers/10_treasure_maps/068_the_parrot.zig
+@@ -56,8 +56,8 @@
+ 
+ /// For each chest: more than 10 doubloons, and a curse level of exactly 0?
+ fn worthDigging(doubloons: zml.Tensor, curses: zml.Tensor) zml.Tensor {
+-    const rich = doubloons.cmp(.GT, .scalar(10, .f32));
+-    const safe = curses.cmp(???, .scalar(0, .i32));
++    const rich = doubloons.cmp(.GT, .scalar(10, .i32));
++    const safe = curses.cmp(.EQ, .scalar(0, .i32));
+     return rich.logical(.AND, safe);
+ }
+ 

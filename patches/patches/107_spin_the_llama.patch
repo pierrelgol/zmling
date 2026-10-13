@@ -1,0 +1,19 @@
+--- exercises/15_pay_attention/107_spin_the_llama.zig
++++ answers/15_pay_attention/107_spin_the_llama.zig
+@@ -80,14 +80,14 @@
+ 
+ /// The herd, each llama turned according to her place in the line.
+ fn spin(x: zml.Tensor) zml.Tensor {
+-    return zml.nn.rope(x, ???, .{});
++    return zml.nn.rope(x, null, .{});
+ }
+ 
+ /// The score of each listener for each speaker, {.q, .k}, when the
+ /// llamas stand at the given positions. (No scaling, no softmax.)
+ fn scoresAt(x: zml.Tensor, positions: zml.Tensor) zml.Tensor {
+     const q = zml.nn.rope(x, positions, .{}).rename(.{ .s = .q });
+-    const k = x.rename(.{ .s = .k });
++    const k = zml.nn.rope(x, positions, .{}).rename(.{ .s = .k });
+     return q.dot(k, .hd);
+ }
+ 

@@ -1,0 +1,17 @@
+--- exercises/06_reduction_kitchen/044_plating.zig
++++ answers/06_reduction_kitchen/044_plating.zig
+@@ -67,12 +67,12 @@
+ 
+ /// For each guest, the probability of ordering each dish.
+ fn cravings(logits: zml.Tensor) zml.Tensor {
+-    return logits.softmax(.guest);
++    return logits.softmax(.dish);
+ }
+ 
+ /// The same thing: exp(x - logSumExp(x)).
+ fn cravingsByHand(logits: zml.Tensor) zml.Tensor {
+-    return logits.sub(logits.???(.dish)).exp();
++    return logits.sub(logits.logSumExp(.dish)).exp();
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

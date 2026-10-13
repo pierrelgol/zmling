@@ -1,0 +1,19 @@
+--- exercises/03_arithmetic_diner/020_how_would_you_like_it.zig
++++ answers/03_arithmetic_diner/020_how_would_you_like_it.zig
+@@ -96,14 +96,12 @@
+ 
+ /// Leaky relu with a slope of 0.1, without calling `leakyReLU`.
+ fn leakyByHand(x: zml.Tensor) zml.Tensor {
+-    // TODO
+-    return x;
++    return x.maximum(x.scale(0.1));
+ }
+ 
+ /// silu, without calling `silu`.
+ fn siluByHand(x: zml.Tensor) zml.Tensor {
+-    // TODO
+-    return x;
++    return x.mul(x.sigmoid());
+ }
+ 
+ /// Compiles `recipe` for five f32, runs it on the steaks.

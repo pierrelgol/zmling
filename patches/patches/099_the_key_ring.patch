@@ -1,0 +1,20 @@
+--- exercises/14_heavy_lifting/099_the_key_ring.zig
++++ answers/14_heavy_lifting/099_the_key_ring.zig
+@@ -127,7 +127,7 @@
+     });
+ 
+     // A loose tensor, at the root of the file.
+-    const plates = view.createReplicatedTensor("plates", .{ .plate, .kg });
++    const plates = view.createReplicatedTensor("plates", .{.plate});
+     try stdout.print("plates: {f}\n", .{plates});
+ 
+     for (0..2) |i| {
+@@ -141,7 +141,7 @@
+ 
+         // Not every layer has a bias. Only cut a key if there is
+         // a lock for it.
+-        const bias: ?zml.Tensor = layer.createReplicatedTensor("bias", .{.dout});
++        const bias: ?zml.Tensor = if (layer.hasKey("bias")) layer.createReplicatedTensor("bias", .{.dout}) else null;
+         try stdout.print("  bias:   {?f}\n", .{bias});
+     }
+     try stdout.flush();

@@ -1,0 +1,20 @@
+--- exercises/13_layer_cake/090_oven_settings.zig
++++ answers/13_layer_cake/090_oven_settings.zig
+@@ -74,7 +74,7 @@
+ 
+     /// The batter, then the oven.
+     pub fn forward(self: Tier, x: zml.Tensor) zml.Tensor {
+-        return self.batter.forward(x, x.dtype());
++        return self.oven.forward(self.batter.forward(x, x.dtype()));
+     }
+ };
+ 
+@@ -109,7 +109,7 @@
+     };
+ 
+     // relu, leaky relu with a slope of 0.1, tanh, sigmoid.
+-    const settings = [_]zml.nn.Activation{ .relu, ???, .tanh, .sigmoid };
++    const settings = [_]zml.nn.Activation{ .relu, .{ .leakyReLU = 0.1 }, .tanh, .sigmoid };
+ 
+     for (settings) |setting| {
+         // An ordinary run-time loop: the model is an ordinary

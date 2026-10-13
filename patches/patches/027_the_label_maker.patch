@@ -1,0 +1,25 @@
+--- exercises/04_luggage_tags/027_the_label_maker.zig
++++ answers/04_luggage_tags/027_the_label_maker.zig
+@@ -71,19 +71,19 @@
+ 
+     // The customs form calls flights "departures" and bags
+     // "items". Both at once, with the careful method.
+-    const customs = manifest.rename(.{ .flights = .departures, .items = .bags });
++    const customs = manifest.rename(.{ .flights = .departures, .bags = .items });
+     try stdout.print("Customs:  {f}\n", .{customs});
+ 
+     // Put a first label on the last axis: .measures. It has no
+     // tag to rename FROM, so go by position, from the end.
+-    const complete = customs.renameAxis(???, .measures);
++    const complete = customs.renameAxis(-1, .measures);
+     try stdout.print("Complete: {f}, fully tagged? {}\n", .{ complete, complete.shape().isFullyTagged() });
+ 
+     // The archive files everything by flight: .departures must be
+     // called .flights again. Kevin did this one. Run it, look
+     // closely at the shape and at the number of items it reports,
+     // then do it the careful way.
+-    const archive = complete.renameTag(.departures, .items);
++    const archive = complete.rename(.{ .departures = .flights });
+     try stdout.print("Archive:  {f}, {d} items per flight.\n", .{ archive, archive.dim(.items) });
+     try stdout.flush();
+ }

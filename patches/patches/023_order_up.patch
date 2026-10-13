@@ -1,0 +1,17 @@
+--- exercises/03_arithmetic_diner/023_order_up.zig
++++ answers/03_arithmetic_diner/023_order_up.zig
+@@ -75,12 +75,12 @@
+ 
+ /// (temps - mean) / sqrt(variance + epsilon)
+ fn standardize(temps: zml.Tensor, mean: zml.Tensor, variance: zml.Tensor) zml.Tensor {
+-    return temps.sub(mean).div(variance).addConstant(epsilon).sqrt();
++    return temps.sub(mean).div(variance.addConstant(epsilon).sqrt());
+ }
+ 
+ /// log(1 + e^z)
+ fn softplus(z: zml.Tensor) zml.Tensor {
+-    return ???;
++    return z.exp().addConstant(1).log();
+ }
+ 
+ fn doneness(temps: zml.Tensor, mean: zml.Tensor, variance: zml.Tensor) zml.Tensor {

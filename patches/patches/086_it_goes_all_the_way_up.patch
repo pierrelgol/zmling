@@ -1,0 +1,21 @@
+--- exercises/12_the_exe_files/086_it_goes_all_the_way_up.zig
++++ answers/12_the_exe_files/086_it_goes_all_the_way_up.zig
+@@ -140,12 +140,14 @@
+ 
+     var layer_buffers: [3]zml.Bufferized(Layer) = undefined;
+     for (&layer_buffers, &weight_data, &bias_data) |*layer_buffer, *w, *b| {
+-        // TODO: this layer's two Buffers, made from `w` and `b`.
+-        layer_buffer.* = ???;
++        layer_buffer.* = .{
++            .weight = try .fromBytes(io, platform, weight_shape, std.mem.sliceAsBytes(w)),
++            .bias = try .fromBytes(io, platform, bias_shape, std.mem.sliceAsBytes(b)),
++        };
+     }
++    defer for (&layer_buffers) |*layer_buffer| zml.Buffer.deinitAll(Layer, layer_buffer);
+ 
+-    var weights: zml.Bufferized(Network) = .{ .layers = &layer_buffers };
+-    defer zml.Buffer.deinitAll(Network, &weights);
++    const weights: zml.Bufferized(Network) = .{ .layers = &layer_buffers };
+ 
+     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[_]f32{ 3, 1 }));
+     defer x_buffer.deinit();

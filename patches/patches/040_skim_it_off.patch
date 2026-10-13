@@ -1,0 +1,17 @@
+--- exercises/06_reduction_kitchen/040_skim_it_off.zig
++++ answers/06_reduction_kitchen/040_skim_it_off.zig
+@@ -60,12 +60,12 @@
+ 
+ /// Plates for each table: {table=3}.
+ fn platesPerTable(orders: zml.Tensor) zml.Tensor {
+-    return orders.sum(.dish).squeeze(.table);
++    return orders.sum(.dish).squeeze(.dish);
+ }
+ 
+ /// Every plate of the night, as a true scalar.
+ fn platesTonight(orders: zml.Tensor) zml.Tensor {
+-    return ???;
++    return orders.sum(.table).sum(.dish).squeeze(.table).squeeze(.dish);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

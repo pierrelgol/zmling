@@ -1,0 +1,34 @@
+--- exercises/04_luggage_tags/032_quiz_flight_zg404.zig
++++ answers/04_luggage_tags/032_quiz_flight_zg404.zig
+@@ -44,14 +44,14 @@
+ 
+ fn excessReport(weights: zml.Tensor, limits: zml.Tensor) zml.Tensor {
+     // 1.
+-    const w = weights.???;
+-    const l = limits.???;
++    const w = weights.withTags(.{ .flights, .bags });
++    const l = limits.rename(.{ .planes = .flights, .items = .bags });
+ 
+     // 2.
+-    std.debug.assert(???);
++    std.debug.assert(w.shape().eqlWithTags(l.shape()));
+ 
+     // 3. and 4.
+-    return ???;
++    return w.sub(l).relu().divByConst(w.dim(.bags));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -87,10 +87,10 @@
+     defer result.deinit();
+ 
+     // 5.
+-    const report: zml.Shape = ???;
++    const report: zml.Shape = result.shape();
+     try stdout.print("Report {f}, bags on axis {d}, fully tagged: {}\n", .{
+         report,
+-        report.axis(???),
++        report.axis(.bags),
+         report.isFullyTagged(),
+     });
+     try stdout.print("Excess: {any}\n", .{try result.getValue([2][3]f32, io)});

@@ -1,0 +1,11 @@
+--- exercises/07_origami_club/050_neighbours_only.zig
++++ answers/07_origami_club/050_neighbours_only.zig
+@@ -69,7 +69,7 @@
+ const zml = @import("zml");
+ 
+ fn longStrips(pile: zml.Tensor) zml.Tensor {
+-    return pile.merge(.{ .strip = .{ .layers, .cols } });
++    return pile.contiguous(.{ .layers, .cols }).merge(.{ .strip = .{ .layers, .cols } });
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

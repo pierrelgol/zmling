@@ -1,0 +1,17 @@
+--- exercises/12_the_exe_files/087_ten_sightings.zig
++++ answers/12_the_exe_files/087_ten_sightings.zig
+@@ -120,9 +120,11 @@
+     while (first < sightings.len) : (first += batch_size) {
+         const batch = sightings[first..@min(first + batch_size, sightings.len)];
+ 
+-        // A Buffer made to measure.
+-        const batch_shape: zml.Shape = .init(.{ .b = batch.len, .d = 3 }, .f32);
+-        var x_buffer: zml.Buffer = try .fromBytes(io, platform, batch_shape, std.mem.sliceAsBytes(batch));
++        // A full-size batch: the real rows, then rows of zeros.
++        var padded: [batch_size][3]f32 = @splat(@splat(0));
++        @memcpy(padded[0..batch.len], batch);
++
++        var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&padded));
+         defer x_buffer.deinit();
+ 
+         var result: zml.Buffer = undefined;

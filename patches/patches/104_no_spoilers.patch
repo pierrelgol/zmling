@@ -1,0 +1,14 @@
+--- exercises/15_pay_attention/104_no_spoilers.zig
++++ answers/15_pay_attention/104_no_spoilers.zig
+@@ -73,9 +73,9 @@
+     const scores = q.dot(k, .hd).scale(1.0 / @sqrt(hd));
+ 
+     // One cell per (listener, speaker) pair.
+-    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.q), .hd = q.dim(.hd) }, scores.dtype(), window);
++    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.q), .k = k.dim(.k) }, scores.dtype(), window);
+ 
+-    return scores.softmax(.k).add(mask);
++    return scores.add(mask).softmax(.k);
+ }
+ 
+ const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };

@@ -1,0 +1,46 @@
+--- exercises/13_layer_cake/096_quiz_the_wedding_cake.zig
++++ answers/13_layer_cake/096_quiz_the_wedding_cake.zig
+@@ -65,7 +65,12 @@
+ 
+     /// orders: {.order, .s} item ids -> {.order} occasion ids
+     pub fn forward(self: Till, orders: zml.Tensor) zml.Tensor {
+-        return ???;
++        const flavors = self.menu.forward(orders);
++        const taste = flavors.mean(.s).squeeze(.s);
++        const hunches = self.oven.forward(self.hidden.forward(taste, taste.dtype())).rename(.{ .dout = .d });
++        const leveled = self.level.forward(hunches);
++        const occasions = self.verdict.forward(leveled, leveled.dtype());
++        return occasions.argMax(.dout).indices.squeeze(.dout);
+     }
+ };
+ 
+@@ -83,12 +88,12 @@
+     const till: Till = .{
+         .menu = .{ .weight = .init(.{ .voc = 5, .d = 3 }, .f32) },
+         // A Linear: 3 flavors in, 3 hunches out, with a bias.
+-        .hidden = ???,
++        .hidden = .init(.init(.{ .dout = 3, .d = 3 }, .f32), .init(.{ .dout = 3 }, .f32), .d),
+         .oven = .relu,
+         // A LayerNorm over 3 hunches: a weight, no bias, the default eps.
+-        .level = ???,
++        .level = .{ .weight = .init(.{ .d = 3 }, .f32) },
+         // A Linear: 3 hunches in, 3 occasions out, with a bias.
+-        .verdict = ???,
++        .verdict = .init(.init(.{ .dout = 3, .d = 3 }, .f32), .init(.{ .dout = 3 }, .f32), .d),
+     };
+ 
+     // Three orders of four items.
+@@ -129,7 +134,12 @@
+     var verdict_bias: zml.Buffer = try .fromBytes(io, platform, till.verdict.bias.?.shape(), std.mem.sliceAsBytes(&[3]f32{ 0, 0, 0.6 }));
+     defer verdict_bias.deinit();
+ 
+-    const till_buffers: zml.Bufferized(Till) = ???;
++    const till_buffers: zml.Bufferized(Till) = .{
++        .menu = .{ .weight = menu_weight },
++        .hidden = .{ .weight = hidden_weight, .bias = hidden_bias, .quantization = null },
++        .level = .{ .weight = level_weight },
++        .verdict = .{ .weight = verdict_weight, .bias = verdict_bias, .quantization = null },
++    };
+ 
+     const order_names = [_][]const u8{
+         "2 croissants, 2 baguettes",

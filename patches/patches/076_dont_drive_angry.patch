@@ -1,0 +1,12 @@
+--- exercises/11_time_loops/076_dont_drive_angry.zig
++++ answers/11_time_loops/076_dont_drive_angry.zig
+@@ -65,8 +65,7 @@
+ 
+     // Run time: below zero, it feels twice as cold.
+     const zero = zml.Tensor.scalar(0, .i32);
+-    if (t.cmp(.LT, zero)) t = t.scale(2);
+-    return t;
++    return t.cmp(.LT, zero).select(t.scale(2), t);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

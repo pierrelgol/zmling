@@ -1,0 +1,47 @@
+--- exercises/11_time_loops/080_quiz_getting_out.zig
++++ answers/11_time_loops/080_quiz_getting_out.zig
+@@ -53,18 +53,29 @@
+     };
+ 
+     pub fn cond(self: Escape, state: State) zml.Tensor {
+-        return ???;
++        const not_free = state.n.cmp(.NE, zml.Tensor.scalar(1, .i32));
++        const still_patient = state.steps.cmp(.LT, zml.Tensor.scalar(self.patience, .i32));
++        return not_free.logical(.AND, still_patient);
+     }
+ 
+     pub fn body(self: Escape, state: State) State {
+         _ = self;
+-        return ???;
++        const two = zml.Tensor.scalar(2, .i32);
++        const even = state.n.remainder(two).cmp(.EQ, zml.Tensor.scalar(0, .i32));
++        return .{
++            .n = even.select(state.n.div(two), state.n.scale(3).addConstant(1)),
++            .steps = state.steps.addConstant(1),
++        };
+     }
+ };
+ 
+ /// The number of steps taken from `start`, at most `patience`.
+ fn stepsToFreedom(start: zml.Tensor, patience: i32) zml.Tensor {
+-    return ???;
++    const end = zml.ops.@"while"(Escape, .{ .patience = patience }, .{
++        .n = start,
++        .steps = zml.Tensor.scalar(0, .i32),
++    });
++    return end.steps;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -81,9 +92,9 @@
+     const start: zml.Tensor = .init(.{}, .i32);
+ 
+     // Phil on a good day will try 1000 steps. Phil before coffee: 20.
+-    var calm_exe = try platform.compileFn(gpa, io, stepsToFreedom, ???, .{});
++    var calm_exe = try platform.compileFn(gpa, io, stepsToFreedom, .{ start, 1000 }, .{});
+     defer calm_exe.deinit();
+-    var grumpy_exe = try platform.compileFn(gpa, io, stepsToFreedom, ???, .{});
++    var grumpy_exe = try platform.compileFn(gpa, io, stepsToFreedom, .{ start, 20 }, .{});
+     defer grumpy_exe.deinit();
+ 
+     for ([_]i32{ 1, 6, 7, 27, 97 }) |n| {

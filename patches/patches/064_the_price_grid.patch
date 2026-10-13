@@ -1,0 +1,13 @@
+--- exercises/09_dot_com_bubble/064_the_price_grid.zig
++++ answers/09_dot_com_bubble/064_the_price_grid.zig
+@@ -69,8 +69,8 @@
+ 
+     // Three products and three tiers. The grid should come out
+     // as {products=3,tiers=3,f32}.
+-    const prices: zml.Tensor = .init(.{3}, .f32);
+-    const tiers: zml.Tensor = .init(.{3}, .f32);
++    const prices: zml.Tensor = .init(.{ .products = 3 }, .f32);
++    const tiers: zml.Tensor = .init(.{ .tiers = 3 }, .f32);
+ 
+     var exe = try platform.compileFn(gpa, io, priceGrid, .{ prices, tiers }, .{});
+     defer exe.deinit();

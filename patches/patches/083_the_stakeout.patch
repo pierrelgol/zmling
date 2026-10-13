@@ -1,0 +1,20 @@
+--- exercises/12_the_exe_files/083_the_stakeout.zig
++++ answers/12_the_exe_files/083_the_stakeout.zig
+@@ -104,7 +104,7 @@
+     defer threshold_buffer.deinit();
+ 
+     // One runner for the whole stakeout.
+-    var runner = ???;
++    var runner = try exe.runner(gpa);
+     defer runner.deinit(gpa);
+ 
+     const nights = [3][6]f32{
+@@ -118,7 +118,7 @@
+         defer tape_buffer.deinit();
+ 
+         var report: zml.Bufferized(Report) = undefined;
+-        runner.run(io, ???, ???, ???);
++        runner.run(io, .{ tape_buffer, threshold_buffer }, .{&report}, .{ .wait = true });
+         defer report.peak.deinit();
+         defer report.alarms.deinit();
+ 

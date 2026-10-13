@@ -1,0 +1,83 @@
+--- exercises/16_casino_royale/114_quiz_the_house_always_wins.zig
++++ answers/16_casino_royale/114_quiz_the_house_always_wins.zig
+@@ -81,12 +81,17 @@
+     head: zml.nn.Linear,
+ 
+     pub fn init(view: zml.io.TensorStore.View) Sign {
+-        return ???;
++        return .{
++            .embed = .{ .weight = view.withPrefix("embed").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .head = .init(view.withPrefix("head").createReplicatedTensor("weight", .{ .voc, .d }), null, .d),
++        };
+     }
+ 
+     /// token: {} i32 -> the next token: {} i32, and the Rng.
+     pub fn forward(self: Sign, token: zml.Tensor, rng: zml.Tensor.Rng) struct { zml.Tensor, zml.Tensor.Rng } {
+-        return ???;
++        const meaning = self.embed.forward(token);
++        const logits = self.head.forward(meaning, .f32);
++        return zml.nn.sampleTokens(logits, .{ .topk = 1 }, rng);
+     }
+ 
+     pub fn load(
+@@ -96,7 +101,15 @@
+         platform: *const zml.Platform,
+         store: *const zml.io.TensorStore,
+     ) !zml.Bufferized(Sign) {
+-        return ???;
++        var buffers = try zml.mem.bufferize(gpa, Sign, self);
++
++        var loader: zml.io.Loader = try .init(gpa, platform, .default);
++        defer loader.deinit();
++
++        try loader.load(io, Sign, self, &buffers, store, .{});
++        try loader.await(io);
++
++        return buffers;
+     }
+ 
+     pub fn unload(buffers: *zml.Bufferized(Sign)) void {
+@@ -126,19 +139,19 @@
+     var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
+     defer store.deinit();
+ 
+-    const sign: Sign = ???;
++    const sign: Sign = .init(store.view());
+ 
+     // The placeholders: one token (a scalar), and the dice.
+-    const token: zml.Tensor = ???;
+-    const rng: zml.Tensor.Rng = ???;
++    const token: zml.Tensor = .init(.{}, .i32);
++    const rng: zml.Tensor.Rng = .init();
+ 
+-    var exe = ???;
++    var exe = try platform.compile(gpa, io, sign, .forward, .{ token, rng }, .{});
+     defer exe.deinit();
+ 
+     var sign_buffers = try sign.load(gpa, io, platform, &store);
+     defer Sign.unload(&sign_buffers);
+ 
+-    var rng_buffer = ???;
++    var rng_buffer = try rng.initBuffer(io, platform, 2024);
+     defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
+ 
+     var runner = try exe.runner(gpa);
+@@ -153,11 +166,13 @@
+     // The sign would go on forever: stop at the end of the
+     // sentence (or after 20 tokens, if the model has other ideas).
+     for (0..20) |_| {
+-        // Run the model on `token_buffer`. The token that comes out
+-        // is the token that goes in next: free the old Buffer (it
+-        // was not donated, it is still yours) and keep the new one.
+-        // And mind the dice.
+-        ???
++        var next_buffer: zml.Buffer = undefined;
++        runner.run(io, .{ sign_buffers, token_buffer, rng_buffer }, .{ &next_buffer, &rng_buffer }, .{ .wait = true });
++
++        // The token that came out is the token that goes in next.
++        // (The old one was not donated: it is ours to free.)
++        token_buffer.deinit();
++        token_buffer = next_buffer;
+ 
+         const next_token = try token_buffer.getValue(i32, io);
+         if (next_token == end_token) break;

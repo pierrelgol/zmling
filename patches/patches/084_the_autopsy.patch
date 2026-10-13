@@ -1,0 +1,20 @@
+--- exercises/12_the_exe_files/084_the_autopsy.zig
++++ answers/12_the_exe_files/084_the_autopsy.zig
+@@ -112,7 +112,7 @@
+     };
+     const x: zml.Tensor = .init(.{ .d = 3 }, .f32);
+ 
+-    var exe = try platform.compile(gpa, io, model, ???, .{x}, .{});
++    var exe = try platform.compile(gpa, io, model, .forward, .{x}, .{});
+     defer exe.deinit();
+ 
+     try stdout.print("The Exe has {d} inputs: {f}, {f} and {f}.\n", .{
+@@ -146,7 +146,7 @@
+     var results = try exe.results(gpa);
+     defer results.deinit(gpa);
+ 
+-    args.set(.{ x_buffer, weights });
++    args.set(.{ weights, x_buffer });
+     exe.call(io, args, &results, .{ .wait = true });
+ 
+     var scores = results.get(zml.Buffer);

@@ -1,0 +1,31 @@
+--- exercises/16_casino_royale/111_groundhog_table.zig
++++ answers/16_casino_royale/111_groundhog_table.zig
+@@ -80,10 +80,10 @@
+ 
+ /// Deals five cards, each between 1 and 13, and returns the
+ /// state to deal the next round from.
+-fn dealRound(rng: zml.Tensor.Rng) zml.Tensor {
++fn dealRound(rng: zml.Tensor.Rng) struct { zml.Tensor.Rng, zml.Tensor } {
+     const hand: zml.Shape = .init(.{ .card = 5 }, .f32);
+-    _, const cards = rng.uniform(hand, .{ .min = 1, .max = 14 });
+-    return cards.floor().convert(.i32);
++    const next_rng, const cards = rng.uniform(hand, .{ .min = 1, .max = 14 });
++    return .{ next_rng, cards.floor().convert(.i32) };
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -106,9 +106,13 @@
+     var rng_buffer = try rng.initBuffer(io, platform, 1234);
+     defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
+ 
++    var runner = try exe.runner(gpa);
++    defer runner.deinit(gpa);
++
+     var rounds: [3][5]i32 = undefined;
+     for (&rounds) |*round| {
+-        var hand: zml.Buffer = try exe.eval(gpa, io, .{rng_buffer});
++        var hand: zml.Buffer = undefined;
++        runner.run(io, .{rng_buffer}, .{ &rng_buffer, &hand }, .{ .wait = true });
+         defer hand.deinit();
+ 
+         round.* = try hand.getValue([5]i32, io);

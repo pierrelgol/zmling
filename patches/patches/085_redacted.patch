@@ -1,0 +1,20 @@
+--- exercises/12_the_exe_files/085_redacted.zig
++++ answers/12_the_exe_files/085_redacted.zig
+@@ -107,7 +107,7 @@
+         .weight = scally.weight,
+         .bias = scally.bias,
+         .threshold = 5,
+-        .paranoid = false,
++        .paranoid = true,
+     };
+     const x: zml.Tensor = .init(.{ .d = 3 }, .f32);
+ 
+@@ -126,8 +126,6 @@
+     var weights: zml.Bufferized(Polygraph) = .{
+         .weight = try .fromBytes(io, platform, scally.weight.shape(), std.mem.sliceAsBytes(&[_]f32{ 1, 2, 0.5 })),
+         .bias = try .scalar(io, platform, -1, .f32),
+-        .threshold = 5,
+-        .paranoid = false,
+     };
+     defer zml.Buffer.deinitAll(Polygraph, &weights);
+ 

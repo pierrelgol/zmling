@@ -1,0 +1,30 @@
+--- exercises/04_luggage_tags/029_same_size_different_bag.zig
++++ answers/04_luggage_tags/029_same_size_different_bag.zig
+@@ -69,7 +69,7 @@
+ 
+ /// fees + weights, in that order. (Kevin: "same thing.")
+ fn feesPlusWeights(weights: zml.Tensor, fees: zml.Tensor) zml.Tensor {
+-    return weights.add(fees);
++    return fees.add(weights);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -90,14 +90,14 @@
+     // Each line must use a different comparison. The expected
+     // answers are: true, true, false. Then: true, false, false.
+     try stdout.print("weights vs fees:    dims {}, dims+dtype {}, dims+dtype+tags {}\n", .{
++        weights.shape().eqlDims(fees.shape()),
+         weights.shape().eql(fees.shape()),
+-        weights.shape().eql(fees.shape()),
+-        weights.shape().eql(fees.shape()),
++        weights.shape().eqlWithTags(fees.shape()),
+     });
+     try stdout.print("weights vs serials: dims {}, dims+dtype {}, dims+dtype+tags {}\n", .{
++        weights.shape().eqlDims(serial_numbers.shape()),
+         weights.shape().eql(serial_numbers.shape()),
+-        weights.shape().eql(serial_numbers.shape()),
+-        weights.shape().eql(serial_numbers.shape()),
++        weights.shape().eqlWithTags(serial_numbers.shape()),
+     });
+ 
+     // Kevin's sum compiles. Both ways around.

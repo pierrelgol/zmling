@@ -1,0 +1,11 @@
+--- exercises/07_origami_club/048_same_shape_different_bird.zig
++++ answers/07_origami_club/048_same_shape_different_bird.zig
+@@ -73,7 +73,7 @@
+ 
+ /// One row per member in, one row per round out.
+ fn scoreboard(scores: zml.Tensor) zml.Tensor {
+-    return scores.reshape(.{ .rounds = 3, .members = 2 });
++    return scores.transpose(.{ .rounds, .members });
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

@@ -1,0 +1,25 @@
+--- exercises/15_pay_attention/108_the_gossip_archive.zig
++++ answers/15_pay_attention/108_the_gossip_archive.zig
+@@ -87,8 +87,8 @@
+     /// The archive, with one key and one value {.hd} filed at row `pos`.
+     pub fn updateAt(self: Archive, new_k: zml.Tensor, new_v: zml.Tensor, pos: zml.Tensor) Archive {
+         return .{
+-            .k = ???,
+-            .v = ???,
++            .k = self.k.dynamicUpdateSlice(.{ .k = pos }, new_k),
++            .v = self.v.dynamicUpdateSlice(.{ .k = pos }, new_v),
+         };
+     }
+ };
+@@ -96,9 +96,8 @@
+ /// A mask over the rows of the archive, {.k}: 0 for the rows 0 to `pos`
+ /// (included: a llama hears herself), -inf for the rows that are still empty.
+ fn arrived(pos: zml.Tensor) zml.Tensor {
+-    // Everybody is welcome, even those who are not there.
+-    _ = pos;
+-    return zml.Tensor.zeroes(.init(.{ .k = max_len }, .f32));
++    const row = zml.Tensor.arange(.{ .end = max_len }, pos.dtype()).withTags(.{.k});
++    return row.cmp(.LE, pos).select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
+ }
+ 
+ /// One llama arrives at position `pos`, with her q, k and v: {.hd}.

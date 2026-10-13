@@ -29,10 +29,13 @@
 // model takes seconds to minutes), it has to walk in through
 // the door, as a Buffer.
 //
-// Here is the promised rule about scalars, the only automatic
-// broadcasting ZML does on plain (untagged) tensors:
+// Here is the promised rule about scalars, the one piece of
+// automatic stretching ("broadcasting") you can always count on:
 //
 //     a rank 0 tensor combines with a tensor of ANY shape.
+//
+// (There is some fine print for other shapes. It gets its own
+// chapter, "Broadcast News".)
 //
 // `knocks.mul(volume)` multiplies every element of `knocks` by
 // the one value of `volume`. But a {1} tensor is NOT a scalar,

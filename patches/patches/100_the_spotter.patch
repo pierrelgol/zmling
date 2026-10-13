@@ -1,0 +1,19 @@
+--- exercises/14_heavy_lifting/100_the_spotter.zig
++++ answers/14_heavy_lifting/100_the_spotter.zig
+@@ -97,7 +97,15 @@
+         platform: *const zml.Platform,
+         store: *const zml.io.TensorStore,
+     ) !zml.Bufferized(Rack) {
+-        return ???;
++        var buffers = try zml.mem.bufferize(gpa, Rack, self);
++
++        var loader: zml.io.Loader = try .init(gpa, platform, .default);
++        defer loader.deinit();
++
++        try loader.load(io, Rack, self, &buffers, store, .{});
++        try loader.await(io);
++
++        return buffers;
+     }
+ };
+ 

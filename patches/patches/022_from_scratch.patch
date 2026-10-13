@@ -1,0 +1,20 @@
+--- exercises/03_arithmetic_diner/022_from_scratch.zig
++++ answers/03_arithmetic_diner/022_from_scratch.zig
+@@ -77,14 +77,14 @@
+ 
+ /// Ticket numbers 101, 102, 103, 104, 105, as .i32.
+ fn tickets() zml.Tensor {
+-    return zml.Tensor.arange(.{ .start = ???, .end = ??? }, .i32);
++    return zml.Tensor.arange(.{ .start = 101, .end = 106 }, .i32);
+ }
+ 
+ /// bills + 0.5 * seat number, and at least 3.
+ fn walkingFee(bills: zml.Tensor) zml.Tensor {
+-    const seat_number = zml.Tensor.iota(bills.shape(), .tables);
++    const seat_number = zml.Tensor.iota(bills.shape(), .seats);
+     const house_minimum = zml.Tensor.scalar(3, .f32);
+-    return bills.add(seat_number.scale(0.5)).maximum(house_minimum);
++    return bills.add(seat_number.convert(.f32).scale(0.5)).maximum(house_minimum);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

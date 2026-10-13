@@ -1,0 +1,11 @@
+--- exercises/03_arithmetic_diner/021_no_substitutions.zig
++++ answers/03_arithmetic_diner/021_no_substitutions.zig
+@@ -65,7 +65,7 @@
+ 
+ /// trunc(hours * 1.5 * wage) + bonus, as whole dollars.
+ fn payday(hours: zml.Tensor, wage: zml.Tensor, bonus: zml.Tensor) zml.Tensor {
+-    return hours.scale(1.5).mul(wage).add(bonus);
++    return hours.convert(.f32).scale(1.5).mul(wage).convert(.i32).add(bonus);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

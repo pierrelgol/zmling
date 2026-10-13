@@ -10,9 +10,11 @@ if [ ! -f patches/mkpatch.sh ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ]; then set -- $(ls answers/*/*.zig | sed 's|.*/0*\([0-9]*\)_.*|\1|'); fi
+if [ $# -eq 0 ]; then set -- $(ls answers/*/[0-9]*.zig | sed 's|.*/0*\([0-9]*\)_.*|\1|'); fi
 
 for n in "$@"; do
+    n=${n#0}
+    n=${n#0}
     f=$(ls exercises/*/"$(printf '%03d' "$n")"_*.zig)
     rel=${f#exercises/}
     if [ ! -f "answers/$rel" ]; then

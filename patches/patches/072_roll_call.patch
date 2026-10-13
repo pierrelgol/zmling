@@ -1,0 +1,18 @@
+--- exercises/10_treasure_maps/072_roll_call.zig
++++ answers/10_treasure_maps/072_roll_call.zig
+@@ -62,13 +62,13 @@
+ 
+ /// The loot, richest pirate first.
+ fn richestFirst(loot: zml.Tensor) zml.Tensor {
+-    return loot.sort(.pirate, .{}).values;
++    return loot.sort(.pirate, .{ .descending = true }).values;
+ }
+ 
+ /// The ages of the pirates, in the order of the pay line (richest first).
+ fn agesInLine(loot: zml.Tensor, age: zml.Tensor) zml.Tensor {
+     const order = loot.argsort(.pirate, .{ .descending = true });
+-    return age.gather(.{ .pirate = order }, .{});
++    return age.gather(.{ .pirate = order.rename(.{ .pirate = .rank }) }, .{});
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

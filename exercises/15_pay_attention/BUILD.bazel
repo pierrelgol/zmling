@@ -1,0 +1,3 @@
+load("//zmling/harness:defs.bzl", "zmling_exercises")
+
+zmling_exercises()

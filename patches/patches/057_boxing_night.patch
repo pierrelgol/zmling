@@ -1,0 +1,21 @@
+--- exercises/08_slice_of_life/057_boxing_night.zig
++++ answers/08_slice_of_life/057_boxing_night.zig
+@@ -77,15 +77,15 @@
+ const zml = @import("zml");
+ 
+ fn party(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
+-    return zml.Tensor.concatenate(&.{ margherita, pepperoni }, ???);
++    return zml.Tensor.concatenate(&.{ margherita, pepperoni }, .slices);
+ }
+ 
+ fn delivery(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
+-    return zml.Tensor.concatenate(&.{ margherita, pepperoni }, .slices);
++    return zml.Tensor.stack(&.{ margherita, pepperoni }, 0, .boxes);
+ }
+ 
+ fn tasting(margherita: zml.Tensor, pepperoni: zml.Tensor) zml.Tensor {
+-    return zml.Tensor.stack(&.{ margherita, pepperoni }, 0, .kinds);
++    return zml.Tensor.stack(&.{ margherita, pepperoni }, .last, .kinds);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

@@ -30,9 +30,11 @@ This is the authoring guide. Read `exercises/01_shape_shifters/` and
 2. Run it until the output is right (from `zml/`):
 
    ```sh
-   bazel run --noshow_progress --ui_event_filters=-info,-stdout,-stderr //zmling_answers/<chapter>:NNN 2>&1 | grep -v '^warning'
+   bazel run --disk_cache= --noshow_progress --ui_event_filters=-info,-stdout,-stderr //zmling_answers/<chapter>:NNN 2>&1 | grep -v '^warning'
    ```
 
+   Each linked binary weighs about 1 GB: `--disk_cache=` keeps it out of your Bazel disk cache,
+   and you should delete `zml/bazel-bin/zmling_answers/<chapter>/NNN` when you are done with it.
    A build takes ~15 s. Bazel runs one command at a time per workspace, so build several targets
    in one command when you can (`bazel build //zmling_answers/<chapter>:all`).
 
@@ -96,7 +98,10 @@ Never write an API name from memory.
   `Expected argument 1 to have shape {hours=4,i32}, got {hours=5,i32}`.
 - Shape/dtype mismatches in ops are panics during tracing, not Zig errors:
   `mul expects tensor shapes to match, got {knocks=3,f32} and {1,f32}`.
-- No dtype promotion, and only rank-0 tensors broadcast automatically.
+- No dtype promotion. Rank-0 tensors broadcast automatically; otherwise only size-1 axes of the
+  *right* operand are stretched, and only when both sides have the same tags in the same order
+  (see `binaryOpHelper`). Element-wise ops do not compare tags when the sizes match.
+- `Tensor.any` and `Tensor.all` do not compile at the pinned commit.
 - Shapes print as `{2,3,f32}` / `{h=2,w=3,i32}`, tensors as `Tensor({2,3,f32})`.
   `{any}` on an array prints `{ 1, 2, 3 }`. Don't print a `zml.Slice` with `{f}` (it has a pointer).
 - `Slice.items(T)` does not check `T` against the dtype.

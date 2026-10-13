@@ -1,0 +1,20 @@
+--- exercises/13_layer_cake/092_no_such_struct.zig
++++ answers/13_layer_cake/092_no_such_struct.zig
+@@ -74,14 +74,14 @@
+     eps: f32,
+ 
+     pub fn forward(self: RmsNorm, x: zml.Tensor) zml.Tensor {
+-        const normalized = zml.nn.rmsNorm(x, .cake, self.eps);
+-        return normalized;
++        const normalized = zml.nn.rmsNorm(x, .d, self.eps);
++        return normalized.mul(self.weight.broad(x.shape()));
+     }
+ };
+ 
+ /// Each cake, scaled to a length of 1. Use 1e-12 for eps.
+ fn unitLength(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    return zml.nn.normalizeL2(x, 1e-12);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

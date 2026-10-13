@@ -1,0 +1,30 @@
+--- exercises/10_treasure_maps/074_quiz_buried_treasure.zig
++++ answers/10_treasure_maps/074_quiz_buried_treasure.zig
+@@ -40,7 +40,8 @@
+ 
+ /// Steps 1 and 2: the two best islands that are safe to land on.
+ fn plan(gold: zml.Tensor, sharks: zml.Tensor) zml.Tensor.SortRes {
+-    return ???;
++    const safe = sharks.cmp(.LE, .scalar(3, .i32));
++    return gold.mask(safe, 0).topK(.{ .best = .island }, 2, .{});
+ }
+ 
+ fn howMuch(gold: zml.Tensor, sharks: zml.Tensor) zml.Tensor {
+@@ -53,7 +54,7 @@
+ 
+ /// Step 3: {best=2,role=2}, the landing party for each chosen island.
+ fn landingParties(gold: zml.Tensor, sharks: zml.Tensor, parties: zml.Tensor) zml.Tensor {
+-    return ???;
++    return parties.gather(.{ .island = plan(gold, sharks).indices }, .{});
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -69,7 +70,7 @@
+ 
+     const gold: zml.Tensor = .init(.{ .island = 6 }, .i32);
+     const sharks: zml.Tensor = .init(.{ .island = 6 }, .i32);
+-    const parties: zml.Tensor = ???;
++    const parties: zml.Tensor = .init(.{ .island = 6, .role = 2 }, .i32);
+ 
+     var how_much_exe = try platform.compileFn(gpa, io, howMuch, .{ gold, sharks }, .{});
+     defer how_much_exe.deinit();

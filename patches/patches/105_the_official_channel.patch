@@ -1,0 +1,18 @@
+--- exercises/15_pay_attention/105_the_official_channel.zig
++++ answers/15_pay_attention/105_the_official_channel.zig
+@@ -90,7 +90,14 @@
+ /// Causal self-attention, the short way.
+ /// q, k, v: {.h, .s, .hd} -> {.h, .s, .hd}
+ fn official(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor) zml.Tensor {
+-    return zml.nn.sdpa(q, k, v, .{});
++    const mask = zml.nn.causalAttnMask(.{ .q = q.dim(.s), .k = k.dim(.s) }, q.dtype(), null);
++    const heard = zml.nn.sdpa(
++        q.rename(.{ .s = .q }),
++        k.rename(.{ .s = .k }),
++        v.rename(.{ .s = .k }),
++        .{ .attn_mask = mask },
++    );
++    return heard.rename(.{ .q = .s });
+ }
+ 
+ const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };

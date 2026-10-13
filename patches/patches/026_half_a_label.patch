@@ -1,0 +1,27 @@
+--- exercises/04_luggage_tags/026_half_a_label.zig
++++ answers/04_luggage_tags/026_half_a_label.zig
+@@ -70,7 +70,7 @@
+     const xray: zml.Tensor = .init(.{ 7, 2, 5, 3 }, .f32);
+ 
+     // Label what the manual still says: .bags, then .cm.
+-    const scans = xray.???(.{ .bags, .cm });
++    const scans = xray.withPartialTags(.{ .bags, .cm });
+     try stdout.print("{f}: fully tagged? {}\n", .{ scans, scans.shape().isFullyTagged() });
+ 
+     // Is there a .bags axis? A .days axis?
+@@ -82,13 +82,13 @@
+     // Brenda remembers: the machine keeps one week of scans, so
+     // the first axis is .days. Nobody knows about the second one.
+     // (She suspects it's "left and right". Of what? Exactly.)
+-    const week = scans.withTags(.{ .days, .bags, .cm });
++    const week = scans.withTags(.{ .days, ._, .bags, .cm });
+     try stdout.print("{f}: fully tagged? {}\n", .{ week, week.shape().isFullyTagged() });
+ 
+     try stdout.print("days: axis {?d}, and the mystery axis has {d} of something called '{s}'.\n", .{
+         week.shape().hasTag(.days),
+         // The size of the axis that has no name.
+-        week.dim(._),
++        week.dim(1),
+         week.shape().tag(1),
+     });
+     try stdout.flush();

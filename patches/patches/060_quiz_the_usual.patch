@@ -1,0 +1,22 @@
+--- exercises/08_slice_of_life/060_quiz_the_usual.zig
++++ answers/08_slice_of_life/060_quiz_the_usual.zig
+@@ -50,7 +50,18 @@
+ const zml = @import("zml");
+ 
+ fn theUsual(tray: zml.Tensor, which: zml.Tensor) zml.Tensor {
+-    return ???;
++    const pizza = tray.slice(.pizzas, .dynSingle(which));
++
++    const first_half, const second_half = pizza.chunkExact(.slices, 2);
++
++    const his_box = zml.Tensor.concatenate(&.{
++        first_half.slice(.slices, .{ .step = 2 }),
++        second_half.slice(.slices, .{ .end = -1 }),
++    }, .slices);
++
++    const sample = tray.slices(.{ .pizzas, .slices }, &.{ .single(-1), .{ .start = -5 } });
++
++    return zml.Tensor.stack(&.{ his_box, sample }, 0, .boxes);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

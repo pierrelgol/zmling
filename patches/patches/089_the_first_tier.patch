@@ -1,0 +1,15 @@
+--- exercises/13_layer_cake/089_the_first_tier.zig
++++ answers/13_layer_cake/089_the_first_tier.zig
+@@ -117,10 +117,10 @@
+     // axis that `forward` will contract.
+     const weight: zml.Tensor = .init(.{ .dout = 2, .d = 3 }, .f32);
+     const bias: zml.Tensor = .init(.{ .dout = 2 }, .f32);
+-    const tier: zml.nn.Linear = .init(weight, bias, ???);
++    const tier: zml.nn.Linear = .init(weight, bias, .d);
+ 
+     // Three cakes, three measurements each: flour, sugar, butter.
+-    const cakes: zml.Tensor = .init(.{ 3, 3 }, .f32);
++    const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 3 }, .f32);
+ 
+     var exe = try platform.compile(gpa, io, tier, .forward, .{ cakes, .f32 }, .{});
+     defer exe.deinit();

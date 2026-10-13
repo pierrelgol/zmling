@@ -1,0 +1,31 @@
+--- exercises/16_casino_royale/113_let_it_ride.zig
++++ answers/16_casino_royale/113_let_it_ride.zig
+@@ -94,15 +94,15 @@
+ 
+     const tables = [_]Table{
+         // No dice: the favorite, every time.
+-        .{ .name = "the sure thing", .strategy = .{ .topk = 6 } },
++        .{ .name = "the sure thing", .strategy = .{ .topk = 1 } },
+         // The three best pockets, with the chances the model gave them.
+-        .{ .name = "the honest table", .strategy = .{ .topk = 6, .temperature = 1.0 } },
++        .{ .name = "the honest table", .strategy = .{ .topk = 3, .temperature = 1.0 } },
+         // The three best pockets are candidates, but so cold
+         // that the favorite wins all the same.
+-        .{ .name = "the cold table", .strategy = .{ .topk = 3, .temperature = 100 } },
++        .{ .name = "the cold table", .strategy = .{ .topk = 3, .temperature = 0.01 } },
+         // The three best pockets, so hot that the model's
+         // opinion hardly counts: about a third each.
+-        .{ .name = "the hot table", .strategy = .{ .topk = 3, .temperature = 0.01 } },
++        .{ .name = "the hot table", .strategy = .{ .topk = 3, .temperature = 100 } },
+     };
+ 
+     // One seed for the whole test, one state threaded through
+@@ -125,7 +125,7 @@
+         var counts: [6]u32 = @splat(0);
+         for (0..spins) |_| {
+             var pocket: zml.Buffer = undefined;
+-            runner.run(io, ???, ???, .{ .wait = true });
++            runner.run(io, .{ logits_buffer, rng_buffer }, .{ &pocket, &rng_buffer }, .{ .wait = true });
+             defer pocket.deinit();
+ 
+             counts[@intCast(try pocket.getValue(i32, io))] += 1;

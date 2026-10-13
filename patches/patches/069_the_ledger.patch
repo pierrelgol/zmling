@@ -1,0 +1,16 @@
+--- exercises/10_treasure_maps/069_the_ledger.zig
++++ answers/10_treasure_maps/069_the_ledger.zig
+@@ -59,11 +59,10 @@
+     const capped = loot.clamp(.scalar(5, .i32), .scalar(50, .i32));
+ 
+     // Article 2: -13 where the chest is cursed, `capped` elsewhere.
+-    const paid = ???;
++    const paid = cursed.select(.scalar(-13, .i32), capped);
+ 
+     // Article 3: chests that were not found count for 0.
+-    const lost = found.not();
+-    return paid.mask(lost, 0);
++    return paid.mask(found, 0);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

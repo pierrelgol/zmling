@@ -1,0 +1,11 @@
+--- exercises/09_dot_com_bubble/065_legacy_code.zig
++++ answers/09_dot_com_bubble/065_legacy_code.zig
+@@ -68,7 +68,7 @@
+ 
+ /// For each quarry and each day, the parts to ship. No tags allowed.
+ fn partsNeeded(orders: zml.Tensor, recipes: zml.Tensor) zml.Tensor {
+-    return orders.dotGeneral(recipes, &.{.{ 2, 2 }}, &.{});
++    return orders.dotGeneral(recipes, &.{.{ 2, 1 }}, &.{.{ 0, 0 }});
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

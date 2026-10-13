@@ -1,0 +1,13 @@
+--- exercises/06_reduction_kitchen/042_dish_of_the_day.zig
++++ answers/06_reduction_kitchen/042_dish_of_the_day.zig
+@@ -61,8 +61,8 @@
+ const zml = @import("zml");
+ 
+ /// For each day, the index of the dish that sold the most: {day=5}.
+-fn dishOfTheDay(sales: zml.Tensor) zml.Tensor.ArgMaxRes {
+-    return sales.argMax(.dish);
++fn dishOfTheDay(sales: zml.Tensor) zml.Tensor {
++    return sales.argMax(.dish).indices.squeeze(.dish);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

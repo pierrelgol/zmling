@@ -1,0 +1,11 @@
+--- exercises/09_dot_com_bubble/063_branch_offices.zig
++++ answers/09_dot_com_bubble/063_branch_offices.zig
+@@ -68,7 +68,7 @@
+ 
+ /// For every (office, partner) pair, the dot product of their price lists.
+ fn synergyMatrix(prices: zml.Tensor) zml.Tensor {
+-    return prices.dot(prices, .products);
++    return prices.dot(prices.rename(.{ .office = .partner }), .products);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

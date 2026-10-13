@@ -1,0 +1,19 @@
+--- exercises/15_pay_attention/103_who_listens_to_whom.zig
++++ answers/15_pay_attention/103_who_listens_to_whom.zig
+@@ -75,13 +75,13 @@
+ /// Every listener has exactly 100% to give.
+ fn attentionWeights(q: zml.Tensor, k: zml.Tensor) zml.Tensor {
+     const hd: f32 = @floatFromInt(q.dim(.hd));
+-    const scores = q.dot(k, ???).scale(1.0 / @sqrt(hd));
+-    return scores.softmax(.q);
++    const scores = q.dot(k, .hd).scale(1.0 / @sqrt(hd));
++    return scores.softmax(.k);
+ }
+ 
+ /// What each listener ends up hearing: {.q, .hd}.
+ fn gossip(q: zml.Tensor, k: zml.Tensor, v: zml.Tensor) zml.Tensor {
+-    return attentionWeights(q, k).dot(v, ???);
++    return attentionWeights(q, k).dot(v, .k);
+ }
+ 
+ const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };

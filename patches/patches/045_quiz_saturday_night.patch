@@ -1,0 +1,30 @@
+--- exercises/06_reduction_kitchen/045_quiz_saturday_night.zig
++++ answers/06_reduction_kitchen/045_quiz_saturday_night.zig
+@@ -46,22 +46,23 @@
+ 
+ /// 1. What each table owes: {table=3}.
+ fn bills(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return ???;
++    return orders.mul(prices.broad(orders.shape())).sum(.dish).squeeze(.dish);
+ }
+ 
+ /// 2. The mean of the bills: a scalar.
+ fn averageBill(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return ???;
++    return bills(orders, prices).mean(.table).squeeze(.table);
+ }
+ 
+ /// 3. The index of the most ordered dish: an integer scalar.
+ fn bestSeller(orders: zml.Tensor) zml.Tensor {
+-    return ???;
++    return orders.sum(.table).argMax(.dish).indices.squeeze(.table).squeeze(.dish);
+ }
+ 
+ /// 4. The fraction of the money that each dish brought in: {dish=4}.
+ fn shares(orders: zml.Tensor, prices: zml.Tensor) zml.Tensor {
+-    return ???;
++    const money = orders.mul(prices.broad(orders.shape())).sum(.table);
++    return money.div(money.sum(.dish)).squeeze(.table);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

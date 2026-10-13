@@ -1,0 +1,18 @@
+--- exercises/08_slice_of_life/058_fair_shares.zig
++++ answers/08_slice_of_life/058_fair_shares.zig
+@@ -70,13 +70,13 @@
+ 
+ fn bigFirst(pizza: zml.Tensor) zml.Tensor {
+     // Toddler, brother, cousin.
+-    const shares = pizza.split(.slices, &.{ 1, 3, 3 });
++    const shares = pizza.split(.slices, &.{ 1, 3, 4 });
+ 
+     return zml.Tensor.concatenate(&.{ shares[2], shares[1], shares[0] }, .slices);
+ }
+ 
+ fn twins(pizza: zml.Tensor) zml.Tensor {
+-    const first, const second = ???;
++    const first, const second = pizza.chunkExact(.slices, 2);
+ 
+     return first.sub(second);
+ }

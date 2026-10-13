@@ -1,0 +1,22 @@
+--- exercises/15_pay_attention/106_two_ears.zig
++++ answers/15_pay_attention/106_two_ears.zig
+@@ -66,8 +66,8 @@
+ /// x is used for the queries and for the keys, v for the values.
+ fn listen(x: zml.Tensor, v: zml.Tensor, heads: u32) zml.Tensor {
+     // {.s, .d} -> {.s, .h, .hd}
+-    const x_heads = x.splitAxis(.d, ???);
+-    const v_heads = v.splitAxis(.d, ???);
++    const x_heads = x.splitAxis(.d, .{ .h = heads, .hd = .auto });
++    const v_heads = v.splitAxis(.d, .{ .h = heads, .hd = .auto });
+ 
+     const heard = zml.nn.sdpa(
+         x_heads.rename(.{ .s = .q }),
+@@ -77,7 +77,7 @@
+     );
+ 
+     // {.q, .h, .hd} -> {.s, .d}
+-    return heard.merge(???).rename(.{ .q = .s });
++    return heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
+ }
+ 
+ const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };

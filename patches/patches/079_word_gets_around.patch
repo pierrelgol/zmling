@@ -1,0 +1,11 @@
+--- exercises/11_time_loops/079_word_gets_around.zig
++++ answers/11_time_loops/079_word_gets_around.zig
+@@ -121,7 +121,7 @@
+ fn spreadLooped(factor: zml.Tensor, days: zml.Tensor) zml.Tensor {
+     const end = zml.ops.@"while"(Rumor, .{ .factor = factor }, .{
+         .days_left = days,
+-        .crowd = zml.Tensor.scalar(1, .i32),
++        .crowd = zml.Tensor.scalar(1, .i32).broad(factor.shape()),
+     });
+     return end.crowd;
+ }

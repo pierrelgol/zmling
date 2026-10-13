@@ -1,0 +1,34 @@
+--- exercises/15_pay_attention/109_quiz_the_whole_herd.zig
++++ answers/15_pay_attention/109_quiz_the_whole_herd.zig
+@@ -64,7 +64,21 @@
+ 
+     /// x: {.s, .d} -> {.s, .d}
+     pub fn forward(self: SelfAttention, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        const split = .{ .h = self.heads, .hd = .auto };
++        const q = self.q_proj.forward(x, x.dtype()).splitAxis(.dout, split);
++        const k = self.k_proj.forward(x, x.dtype()).splitAxis(.dout, split);
++        const v = self.v_proj.forward(x, x.dtype()).splitAxis(.dout, split);
++
++        const mask = zml.nn.causalAttnMask(.{ .q = x.dim(.s), .k = x.dim(.s) }, x.dtype(), null);
++        const heard = zml.nn.sdpa(
++            zml.nn.rope(q, null, .{}).rename(.{ .s = .q }),
++            zml.nn.rope(k, null, .{}).rename(.{ .s = .k }),
++            v.rename(.{ .s = .k }),
++            .{ .attn_mask = mask },
++        );
++
++        const merged = heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
++        return x.add(self.o_proj.forward(merged, merged.dtype()).rename(.{ .dout = .d }));
+     }
+ };
+ 
+@@ -93,7 +107,7 @@
+     // Four llamas, four numbers each.
+     const x: zml.Tensor = .init(.{ .s = 4, .d = 4 }, .f32);
+ 
+-    var exe = ???;
++    var exe = try platform.compile(gpa, io, layer, .forward, .{x}, .{});
+     defer exe.deinit();
+ 
+     // "I want to hear about what I am": the identity.

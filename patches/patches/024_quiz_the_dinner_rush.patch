@@ -1,0 +1,16 @@
+--- exercises/03_arithmetic_diner/024_quiz_the_dinner_rush.zig
++++ answers/03_arithmetic_diner/024_quiz_the_dinner_rush.zig
+@@ -40,7 +40,12 @@
+ const zml = @import("zml");
+ 
+ fn register(plates: zml.Tensor, price: zml.Tensor, mood: zml.Tensor) zml.Tensor {
+-    return ???;
++    const bill = plates.convert(.f32).mul(price);
++    const after_coupon = bill.subConstant(10).relu();
++    const tip_factor = mood.sigmoid().scale(0.5).addConstant(1);
++    const whole = after_coupon.mul(tip_factor).ceil().convert(.i32);
++    const table_number = zml.Tensor.arange(.{ .start = 1, .end = 5 }, .i32);
++    return whole.add(table_number);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

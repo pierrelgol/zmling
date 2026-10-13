@@ -1,0 +1,23 @@
+--- exercises/12_the_exe_files/082_raw_footage.zig
++++ answers/12_the_exe_files/082_raw_footage.zig
+@@ -125,11 +125,15 @@
+     }));
+     defer photo_buffer.deinit();
+ 
+-    // Molder's attempt: one eval per field.
+-    var report: zml.Bufferized(Report) = .{
+-        .brightest = try exe.eval(gpa, io, .{photo_buffer}),
+-        .glow = try exe.eval(gpa, io, .{photo_buffer}),
+-    };
++    var args = try exe.args(gpa);
++    defer args.deinit(gpa);
++    var results = try exe.results(gpa);
++    defer results.deinit(gpa);
++
++    args.set(.{photo_buffer});
++    exe.call(io, args, &results, .{ .wait = true });
++
++    var report = results.get(zml.Bufferized(Report));
+     defer report.brightest.deinit();
+     defer report.glow.deinit();
+ 

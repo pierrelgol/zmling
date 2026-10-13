@@ -1,0 +1,20 @@
+--- exercises/10_treasure_maps/071_latitude_longitude.zig
++++ answers/10_treasure_maps/071_latitude_longitude.zig
+@@ -57,7 +57,7 @@
+ 
+ /// The gold under each X.
+ fn dig(sea: zml.Tensor, lats: zml.Tensor, lons: zml.Tensor) zml.Tensor {
+-    return sea.gather(.{ .lon = lons, .lat = lats }, .{});
++    return sea.gather(.{ .lat = lats, .lon = lons }, .{});
+ }
+ 
+ /// For each latitude, the gold at the lookout's favourite longitude.
+@@ -80,7 +80,7 @@
+     const lats: zml.Tensor = .init(.{ .x = 3 }, .i32);
+     const lons: zml.Tensor = .init(.{ .x = 3 }, .i32);
+     // One longitude per latitude. The tag has to say so.
+-    const best_lon: zml.Tensor = .init(.{ .watch = 4 }, .i32);
++    const best_lon: zml.Tensor = .init(.{ .lat = 4 }, .i32);
+ 
+     var dig_exe = try platform.compileFn(gpa, io, dig, .{ sea, lats, lons }, .{});
+     defer dig_exe.deinit();

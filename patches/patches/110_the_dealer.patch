@@ -1,0 +1,22 @@
+--- exercises/16_casino_royale/110_the_dealer.zig
++++ answers/16_casino_royale/110_the_dealer.zig
+@@ -86,8 +86,8 @@
+     const hand: zml.Shape = .init(.{ .card = 5 }, .f32);
+ 
+     // A float in [1, 14), rounded down: 1, 2, ... 13.
+-    _, const first = rng.uniform(hand, .{ .min = 1, .max = 14 });
+-    _, const second = rng.uniform(hand, .{ .min = 1, .max = 14 });
++    const rng_after_first, const first = rng.uniform(hand, .{ .min = 1, .max = 14 });
++    _, const second = rng_after_first.uniform(hand, .{ .min = 1, .max = 14 });
+ 
+     return zml.Tensor.stack(&.{ first, second }, 0, .hand).floor().convert(.i32);
+ }
+@@ -104,7 +104,7 @@
+     defer platform.deinit(gpa, io);
+ 
+     // A placeholder for the state of the generator.
+-    const rng: zml.Tensor.Rng = ???;
++    const rng: zml.Tensor.Rng = .init();
+ 
+     var exe = try platform.compileFn(gpa, io, deal, .{rng}, .{});
+     defer exe.deinit();
