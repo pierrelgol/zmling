@@ -1,0 +1,47 @@
+--- exercises/28_footprints_in_the_snow/190_fresh_snow.zig
++++ answers/28_footprints_in_the_snow/190_fresh_snow.zig
+@@ -118,7 +118,10 @@
+ 
+     /// stride: {.step}, meters walked at each step -> {} meters climbed.
+     pub fn forward(self: Trail, stride: zml.Tensor) zml.Tensor {
+-        return ???;
++        passes += 1;
++        if (zml.Compiler.currentOrNull() != null) sightings += 1;
++
++        return stride.mul(self.slope).sum(.step).squeeze(.step);
+     }
+ };
+ 
+@@ -143,9 +146,9 @@
+     try stdout.print("before the snow, a Compiler on the mountain: {}\n", .{zml.Compiler.currentOrNull() != null});
+ 
+     const trail: Trail = .{ .slope = .init(.{ .step = 4 }, .f32) };
+-    const stride: zml.Tensor = .init(.{ .step = 5 }, .f32);
++    const stride: zml.Tensor = .init(.{ .step = 4 }, .f32);
+ 
+-    var exe = try platform.compile(gpa, io, trail, .forward, .{ stride, stride }, .{});
++    var exe = try platform.compile(gpa, io, trail, .forward, .{stride}, .{});
+     defer exe.deinit();
+ 
+     try stdout.print("after the snow,  a Compiler on the mountain: {}\n", .{zml.Compiler.currentOrNull() != null});
+@@ -156,7 +159,7 @@
+     const weights: zml.Bufferized(Trail) = .{ .slope = slope_buffer };
+ 
+     for (strides, 1..) |walked, hiker| {
+-        var stride_buffer: zml.Buffer = try .fromBytes(io, platform, .init(.{ .step = 2, .half = 2 }, .f32), std.mem.sliceAsBytes(&walked));
++        var stride_buffer: zml.Buffer = try .fromBytes(io, platform, stride.shape(), std.mem.sliceAsBytes(&walked));
+         defer stride_buffer.deinit();
+ 
+         var climbed: zml.Buffer = try exe.eval(gpa, io, .{ weights, stride_buffer });
+@@ -166,7 +169,10 @@
+     }
+ 
+     // The same function, traced again for a longer trail.
+-    var long_exe = ???;
++    const long_trail: Trail = .{ .slope = .init(.{ .step = 6 }, .f32) };
++    const long_stride: zml.Tensor = .init(.{ .step = 6 }, .f32);
++
++    var long_exe = try platform.compile(gpa, io, long_trail, .forward, .{long_stride}, .{});
+     defer long_exe.deinit();
+ 
+     try stdout.print("2 compiles: forward ran {d} times, and saw the Compiler {d} times\n", .{ passes, sightings });

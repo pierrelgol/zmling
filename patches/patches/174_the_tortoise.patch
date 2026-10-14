@@ -1,0 +1,80 @@
+--- exercises/25_the_petting_zoo/174_the_tortoise.zig
++++ answers/25_the_petting_zoo/174_the_tortoise.zig
+@@ -118,20 +118,34 @@
+ 
+ /// The loop: what stays (the fields), what moves (the State).
+ const Walk = struct {
+-    // What stays the same during the walk: three fields.
+-    ???,
++    cell: Cell,
++    /// {.s, .d}: every sign of the path.
++    xs: zml.Tensor,
++    /// i32, rank 0: how many signs to read.
++    length: zml.Tensor,
+ 
+     pub const State = struct {
+-        // What moves: three Tensors.
+-        ???,
++        /// i32, rank 0
++        step: zml.Tensor,
++        /// {.d}
++        h: zml.Tensor,
++        /// {.s, .d}
++        trail: zml.Tensor,
+     };
+ 
+     pub fn cond(self: Walk, state: State) zml.Tensor {
+-        return ???;
++        const length = self.length.minimum(.scalar(self.xs.dim(.s), .i32));
++        return state.step.cmp(.LT, length);
+     }
+ 
+     pub fn body(self: Walk, state: State) State {
+-        return ???;
++        const x = self.xs.slice(.s, .dynSingle(state.step));
++        const h = self.cell.step(x, state.h);
++        return .{
++            .step = state.step.addConstant(1),
++            .h = h,
++            .trail = state.trail.dynamicUpdateSlice(.{ .s = state.step }, h),
++        };
+     }
+ };
+ 
+@@ -147,7 +161,12 @@
+ 
+     /// xs: {.s, .d}, length: i32 rank 0. The loop is in the graph.
+     pub fn looped(self: Tortoise, xs: zml.Tensor, length: zml.Tensor) Memory {
+-        return ???;
++        const end = zml.ops.@"while"(Walk, .{ .cell = self.cell, .xs = xs, .length = length }, .{
++            .step = zml.Tensor.scalar(0, .i32),
++            .h = zml.Tensor.zeroes(xs.shape().drop(.s)),
++            .trail = zml.Tensor.zeroes(xs.shape()),
++        });
++        return .{ .h = end.h, .trail = end.trail };
+     }
+ 
+     /// xs: {.s, .d} -> the last mood {.d}. The loop is in Zig.
+@@ -229,12 +248,19 @@
+     defer xs_buffer.deinit();
+ 
+     // The loop in the graph: one Exe, any number of signs.
+-    ???;
++    var looped_exe = try platform.compile(gpa, io, sheldon, .looped, .{ xs, length }, .{});
++    defer looped_exe.deinit();
++    var runner = try looped_exe.runner(gpa);
++    defer runner.deinit(gpa);
+ 
+     var last_mood: [2]f32 = undefined;
+     for ([_]i32{ 2, 3, 4, 9 }) |n| {
+-        // `n` as a Buffer, and the run.
+-        ???;
++        var length_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
++        defer length_buffer.deinit();
++
++        var memory: zml.Bufferized(Tortoise.Memory) = undefined;
++        runner.run(io, .{ weights, xs_buffer, length_buffer }, .{&memory}, .{ .wait = true });
++        defer zml.Buffer.deinitAll(Tortoise.Memory, &memory);
+ 
+         last_mood = try memory.h.getValue([2]f32, io);
+         try stdout.print("asked for {d} signs, his mood: curious {d:.3}, grumpy {d:.3}\n", .{ n, last_mood[0], last_mood[1] });

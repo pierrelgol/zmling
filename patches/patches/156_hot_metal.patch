@@ -1,0 +1,47 @@
+--- exercises/23_hot_off_the_press/156_hot_metal.zig
++++ answers/23_hot_off_the_press/156_hot_metal.zig
+@@ -268,7 +268,9 @@
+     }
+ 
+     pub fn forward(self: Block, x: zml.Tensor, pos: zml.Tensor, cache: Cache, layer: usize) struct { zml.Tensor, Cache } {
+-        return ???;
++        const heard, const filed = self.attention.forward(rmsNorm(x, self.attention_norm), pos, cache, layer);
++        const h = x.add(heard);
++        return .{ h.add(self.feed_forward.forward(rmsNorm(h, self.ffn_norm))), filed };
+     }
+ };
+ 
+@@ -299,7 +301,10 @@
+ 
+         const logits = rmsNorm(x, self.norm).dot(self.tok_embeddings.weight, .d);
+         const next = logits.argMax(.voc).indices.squeeze(.voc);
+-        return .{ next.convert(.u32), filed };
++        return .{
++            next.convert(.u32).reuseBuffer(tokens),
++            .{ .k = filed.k.reuseBuffer(cache.k), .v = filed.v.reuseBuffer(cache.v) },
++        };
+     }
+ };
+ 
+@@ -340,7 +345,9 @@
+     plate: *zml.Buffer,
+     pos: usize,
+ ) !void {
+-    return ???;
++    var pos_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(pos)), .i32);
++    defer pos_buffer.deinit();
++    runner.run(io, .{ weights, plate.*, pos_buffer, cache.* }, .{ plate, cache }, .{ .wait = true });
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -461,7 +468,9 @@
+     defer hand_pos.deinit();
+ 
+     // `page`: a `Page`, what the raw call gives back for those inputs.
+-    ???;
++    args.set(.{ weights, hand_plate, hand_pos, hand_cache });
++    decode.call(io, args, &results, .{ .wait = true });
++    var page = results.get(Page);
+ 
+     const after_bos = (try page.tokens.getValue([1]u32, io))[0];
+     const melted = if (hand_plate.getValue([1]u32, io)) |_| false else |_| true;

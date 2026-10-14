@@ -1,0 +1,63 @@
+--- exercises/25_the_petting_zoo/173_second_opinions.zig
++++ answers/25_the_petting_zoo/173_second_opinions.zig
+@@ -138,7 +138,12 @@
+ 
+     /// x: {.b, .s, .d}
+     pub fn route(self: Clinic, x: zml.Tensor) Routing {
+-        return ???;
++        const confidence = self.router.forward(x, x.dtype()).softmax(.expert);
++        const top = confidence.topK(.{ .topk = .expert }, self.top_k, .{});
++        return .{
++            .ids = top.indices,
++            .weights = top.values.div(top.values.sum(.topk)),
++        };
+     }
+ 
+     /// The clinic, by hand. x: {.b, .s, .d}
+@@ -148,7 +153,7 @@
+         const up = self.up.gather(.{ .expert = routing.ids }, .{});
+         const down = self.down.gather(.{ .expert = routing.ids }, .{});
+ 
+-        const hidden = x.dot(up, .d);
++        const hidden = x.dot(up, .d).relu();
+         const opinions = hidden.dot(down, .hid);
+ 
+         return .{
+@@ -160,7 +165,16 @@
+ 
+     /// The clinic, by the pantry. x: {.b, .s, .d} -> {.b, .s, .d}
+     pub fn reference(self: Clinic, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        const routing = self.route(x);
++        return zml.moe.forwardMoe(
++            x,
++            routing.ids,
++            routing.weights,
++            .init(self.up, null, .d),
++            .init(self.down, null, .hid),
++            .stablehlo,
++            .{ .activation = .relu, .quantize_input = false, .routing_weight_placement = .after_down },
++        );
+     }
+ };
+ 
+@@ -221,9 +235,16 @@
+     };
+     const x: zml.Tensor = .init(.{ .b = 1, .s = 3, .d = 2 }, .f32);
+ 
+-    // The weights of the clinic, in a `zml.Bufferized(Clinic)` named
+-    // `weights`. Free them at the end.
+-    ???;
++    var weights: zml.Bufferized(Clinic) = .{
++        .router = .{
++            .weight = try .fromBytes(io, platform, clinic.router.weight.shape(), std.mem.sliceAsBytes(&router_weight)),
++            .bias = null,
++            .quantization = null,
++        },
++        .up = try .fromBytes(io, platform, clinic.up.shape(), std.mem.sliceAsBytes(&up_weight)),
++        .down = try .fromBytes(io, platform, clinic.down.shape(), std.mem.sliceAsBytes(&down_weight)),
++    };
++    defer zml.Buffer.deinitAll(Clinic, &weights);
+ 
+     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&symptoms));
+     defer x_buffer.deinit();

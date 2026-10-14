@@ -1,0 +1,68 @@
+--- exercises/27_the_hall_of_mirrors/187_the_twins.zig
++++ answers/27_the_hall_of_mirrors/187_the_twins.zig
+@@ -117,33 +117,31 @@
+     const frame = view.createReplicatedTensor("bias", null);
+     return .{
+         .glass = view.createReplicatedTensor("weight", .{ .dout, .d }),
+-        .frame = .fromShape(frame.shape().withTags(.{.dout})),
++        .frame = frame.withTags(.{.dout}),
+     };
+ }
+ 
+ const Hall = struct {
+     entrance: Mirror,
+     middle: Mirror,
+-    way_out: Mirror,
+ 
+     pub fn init(view: zml.io.TensorStore.View) Hall {
+-        const entrance = mirror(view.withLayer(0));
+         return .{
+-            .entrance = entrance,
++            .entrance = mirror(view.withLayer(0)),
+             .middle = mirror(view.withLayer(1)),
+-            .way_out = entrance,
+         };
+     }
+ 
+     /// In by the entrance, through the middle, out by the entrance.
+     pub fn forward(self: Hall, visitor: zml.Tensor) zml.Tensor {
+-        return self.way_out.forward(self.middle.forward(self.entrance.forward(visitor)));
++        return self.entrance.forward(self.middle.forward(self.entrance.forward(visitor)));
+     }
+ };
+ 
+ /// The key of the file `t` is bound to, or "nothing".
+ fn source(store: *const zml.io.TensorStore, t: zml.Tensor) []const u8 {
+-    return ???;
++    const binding = store.getSourcesById(t.id) orelse return "nothing";
++    return binding.tensors[0].name;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -160,8 +158,11 @@
+     const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
+     defer gpa.free(path);
+ 
+-    // `store`: a registry first, then the store itself.
+-    ???;
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++    defer store.deinit();
+ 
+     const view = store.view().withPrefix("bar");
+ 
+@@ -193,8 +194,10 @@
+     var weights = try zml.mem.bufferize(gpa, Hall, &hall);
+     defer zml.Buffer.deinitAll(Hall, &weights);
+ 
+-    // Fill `weights` from the store.
+-    ???;
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, Hall, &hall, &weights, &store, .{});
++    try loader.await(io);
+ 
+     var guest: zml.Buffer = try .fromBytes(io, platform, visitor.shape(), std.mem.sliceAsBytes(&[_]f32{ 3, 1 }));
+     defer guest.deinit();

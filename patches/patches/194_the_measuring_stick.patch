@@ -1,0 +1,54 @@
+--- exercises/28_footprints_in_the_snow/194_the_measuring_stick.zig
++++ answers/28_footprints_in_the_snow/194_the_measuring_stick.zig
+@@ -108,9 +108,12 @@
+ 
+ /// Panics, at trace time, unless `x` is a {.day, .print} table.
+ fn expectTrail(comptime who: []const u8, x: zml.Tensor) void {
+-    // The message: "{s} expects a {s} table, got {f}", and the
+-    // table it expects is spelled "{day,print}".
+-    return ???;
++    measures += 1;
++    zml.stdx.debug.assert(
++        x.rank() == 2 and x.shape().hasTag(.day) == 0 and x.shape().hasTag(.print) == 1,
++        "{s} expects a {s} table, got {f}",
++        .{ who, "{day,print}", x },
++    );
+ }
+ 
+ const Settle = struct {
+@@ -119,18 +122,21 @@
+ 
+     /// fresh, old: {.day, .print} -> {.day, .print}
+     pub fn forward(self: Settle, fresh: zml.Tensor, old: zml.Tensor) zml.Tensor {
++        expectTrail("Settle", fresh);
++        expectTrail("Settle", old);
++
+         return fresh.sub(old.mul(self.keep.broad(old.shape())));
+     }
+ };
+ 
+ /// fresh: {.day, .print}, notebook: {.print, .day} -> {.day, .print}
+ fn settle(model: Settle, fresh: zml.Tensor, notebook: zml.Tensor) zml.Tensor {
+-    return model.forward(fresh, notebook);
++    return model.forward(fresh, notebook.transpose(.{ .day, .print }));
+ }
+ 
+ /// How many values of `x` are negative: {} i32.
+ fn belowZero(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    return x.cmp(.LT, zml.Tensor.scalar(0, .f32)).convert(.i32).flatten().sum(0).squeeze(0);
+ }
+ 
+ const keep_data = [3]f32{ 1, 2, 0.5 };
+@@ -187,9 +193,9 @@
+     }
+ 
+     // The check on VALUES: a second little program, run on the result.
+-    var below_exe = ???;
++    var below_exe = try platform.compileFn(gpa, io, belowZero, .{zml.Tensor.fromShape(settled.shape())}, .{});
+     defer below_exe.deinit();
+-    var below: zml.Buffer = ???;
++    var below: zml.Buffer = try below_exe.eval(gpa, io, .{settled});
+     defer below.deinit();
+ 
+     try stdout.print("readings below zero: {d}\n", .{try below.getValue(i32, io)});

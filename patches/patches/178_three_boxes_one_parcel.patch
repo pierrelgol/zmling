@@ -1,0 +1,68 @@
+--- exercises/26_the_mail_room/178_three_boxes_one_parcel.zig
++++ answers/26_the_mail_room/178_three_boxes_one_parcel.zig
+@@ -122,19 +122,29 @@
+ 
+ /// "model-00002-of-00003.safetensors" for (2, 3).
+ fn shardName(buffer: []u8, number: usize, total: usize) ![]const u8 {
+-    return ???;
++    return std.fmt.bufPrint(buffer, "model-{d:0>5}-of-{d:0>5}.safetensors", .{ number, total });
+ }
+ 
+ /// How many tensors the index puts in the file `shard`.
+ fn tensorsIn(index: Index, shard: []const u8) usize {
+-    return ???;
++    var n: usize = 0;
++    for (index.weight_map.map.values()) |file| {
++        if (std.mem.eql(u8, file, shard)) n += 1;
++    }
++    return n;
+ }
+ 
+ /// Prints "entry point <name>, <n> tensors, <n> bytes" for the
+ /// repository at `path`.
+ fn summary(gpa: std.mem.Allocator, io: std.Io, stdout: *std.Io.Writer, path: []const u8) !void {
+-    // The repository, `entry_point` (a name), and `registry`.
+-    ???
++    var repo = try zml.safetensors.resolveModelRepo(io, path);
++    defer repo.close(io);
++
++    const file, const entry_point = try zml.safetensors.resolveModelEntrypoint(io, repo);
++    file.close(io);
++
++    var registry: zml.safetensors.TensorRegistry = try .fromRepo(gpa, io, repo);
++    defer registry.deinit();
+ 
+     try stdout.print("entry point {s}, {d} tensors, {d} bytes\n", .{
+         entry_point,
+@@ -145,12 +155,16 @@
+ 
+ fn countLayers(view: View) u32 {
+     var n: u32 = 0;
+-    while (view.withPrefix("layers").withLayer(n).hasKey("")) n += 1;
++    while (view.withPrefix("model").withPrefix("layers").withLayer(n).hasKey("")) n += 1;
+     return n;
+ }
+ 
+ fn missing(registry: *const zml.safetensors.TensorRegistry, names: []const []const u8) usize {
+-    return ???;
++    var n: usize = 0;
++    for (names) |name| {
++        if (!registry.tensors.contains(name)) n += 1;
++    }
++    return n;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -201,10 +215,8 @@
+     summary(gpa, io, stdout, parcels) catch |err| try stdout.print("{}\n", .{err});
+     try stdout.flush();
+ 
+-    // Priya: "the big box is number 2, so I opened that one."
+-    const box = try repo.realPathFileAlloc(io, "model-00002-of-00003.safetensors", gpa);
+-    defer gpa.free(box);
+-    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, box);
++    // The overseas parcel, opened properly.
++    var registry: zml.safetensors.TensorRegistry = try .fromRepo(gpa, io, repo);
+     defer registry.deinit();
+ 
+     try stdout.print("\noverseas, tensor by tensor:\n", .{});

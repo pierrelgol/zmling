@@ -1,0 +1,254 @@
+--- exercises/23_hot_off_the_press/161_quiz_the_front_page.zig
++++ answers/23_hot_off_the_press/161_quiz_the_front_page.zig
+@@ -280,8 +280,163 @@
+     };
+ }
+ 
+-// The press, the pressman, the stops, the page, the printing: yours.
+-???
++/// What one run of the press takes...
++const Input = struct {
++    weights: Llama,
++    tokens: zml.Tensor,
++    pos: zml.Tensor,
++    cache: Cache,
++    dials: zml.nn.DynamicSamplingStrategy,
++    rng: zml.Tensor.Rng,
++};
++
++/// ... and what comes out of it.
++const Output = struct {
++    tokens: zml.Tensor,
++    cache: Cache,
++    rng: zml.Tensor.Rng,
++};
++
++/// tokens: {.s} u32, at positions pos, pos + 1...
++/// Returns, for each position, a token DRAWN after it, in the memory
++/// of `tokens`, the cache, in its own memory, and the dice.
++fn step(input: Input) Output {
++    const model = input.weights;
++    var x = model.tok_embeddings.forward(input.tokens);
++    var filed = input.cache;
++    for (model.layers, 0..) |layer, i| x, filed = layer.forward(x, input.pos, filed, i);
++
++    const logits = rmsNorm(x, model.norm).dot(model.tok_embeddings.weight, .d);
++    const next, const rng = zml.nn.sampleTokensDynamic(logits, input.dials, input.rng);
++    return .{
++        .tokens = next.convert(.u32).reuseBuffer(input.tokens),
++        .cache = .{
++            .k = filed.k.reuseBuffer(input.cache.k),
++            .v = filed.v.reuseBuffer(input.cache.v),
++        },
++        .rng = rng,
++    };
++}
++
++/// The press: an Exe that knows the names of what it takes.
++const Press = zml.FnExe(step);
++
++/// The pressman: a runner with the weights locked in.
++const Pressman = Press.Runner(.{.weights});
++
++const Dials = zml.nn.DynamicSamplingStrategy;
++
++/// What one printing keeps on the device from one run to the next.
++const Desk = struct {
++    cache: zml.Bufferized(Cache),
++    dials: zml.Bufferized(Dials),
++    rng: zml.Bufferized(zml.Tensor.Rng),
++};
++
++/// One run: the tokens of `plate` enter at position `pos`. `plate`,
++/// the cache and the dice are recast in place.
++fn feed(io: std.Io, platform: *zml.Platform, pressman: *Pressman, desk: *Desk, plate: *zml.Buffer, pos: usize) !void {
++    var pos_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(pos)), .i32);
++    defer pos_buffer.deinit();
++    pressman.run(io, .{
++        .inputs = .{ .tokens = plate.*, .pos = pos_buffer, .cache = desk.cache, .dials = desk.dials, .rng = desk.rng },
++        .outputs = .{ .tokens = plate, .cache = &desk.cache, .rng = &desk.rng },
++    }, .{ .wait = true });
++}
++
++/// Why the presses stopped.
++const Stop = enum { the_end, no_paper };
++
++fn isStop(stops: []const u32, token: u32) bool {
++    return std.mem.indexOfScalar(u32, stops, token) != null;
++}
++
++/// The page as Tiny expects it: the start token, then the opening.
++/// The caller frees it.
++fn openPage(gpa: std.mem.Allocator, tokenizer: *const zml.tokenizer.Tokenizer, text: []const u8) ![]u32 {
++    var encoder = try tokenizer.encoder();
++    defer encoder.deinit();
++
++    const start = tokenizer.tokenId("<s>") orelse return error.NoSuchToken;
++    var tokens: std.Io.Writer.Allocating = .initAligned(gpa, .of(u32));
++    errdefer tokens.deinit();
++    try encoder.appendTokens(&tokens.writer, &.{start});
++    try encoder.encode(&tokens.writer, text);
++    return @ptrCast(@alignCast(try tokens.toOwnedSlice()));
++}
++
++/// Everything that does not change from one printing to the next.
++const Shop = struct {
++    gpa: std.mem.Allocator,
++    io: std.Io,
++    platform: *zml.Platform,
++    tokenizer: *const zml.tokenizer.Tokenizer,
++    prefill_man: *Pressman,
++    decode_man: *Pressman,
++    cache_shape: zml.Shape,
++    stops: []const u32,
++
++    /// One printing. `story[0..start]` is the page as it opens; the
++    /// rest of `story` is the paper. With a `tape`, the text goes on
++    /// it as it is written. Returns the length of the story, in
++    /// tokens, and why it is not longer.
++    fn roll(shop: Shop, story: []u32, start: usize, setting: Dials.Opts, tape: ?*std.Io.Writer) !struct { usize, Stop } {
++        std.debug.assert(start <= forme and start < story.len and story.len <= rows);
++        const io = shop.io;
++
++        // An empty cache, the dials, fresh dice.
++        var dials = try Dials.makeBuffers(io, shop.platform, .f32, setting);
++        defer Dials.deinitBuffers(&dials);
++        var desk: Desk = .{
++            .cache = try blankCache(shop.gpa, io, shop.platform, shop.cache_shape),
++            .dials = dials,
++            .rng = try zml.Tensor.Rng.init().initBuffer(io, shop.platform, seed),
++        };
++        defer desk.cache.k.deinit();
++        defer desk.cache.v.deinit();
++        defer zml.Tensor.Rng.deinitBuffer(&desk.rng);
++
++        // A decoder for this text, and for no other.
++        var decoder = try shop.tokenizer.decoder();
++        defer decoder.deinit();
++        var scratch: [64]u8 = undefined;
++        if (tape) |t| {
++            for (story[0..start]) |id| try t.writeAll(try decoder.feedOne(id, &scratch));
++            try t.flush();
++        }
++
++        // The forme.
++        var locked: [forme]u32 = @splat(0);
++        @memcpy(locked[0..start], story[0..start]);
++        var forme_buffer: zml.Buffer = try .fromBytes(io, shop.platform, .init(.{ .s = forme }, .u32), std.mem.sliceAsBytes(&locked));
++        defer forme_buffer.deinit();
++        try feed(io, shop.platform, shop.prefill_man, &desk, &forme_buffer, 0);
++
++        var next: u32 = (try forme_buffer.getValue([forme]u32, io))[start - 1];
++        var plate: zml.Buffer = try .fromBytes(io, shop.platform, .init(.{ .s = 1 }, .u32), std.mem.asBytes(&next));
++        defer plate.deinit();
++
++        var len = start;
++        const why: Stop = while (true) {
++            if (isStop(shop.stops, next)) break .the_end;
++            story[len] = next;
++            len += 1;
++            if (tape) |t| {
++                try t.writeAll(try decoder.feedOne(next, &scratch));
++                try t.flush();
++            }
++            if (len == story.len) break .no_paper;
++            try feed(io, shop.platform, shop.decode_man, &desk, &plate, len - 1);
++            next = (try plate.getValue([1]u32, io))[0];
++        };
++        if (tape) |t| {
++            try t.writeAll(try decoder.finalize(&scratch));
++            try t.writeAll("\n");
++            try t.flush();
++        }
++        return .{ len, why };
++    }
++};
+ 
+ pub fn main(init: std.process.Init) !void {
+     const gpa = init.gpa;
+@@ -317,8 +472,83 @@
+     const model: Llama = try .init(gpa, store.view().withPrefix("_orig_mod"), config);
+     defer gpa.free(model.layers);
+ 
+-    // The weights, the two presses, the three printings.
+-    ???;
++    var weights = try zml.mem.bufferize(gpa, Llama, &model);
++    defer gpa.free(weights.layers);
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Llama, &weights);
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, Llama, &model, &weights, &store, .{});
++    try loader.await(io);
++
++    // The cache: a ghost for the compiler.
++    const cache_shape: zml.Shape = .init(.{
++        .layer = config.n_layers,
++        .k = rows,
++        .h = config.n_kv_heads,
++        .hd = config.dim / config.n_heads,
++    }, .f32);
++    const cache: Cache = .{ .k = .fromShape(cache_shape), .v = .fromShape(cache_shape) };
++    const pos: zml.Tensor = .init(.{}, .i32);
++    const dials: Dials = .init(.f32, type_cases);
++    const rng: zml.Tensor.Rng = .init();
++
++    var prefill: Press = try .compile(gpa, io, platform, .{}, .{.{
++        .weights = model,
++        .tokens = zml.Tensor.init(.{ .s = forme }, .u32),
++        .pos = pos,
++        .cache = cache,
++        .dials = dials,
++        .rng = rng,
++    }});
++    defer prefill.deinit();
++    var prefill_man: Pressman = try .init(&prefill, gpa, .{ .weights = weights });
++    defer prefill_man.deinit(gpa);
++
++    var decode: Press = try .compile(gpa, io, platform, .{}, .{.{
++        .weights = model,
++        .tokens = zml.Tensor.init(.{ .s = 1 }, .u32),
++        .pos = pos,
++        .cache = cache,
++        .dials = dials,
++        .rng = rng,
++    }});
++    defer decode.deinit();
++    var decode_man: Pressman = try .init(&decode, gpa, .{ .weights = weights });
++    defer decode_man.deinit(gpa);
++
++    const stops = [_]u32{
++        tokenizer.tokenId("<s>") orelse return error.NoSuchToken,
++        tokenizer.tokenId("</s>") orelse return error.NoSuchToken,
++    };
++    const shop: Shop = .{
++        .gpa = gpa,
++        .io = io,
++        .platform = platform,
++        .tokenizer = &tokenizer,
++        .prefill_man = &prefill_man,
++        .decode_man = &decode_man,
++        .cache_shape = cache_shape,
++        .stops = &stops,
++    };
++
++    const page = try openPage(gpa, &tokenizer, opening);
++    defer gpa.free(page);
++
++    // The morning edition, on the tape.
++    var morning_paper: [rows]u32 = undefined;
++    @memcpy(morning_paper[0..page.len], page);
++    const morning_len, const morning_stop = try shop.roll(&morning_paper, page.len, .{ .top_k = 1 }, stdout);
++    const morning = morning_paper[0..morning_len];
++
++    // The late edition, twice, off the tape.
++    var late_paper: [2][late_len]u32 = undefined;
++    var late_lens: [2]usize = undefined;
++    for (&late_paper, &late_lens) |*paper, *len| {
++        @memcpy(paper[0..page.len], page);
++        len.*, _ = try shop.roll(paper, page.len, late, null);
++    }
++    const late_story = late_paper[0][0..late_lens[0]];
++    const reprint = late_paper[1][0..late_lens[1]];
+ 
+     try stdout.print("--- morning edition: {d} tokens, and the presses stopped: {s}\n", .{ morning_len, switch (morning_stop) {
+         .the_end => "the story was over",

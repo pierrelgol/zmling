@@ -1,0 +1,4 @@
+load("//zmling/harness:defs.bzl", "zmling_exercises")
+
+# Exercise 187 reads the weights file of chapter 14.
+zmling_exercises(data = ["//zmling/14_heavy_lifting:gym.safetensors"])

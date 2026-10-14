@@ -1,0 +1,111 @@
+--- exercises/28_footprints_in_the_snow/196_quiz_the_cold_case.zig
++++ answers/28_footprints_in_the_snow/196_quiz_the_cold_case.zig
+@@ -50,29 +50,24 @@
+ /// How many times `Case.forward` ran.
+ var traced: usize = 0;
+ 
+-/// The ranger's settings. `main` changes them before each question.
+-var today: i32 = 1;
+-var in_shade: bool = false;
+-
+-/// The ranger's shelf.
+-var shelf: struct { rate: zml.Tensor, threshold: zml.Tensor } = undefined;
+-
+ const Melt = struct {
++    /// {.print}: what the sun takes in a day, shade included.
++    rate: zml.Tensor,
++    days: zml.Tensor,
++
+     pub const State = struct {
+         day: zml.Tensor,
+         depth: zml.Tensor,
+     };
+ 
+     pub fn cond(self: Melt, state: State) zml.Tensor {
+-        _ = self;
+-        return state.day.cmp(.LT, zml.Tensor.scalar(today, .i32));
++        return state.day.cmp(.LT, self.days);
+     }
+ 
+     pub fn body(self: Melt, state: State) State {
+-        _ = self;
+         return .{
+             .day = state.day.addConstant(1),
+-            .depth = state.depth.sub(shelf.rate).relu(),
++            .depth = state.depth.sub(self.rate).relu(),
+         };
+     }
+ };
+@@ -81,27 +76,26 @@
+     /// {.print}: what the sun takes from each print in a day.
+     melt: zml.Tensor,
+ 
+-    /// depth: {.print} f32 -> {.print} f32
+-    pub fn forward(self: Case, depth: zml.Tensor) zml.Tensor {
++    /// depth: {.print} f32, days: {} i32, shade: {} i32 (1 or 0) -> {.print} f32
++    pub fn forward(self: Case, depth: zml.Tensor, days: zml.Tensor, shade: zml.Tensor) zml.Tensor {
+         traced += 1;
+ 
+-        // In the shade, the sun takes half.
+-        var rate = self.melt;
+-        if (in_shade) rate = rate.scale(0.5);
+-        shelf.rate = rate;
++        const in_shade = shade.cmp(.EQ, zml.Tensor.scalar(1, .i32)).broad(self.melt.shape());
++        const rate = in_shade.select(self.melt.scale(0.5), self.melt);
+ 
+         const end = zml.ops.@"while"(
+             Melt,
+-            .{},
++            .{ .rate = rate, .days = days },
+             .{ .day = zml.Tensor.scalar(0, .i32), .depth = depth },
+         );
+         return end.depth;
+     }
+ };
+ 
+-/// left: {.print} f32 -> {} i32, the prints deeper than the threshold.
+-fn visible(left: zml.Tensor) zml.Tensor {
+-    return left.cmp(.GT, shelf.threshold.broad(left.shape())).convert(.i32).sum(.print).squeeze(.print);
++/// left: {.print} f32, threshold: {} f32
++/// -> {} i32, the prints deeper than the threshold.
++fn visible(left: zml.Tensor, threshold: zml.Tensor) zml.Tensor {
++    return left.cmp(.GT, threshold.broad(left.shape())).convert(.i32).sum(.print).squeeze(.print);
+ }
+ 
+ const melt_data = [4]f32{ 2, 5, 4, 1 };
+@@ -128,12 +122,13 @@
+ 
+     const case: Case = .{ .melt = .init(.{ .print = 4 }, .f32) };
+     const depth: zml.Tensor = .init(.{ .print = 4 }, .f32);
++    const days: zml.Tensor = .init(.{}, .i32);
++    const shade: zml.Tensor = .init(.{}, .i32);
+     const threshold: zml.Tensor = .init(.{}, .f32);
+-    shelf.threshold = threshold;
+ 
+-    var case_exe = try platform.compile(gpa, io, case, .forward, .{depth}, .{ .program_name = "the_cold_case" });
++    var case_exe = try platform.compile(gpa, io, case, .forward, .{ depth, days, shade }, .{ .program_name = "the_cold_case" });
+     defer case_exe.deinit();
+-    var visible_exe = try platform.compileFn(gpa, io, visible, .{depth}, .{});
++    var visible_exe = try platform.compileFn(gpa, io, visible, .{ depth, threshold }, .{});
+     defer visible_exe.deinit();
+ 
+     try stdout.print("the case takes {d} inputs, the counting {d}\n", .{ case_exe.input_shapes.len, visible_exe.input_shapes.len });
+@@ -148,12 +143,14 @@
+     defer threshold_buffer.deinit();
+ 
+     for (questions) |question| {
+-        today = question.days;
+-        in_shade = question.shade == 1;
++        var days_buffer: zml.Buffer = try .scalar(io, platform, question.days, .i32);
++        defer days_buffer.deinit();
++        var shade_buffer: zml.Buffer = try .scalar(io, platform, question.shade, .i32);
++        defer shade_buffer.deinit();
+ 
+-        var left: zml.Buffer = try case_exe.eval(gpa, io, .{ weights, depth_buffer });
++        var left: zml.Buffer = try case_exe.eval(gpa, io, .{ weights, depth_buffer, days_buffer, shade_buffer });
+         defer left.deinit();
+-        var count: zml.Buffer = try visible_exe.eval(gpa, io, .{left});
++        var count: zml.Buffer = try visible_exe.eval(gpa, io, .{ left, threshold_buffer });
+         defer count.deinit();
+ 
+         try stdout.print("day {d}, {s}: {any}, {d} deeper than 9.5\n", .{

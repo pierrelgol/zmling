@@ -1,0 +1,70 @@
+--- exercises/27_the_hall_of_mirrors/185_the_other_side.zig
++++ answers/27_the_hall_of_mirrors/185_the_other_side.zig
+@@ -117,15 +117,20 @@
+     bulbs: u8,
+ };
+ 
++const Doors = struct {
++    entry: zml.Tensor,
++    exit: zml.Tensor,
++};
++
+ const Hall = struct {
+     sign: Sign,
+-    doors: [2]zml.Tensor,
+-    corridor: []const Mirror,
++    doors: Doors,
++    corridor: []Mirror,
+ 
+     pub fn forward(self: Hall, visitor: zml.Tensor) zml.Tensor {
+-        var v = visitor.mul(self.doors[0]);
++        var v = visitor.mul(self.doors.entry);
+         for (self.corridor) |mirror| v = mirror.forward(v);
+-        return v.mul(self.doors[1]);
++        return v.mul(self.doors.exit);
+     }
+ };
+ 
+@@ -135,7 +140,9 @@
+     numbers: []const f32,
+ 
+     fn pour(self: *Strip, pane: *zml.Buffer) !void {
+-        return ???;
++        const n = pane.shape().count();
++        pane.* = try .fromBytes(self.io, self.platform, pane.shape(), std.mem.sliceAsBytes(self.numbers[0..n]));
++        self.numbers = self.numbers[n..];
+     }
+ };
+ 
+@@ -170,7 +177,7 @@
+     };
+     const hall: Hall = .{
+         .sign = .{ .text = "MIRRORS", .bulbs = 40 },
+-        .doors = .{ .init(.{ .d = 2 }, .f32), .init(.{ .d = 2 }, .f32) },
++        .doors = .{ .entry = .init(.{ .d = 2 }, .f32), .exit = .init(.{ .d = 2 }, .f32) },
+         .corridor = &corridor,
+     };
+     const visitor: zml.Tensor = .init(.{ .d = 2 }, .f32);
+@@ -200,9 +207,8 @@
+     });
+ 
+     var strip: Strip = .{ .io = io, .platform = platform, .numbers = &glass };
+-    defer zml.Buffer.deinitAll(Hall, &weights);
+-    // Every crate of the back corridor, in order.
+-    ???;
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Hall, &weights);
++    try zml.meta.visit(Strip.pour, &strip, &weights);
+ 
+     try stdout.print("After the pour: full: {}, {d} numbers left on the strip.\n", .{
+         zml.meta.first(zml.Buffer, weights).numShards() != 0,
+@@ -212,8 +218,8 @@
+     var guest: zml.Buffer = try .fromBytes(io, platform, visitor.shape(), std.mem.sliceAsBytes(&[_]f32{ 3, 1 }));
+     defer guest.deinit();
+ 
+-    // `out`: the guest goes through.
+-    ???;
++    var out: zml.Buffer = try exe.eval(gpa, io, .{ weights, guest });
++    defer out.deinit();
+ 
+     try stdout.print("A visitor {{ 3, 1 }} comes out as {any}\n", .{try out.getValue([2]f32, io)});
+     try stdout.flush();

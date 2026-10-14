@@ -1,0 +1,49 @@
+--- exercises/23_hot_off_the_press/155_the_forme.zig
++++ answers/23_hot_off_the_press/155_the_forme.zig
+@@ -208,7 +208,10 @@
+     /// A mask {.q, .k}: 0 where the token at `positions[q]` may look at
+     /// row k of the cache (rows 0 to its own position), -inf elsewhere.
+     fn visible(positions: zml.Tensor, cache_rows: i64) zml.Tensor {
+-        return ???;
++        const shape: zml.Shape = .init(.{ .q = positions.dim(.s), .k = cache_rows }, .i32);
++        const row = zml.Tensor.arange(.{ .end = cache_rows }, .i32).withTags(.{.k}).broad(shape);
++        const me = positions.rename(.{ .s = .q }).broad(shape);
++        return row.cmp(.LE, me).select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
+     }
+ 
+     /// h: {.s, .d}, the tokens at positions pos, pos + 1...
+@@ -283,7 +286,12 @@
+     /// Returns, for EACH of them, the most likely token after it,
+     /// {.s} i32, and the cache with all of them filed.
+     pub fn forward(self: Llama, tokens: zml.Tensor, pos: zml.Tensor, cache: Cache) struct { zml.Tensor, Cache } {
+-        return ???;
++        var x = self.tok_embeddings.forward(tokens);
++        var filed = cache;
++        for (self.layers, 0..) |layer, i| x, filed = layer.forward(x, pos, filed, i);
++
++        const logits = rmsNorm(x, self.norm).dot(self.tok_embeddings.weight, .d);
++        return .{ logits.argMax(.voc).indices.squeeze(.voc), filed };
+     }
+ };
+ 
+@@ -424,14 +432,17 @@
+         try stdout.print("\"{s}\": {d} tokens and {d} blanks\n", .{ opening, len, forme - len });
+ 
+         // `locked`: the forme, [forme]u32. The opening, then blanks.
+-        ???;
++        var locked: [forme]u32 = @splat(0);
++        @memcpy(locked[0..len], story[0..len]);
+ 
+         // The whole forme in one go, at position 0.
+-        story[len] = try feed(gpa, io, platform, &prefill_runner, weights, &cache_buffers, &locked, 0, forme - 1);
++        story[len] = try feed(gpa, io, platform, &prefill_runner, weights, &cache_buffers, &locked, 0, len - 1);
+         len += 1;
+ 
+         // Then one token per run, until the story has `story_len` tokens.
+-        ???;
++        while (len < story_len) : (len += 1) {
++            story[len] = try feed(gpa, io, platform, &decode_runner, weights, &cache_buffers, story[len - 1 .. len], len - 1, 0);
++        }
+ 
+         // A decoder remembers the text before: a new one per story.
+         var decoder = try tokenizer.decoder();

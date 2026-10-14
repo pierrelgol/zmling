@@ -1,0 +1,98 @@
+--- exercises/27_the_hall_of_mirrors/189_quiz_the_grand_tour.zig
++++ answers/27_the_hall_of_mirrors/189_quiz_the_grand_tour.zig
+@@ -110,7 +110,10 @@
+     curved: bool,
+ 
+     pub fn forward(self: Mirror, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        var y = self.glass.dot(x, .d);
++        if (self.frame) |frame| y = y.add(frame);
++        y = y.rename(.{ .out = .d });
++        return if (self.curved) y.relu() else y;
+     }
+ };
+ 
+@@ -128,14 +131,58 @@
+     twins: [2]zml.Tensor,
+ 
+     pub fn forward(self: Hall, visitor: zml.Tensor) zml.Tensor {
+-        return ???;
++        var v = visitor.mul(self.doors.entry);
++        for (self.corridor) |mirror| v = mirror.forward(v);
++        return v.mul(self.twins[0]).add(self.twins[1]).mul(self.doors.exit);
+     }
+ };
+ 
+-// TODO: `Report`, with its `walk`.
++const Report = struct {
++    out: *std.Io.Writer,
++    shapes: [32]zml.Shape = undefined,
++    panes: usize = 0,
++    numbers: usize = 0,
++
++    const Error = std.Io.Writer.Error || std.fmt.BufPrintError;
++
++    fn walk(self: *Report, path: []const u8, v: anytype) Error!void {
++        const T = @TypeOf(v);
++        if (T == zml.Tensor) {
++            try self.out.print("{d:>3}  {s:<24} {d:>3}  {f}\n", .{ self.panes, path, v.count(), v.shape() });
++            self.shapes[self.panes] = v.shape();
++            self.panes += 1;
++            self.numbers += v.count();
++            return;
++        }
++
++        var buf: [64]u8 = undefined;
++        switch (@typeInfo(T)) {
++            .@"struct" => |info| {
++                if (@hasDecl(T, "zml_no_meta_visit")) return;
++                inline for (info.field_names) |name| {
++                    try self.walk(try std.fmt.bufPrint(&buf, "{s}.{s}", .{ path, name }), @field(v, name));
++                }
++            },
++            .array => for (v, 0..) |item, i| {
++                try self.walk(try std.fmt.bufPrint(&buf, "{s}[{d}]", .{ path, i }), item);
++            },
++            .pointer => |info| if (info.size == .slice) {
++                for (v, 0..) |item, i| {
++                    try self.walk(try std.fmt.bufPrint(&buf, "{s}[{d}]", .{ path, i }), item);
++                }
++            },
++            .optional => if (v) |inside| try self.walk(path, inside),
++            else => {},
++        }
++    }
++};
+ 
+ fn sameShapes(a: []const zml.Shape, b: []const zml.Shape) bool {
+-    return ???;
++    if (a.len != b.len) return false;
++    for (a, b) |x, y| {
++        if (!x.eql(y)) return false;
++    }
++    return true;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -166,11 +213,16 @@
+ 
+     try stdout.print("{s}, pane by pane:\n", .{hall.name});
+ 
+-    // `report`: the register of "hall", then of "visitor".
+-    // `register`: the Shapes it noted, no more than it found.
+-    // `walked`: what `zml.meta` collects from the same two.
+-    // `exe`.
+-    ???;
++    var report: Report = .{ .out = stdout };
++    try report.walk("hall", hall);
++    try report.walk("visitor", visitor);
++    const register = report.shapes[0..report.panes];
++
++    const walked = try zml.meta.collectAlloc(zml.Tensor.shape, {}, gpa, &.{ hall, visitor });
++    defer gpa.free(walked);
++
++    var exe = try platform.compile(gpa, io, hall, .forward, .{visitor}, .{});
++    defer exe.deinit();
+ 
+     try stdout.print("{d} panes, {d} numbers.\n", .{ report.panes, report.numbers });
+     try stdout.print("`zml.meta` agrees: {}\n", .{sameShapes(register, walked)});

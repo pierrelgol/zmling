@@ -1,0 +1,41 @@
+--- exercises/25_the_petting_zoo/170_the_short_queue.zig
++++ answers/25_the_petting_zoo/170_the_short_queue.zig
+@@ -112,14 +112,14 @@
+ /// The attention mask {.b, .s} (i32, 1 real, 0 padding) as a mask over
+ /// the keys {.b, .k}, f32: 0 for a real key, -inf for a padded one.
+ fn keyPadding(attention_mask: zml.Tensor) zml.Tensor {
+-    return ???;
++    const real = attention_mask.rename(.{ .s = .k }).cmp(.EQ, .scalar(1, attention_mask.dtype()));
++    return real.select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
+ }
+ 
+ /// Scores {.b, .q, .k}, already masked -> weights, each row sums to 1.
+ /// Or to 0, when there is nobody to listen to.
+ fn weigh(scores: zml.Tensor) zml.Tensor {
+-    const e = scores.exp();
+-    return e.div(e.sum(.k));
++    return scores.softmax(.k);
+ }
+ 
+ /// One round: every animal becomes the blend of what she may hear.
+@@ -142,7 +142,8 @@
+ fn gossip(x: zml.Tensor, attention_mask: zml.Tensor) Barn {
+     const n = x.dim(.s);
+     const table: zml.Shape = .init(.{ .b = x.dim(.b), .q = n, .k = n }, .f32);
+-    const mask = keyPadding(attention_mask).broad(table);
++    const causal = zml.nn.causalAttnMask(.{ .q = n, .k = n }, .f32, null);
++    const mask = causal.broad(table).add(keyPadding(attention_mask).broad(table));
+ 
+     var heard = x;
+     for (0..rounds) |_| heard = round(heard, mask);
+@@ -224,8 +225,8 @@
+     const alone_x: zml.Tensor = .init(.{ .b = 1, .s = 2, .d = 2 }, .f32);
+     const alone_mask: zml.Tensor = .init(.{ .b = 1, .s = 2 }, .i32);
+ 
+-    // `gossip` again, for this shape.
+-    ???;
++    var alone_exe = try platform.compileFn(gpa, io, gossip, .{ alone_x, alone_mask }, .{});
++    defer alone_exe.deinit();
+ 
+     var alone_x_buffer: zml.Buffer = try .fromBytes(io, platform, alone_x.shape(), std.mem.sliceAsBytes(&short_queue));
+     defer alone_x_buffer.deinit();

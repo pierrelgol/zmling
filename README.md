@@ -85,6 +85,13 @@ Everything ZML logs goes to stderr and is ignored, so feel free to add `std.debu
 | 19 | Once Upon a Time | porting a decoder (TinyStories-1M, a GPT-Neo): read the author's code, then write a story |
 | 20 | The Autopsy | debugging a port that runs and writes garbage: reference activations, layer by layer |
 | 21 | The Graduation | a whole Llama 2 (stories260K) from its author's `model.py`: RoPE, grouped-query attention, KV cache |
+| 22 | The Watchmaker | numerics: f32 / f16 / bf16, `bitCast`, stagnating sums, NaN and overflow, integer traps, `reducePrecision` |
+| 23 | Hot Off the Press | the production generation loop: padded prefill and decode Exes, buffer donation, `FnExe` with baked weights, stop tokens, streaming decode, run-time sampling settings |
+| 24 | Window Shopping | convolutions by hand, then `conv1d` / `conv2d` (stride, padding, dilation, groups, NCHW vs NHWC), pooling, resizing, a LeNet-style CNN |
+| 25 | The Petting Zoo | blocks real ports need: pooling heads and cosine ranking, padding masks, cross-attention, positional encodings, mixture of experts, recurrence in the graph |
+| 26 | The Mail Room | the plumbing before the first tensor: command-line flags, HuggingFace config quirks, sharded checkpoints, the virtual file system, Loader options |
+| 27 | The Hall of Mirrors | under the Tensor API: `zml.meta.visit`, `mapAlloc`, `Bufferized`, `Tensor.id`, and how a struct of Tensors becomes an ordered list of Exe inputs |
+| 28 | Footprints in the Snow | what a compile call does: the three times, the thread-local Compiler, Tensors as handles, constants vs arguments, blocks and captures, source locations, reading a failed compile |
 
 ## How it works
 

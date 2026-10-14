@@ -160,3 +160,30 @@ Never write an API name from memory.
 - `zml.nn.sdpa` divides by `sqrt(head_dim)` unless `.scale` is given, and accepts fewer
   key/value heads than query heads. `zml.nn.rope` defaults to the `.real_im_pass` layout (HF
   `rotate_half`); llama2.c and Meta's code need `.interleaved`.
+
+## Chapters 22-25: verified facts
+
+- Numerics (22). `x.reducePrecision(5, 10)` / `(8, 7)` equal `convert(.f16)` / `convert(.bf16)` and
+  back, bit for bit, except that `reducePrecision` has no subnormals (below 6.1e-5 an f16 "by
+  file" is 0). Float to int `convert` truncates toward zero and saturates; int to int wraps.
+  `Tensor.sum`, `cumulativeSum` and a chain of `add` give three different results in bf16: print
+  only the chain. `{d}` prints NaN as `-nan`: print counts (`x.cmp(.NE, x)`, `isFinite().not()`,
+  then `.convert(.i32)` and `sum`) or go through `std.math.isNan`. `expectClose` refuses two
+  different dtypes. An integer literal that an f32 cannot hold (`16777217`) is a Zig compile error.
+- Generation loop (23). Reading a donated Buffer returns `error.InvalidArgument`; `deinit` on it is
+  right after a raw `exe.call` and a segfault after a runner. `Rng.update` donates the Rng state by
+  itself. `FnExe` baked fields must be the first fields of the input struct. The sentencepiece
+  decoder's `feedOne` ignores its buffer and returns its own memory, `finalize` returns nothing,
+  and a reused decoder leaks the previous text. `sampleTokensDynamic` clamps `top_k` to
+  `max_top_k` without a word. A scatter with rank-0 indices is rewritten to `dynamicUpdateSlice`.
+- Convolutions (24). `conv1d` / `conv2d` / `maxPool*` / `nn.upsample` ignore tags and work by
+  position (NCHW, OIHW by default): an NHWC input can run silently and give wrong numbers. A
+  channel or group mismatch panics with only `Invalid inputs tensor.zig@convolution:1106`.
+  `conv2d` padding takes 1 or 4 values. `maxPool1d` has no default `window_strides`.
+  `nn.resizeBilinear` takes sizes (not factors) and works by tag. `nn.resizeBicubic` is broken at
+  the pinned commit: do not use it.
+- Building blocks (25). `zml.moe.Backend.auto` fails on CPU (`error.UnimplementedMoEBackend`);
+  `.stablehlo` works and wants `{.b,.s,.d}` input and `[expert, out, in]` weights.
+  `nn.normalizeL2` always works on the last axis. `dynSingle` past the end returns wrong numbers
+  without a panic. The context of `ops.while` may hold `zml.nn.Linear` structs.
+- `zig fmt` cannot parse `???`: format the answer, then derive the exercise from it.

@@ -1,0 +1,91 @@
+--- exercises/28_footprints_in_the_snow/193_the_snow_cave.zig
++++ answers/28_footprints_in_the_snow/193_the_snow_cave.zig
+@@ -113,25 +113,31 @@
+     return zml.Compiler.current().scopes.len;
+ }
+ 
+-/// Ingrid's shelf: filled by `Slope.forward`, before the loop.
+-var shelf: struct { melt: zml.Tensor, days: zml.Tensor, storm_day: zml.Tensor } = undefined;
+-
+ /// One day: a storm, or the sun.
+ const Weather = struct {
+     depth: zml.Tensor,
++    melt: zml.Tensor,
+ 
+     /// The storm: 10 everywhere.
+     pub fn onTrue(self: Weather) zml.Tensor {
++        seen.branch = stackDepth();
++        traced.branches += 1;
+         return self.depth.addConstant(10);
+     }
+ 
+     /// The sun: each print loses its `melt`, down to zero.
+     pub fn onFalse(self: Weather) zml.Tensor {
+-        return self.depth.sub(shelf.melt);
++        seen.branch = stackDepth();
++        traced.branches += 1;
++        return self.depth.sub(self.melt).relu();
+     }
+ };
+ 
+ const Thaw = struct {
++    melt: zml.Tensor,
++    days: zml.Tensor,
++    storm_day: zml.Tensor,
++
+     pub const State = struct {
+         day: zml.Tensor,
+         depth: zml.Tensor,
+@@ -140,17 +146,15 @@
+     pub fn cond(self: Thaw, state: State) zml.Tensor {
+         seen.cond = stackDepth();
+         traced.cond += 1;
+-        _ = self;
+-        return state.day.cmp(.LT, shelf.days);
++        return state.day.cmp(.LT, self.days);
+     }
+ 
+     pub fn body(self: Thaw, state: State) State {
+         seen.body = stackDepth();
+         traced.body += 1;
+ 
+-        _ = self;
+-        const is_storm = state.day.cmp(.EQ, shelf.storm_day);
+-        const depth = zml.ops.@"if"(Weather, .{ .depth = state.depth }, is_storm);
++        const is_storm = state.day.cmp(.EQ, self.storm_day);
++        const depth = zml.ops.@"if"(Weather, .{ .depth = state.depth, .melt = self.melt }, is_storm);
+         return .{ .day = state.day.addConstant(1), .depth = depth };
+     }
+ };
+@@ -163,11 +167,9 @@
+     pub fn forward(self: Slope, depth: zml.Tensor, days: zml.Tensor, storm_day: zml.Tensor) zml.Tensor {
+         seen.forward = stackDepth();
+ 
+-        shelf = .{ .melt = self.melt, .days = days, .storm_day = storm_day };
+-
+         const end = zml.ops.@"while"(
+             Thaw,
+-            .{},
++            .{ .melt = self.melt, .days = days, .storm_day = storm_day },
+             .{ .day = zml.Tensor.scalar(0, .i32), .depth = depth },
+         );
+         return end.depth;
+@@ -219,8 +221,16 @@
+     }
+ 
+     // 6 days, and the storm on day 2 (the third day: days start at 0).
+-    // It ends with:
+-    //     try stdout.print("6 days, storm on day 2:  {any}\n", .{try left.getValue([4]f32, io)});
++    {
++        var days_buffer: zml.Buffer = try .scalar(io, platform, 6, .i32);
++        defer days_buffer.deinit();
++        var storm_buffer: zml.Buffer = try .scalar(io, platform, 2, .i32);
++        defer storm_buffer.deinit();
++
++        var left: zml.Buffer = try exe.eval(gpa, io, .{ weights, depth_buffer, days_buffer, storm_buffer });
++        defer left.deinit();
++        try stdout.print("6 days, storm on day 2:  {any}\n", .{try left.getValue([4]f32, io)});
++    }
+ 
+     try stdout.print("after 9 days in the cave, body was traced {d} time\n", .{traced.body});
+     try stdout.flush();

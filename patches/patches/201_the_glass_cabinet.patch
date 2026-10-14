@@ -1,0 +1,37 @@
+--- exercises/29_lost_property/201_the_glass_cabinet.zig
++++ answers/29_lost_property/201_the_glass_cabinet.zig
+@@ -134,7 +134,7 @@
+ 
+ /// Every window calls its next ticket, in place.
+ fn nextPlease(board: zml.Tensor) zml.Tensor {
+-    return ???;
++    return board.addConstant(1).reuseBuffer(board);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -167,7 +167,7 @@
+     const numbers = board.view(i32);
+ 
+     // Round 1.
+-    ???;
++    numbers.fillIota(10, 5);
+     try printRound(gpa, io, stdout, 1, &waiting_exe, board, last);
+ 
+     // Round 2: window 2 jumps to ticket 41.
+@@ -175,7 +175,7 @@
+     try printRound(gpa, io, stdout, 2, &waiting_exe, board, last);
+ 
+     // Round 3.
+-    numbers.slice(2, null).fill(0);
++    numbers.slice(0, 2).fill(0);
+     try printRound(gpa, io, stdout, 3, &waiting_exe, board, last);
+ 
+     try stdout.print("uploads since the board was hung: 0\n", .{});
+@@ -192,6 +192,7 @@
+ 
+     for (0..3) |_| {
+         caller.run(io, .{counter.buffer}, .{&counter.buffer}, .{});
++        try counter.await(io);
+         try stdout.print("next, please: {f}\n", .{&counter});
+     }
+ 

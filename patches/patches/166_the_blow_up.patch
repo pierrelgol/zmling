@@ -1,0 +1,57 @@
+--- exercises/24_window_shopping/166_the_blow_up.zig
++++ answers/24_window_shopping/166_the_blow_up.zig
+@@ -100,19 +100,20 @@
+ /// Twice as big, nearest neighbour.
+ /// thumb: {.b, .c, .h, .w} -> {.b, .c, .h, .w}
+ fn blowUp(thumb: zml.Tensor) zml.Tensor {
+-    return zml.nn.upsample(thumb, .{ .mode = .nearest, .scale_factor = &.{2} });
++    const big = zml.nn.upsample(thumb, .{ .mode = .nearest, .scale_factor = &.{2} });
++    return big.withTags(.{ .b, .c, .h, .w });
+ }
+ 
+ /// Twice as big, bilinear: a poster of 4 x 4.
+ /// thumb: {.b, .c, .h = 2, .w = 2} -> {.b, .c, .h = 4, .w = 4}
+ fn smooth(thumb: zml.Tensor) zml.Tensor {
+-    return zml.nn.resizeBilinear(thumb, .{ .h = 2, .w = 2 }, .{});
++    return zml.nn.resizeBilinear(thumb, .{ .h = 4, .w = 4 }, .{});
+ }
+ 
+ /// Twice as big, nearest neighbour, for a photo that comes
+ /// channels last. photo: {.b, .h, .w, .c} -> {.b, .h, .w, .c}
+ fn blowUpPhoto(photo: zml.Tensor) zml.Tensor {
+-    return ???;
++    return blowUp(photo.transpose(.{ .b, .c, .h, .w })).transpose(.{ .b, .h, .w, .c });
+ }
+ 
+ /// Half the size, by keeping one pixel out of two.
+@@ -128,7 +129,14 @@
+ /// Half the size, by averaging every 2 x 2 block.
+ /// wallpaper: {.b, .c, .h, .w}
+ fn average(wallpaper: zml.Tensor) zml.Tensor {
+-    return ???;
++    const sums = zml.ops.reduceWindow(1, .{wallpaper}, .{zml.Tensor.scalar(0, wallpaper.dtype())}, .{
++        .window_dimensions = &.{ 1, 1, 2, 2 },
++        .window_strides = &.{ 1, 1, 2, 2 },
++        .base_dilations = &.{ 1, 1, 1, 1 },
++        .window_dilations = &.{ 1, 1, 1, 1 },
++        .padding = &.{ .{ 0, 0 }, .{ 0, 0 }, .{ 0, 0 }, .{ 0, 0 } },
++    }, &plus);
++    return sums[0].divByConst(4);
+ }
+ 
+ /// Prints `name`, the shape, and the pixels, one row per line.
+@@ -195,9 +203,11 @@
+     defer shrunk.deinit();
+     try show(stdout, gpa, io, "the stripes, shrunk", shrunk, 2);
+ 
+-    // The stripes again, through `average` this time. Show them
+-    // under the name "the stripes, averaged", 2 pixels per row.
+-    ???;
++    var average_exe = try platform.compileFn(gpa, io, average, .{wallpaper}, .{});
++    defer average_exe.deinit();
++    var averaged = try average_exe.eval(gpa, io, .{wallpaper_buffer});
++    defer averaged.deinit();
++    try show(stdout, gpa, io, "the stripes, averaged", averaged, 2);
+ 
+     try stdout.flush();
+ }

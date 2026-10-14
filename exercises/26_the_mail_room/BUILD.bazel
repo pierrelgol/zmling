@@ -1,0 +1,9 @@
+load("//zmling/harness:defs.bzl", "zmling_exercises")
+
+# Tiny model repositories, written by make_fixtures.py.
+ASSETS = glob(["parcels/**"])
+
+# The answers binaries read the very same files, hence the export.
+exports_files(ASSETS)
+
+zmling_exercises(data = ASSETS)

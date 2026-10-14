@@ -1,0 +1,44 @@
+--- exercises/28_footprints_in_the_snow/192_carved_in_ice.zig
++++ answers/28_footprints_in_the_snow/192_carved_in_ice.zig
+@@ -93,8 +93,8 @@
+ 
+ /// gaits: {.print} i32 -> {.print} f32, the stride of each print.
+ fn strides(gaits: zml.Tensor) zml.Tensor {
+-    const table = ???;
+-    return ???;
++    const table = zml.Tensor.constantTensor(.init(.{ .gait = 4 }, .f32), std.mem.sliceAsBytes(&gait_strides));
++    return table.gather(.{ .gait = gaits }, .{});
+ }
+ 
+ /// gaits: {.print} i32 -> {.print} f32
+@@ -104,7 +104,7 @@
+ 
+ /// gaits: {.print} i32, camp: {} f32 -> {.print} f32
+ fn surveyed(gaits: zml.Tensor, camp: zml.Tensor) zml.Tensor {
+-    return ???;
++    return strides(gaits).cumulativeSum(.print).add(camp);
+ }
+ 
+ const trail = [5]i32{ 1, 1, 3, 0, 2 };
+@@ -125,7 +125,7 @@
+ 
+     var carved_exe = try platform.compileFn(gpa, io, carved, .{gaits}, .{});
+     defer carved_exe.deinit();
+-    var surveyed_exe = ???;
++    var surveyed_exe = try platform.compileFn(gpa, io, surveyed, .{ gaits, camp }, .{});
+     defer surveyed_exe.deinit();
+ 
+     try stdout.print("carved: {d} input. surveyed: {d} inputs.\n", .{ carved_exe.input_shapes.len, surveyed_exe.input_shapes.len });
+@@ -161,8 +161,10 @@
+         try stdout.print("  carved:        {any}\n", .{try a.getValue([5]f32, io)});
+         try stdout.print("  surveyed:      {any}\n", .{try b.getValue([5]f32, io)});
+ 
+-        // A constant changes when...
+-        var c: zml.Buffer = try carved_exe.eval(gpa, io, .{gaits_buffer});
++        // A constant changes when the function is traced again.
++        var recarved_exe = try platform.compileFn(gpa, io, carved, .{gaits}, .{});
++        defer recarved_exe.deinit();
++        var c: zml.Buffer = try recarved_exe.eval(gpa, io, .{gaits_buffer});
+         defer c.deinit();
+ 
+         try stdout.print("  carved again:  {any}\n", .{try c.getValue([5]f32, io)});

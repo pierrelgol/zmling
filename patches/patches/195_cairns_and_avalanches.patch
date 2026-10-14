@@ -1,0 +1,61 @@
+--- exercises/28_footprints_in_the_snow/195_cairns_and_avalanches.zig
++++ answers/28_footprints_in_the_snow/195_cairns_and_avalanches.zig
+@@ -148,9 +148,6 @@
+ /// What stays in the pack on each of the three legs.
+ const leg_factors = [3]f32{ 0.5, 0.5, 2 };
+ 
+-/// What was eaten on the last traced day. Filled by `Rations.body`.
+-var pocket: zml.Tensor = undefined;
+-
+ const Rations = struct {
+     ration: zml.Tensor,
+     days: zml.Tensor,
+@@ -158,6 +155,7 @@
+     pub const State = struct {
+         day: zml.Tensor,
+         pack: zml.Tensor,
++        eaten: zml.Tensor,
+     };
+ 
+     pub fn cond(self: Rations, state: State) zml.Tensor {
+@@ -168,10 +166,10 @@
+         cairns.in_camp = cairnStanding();
+ 
+         const eaten = state.pack.minimum(self.ration);
+-        pocket = eaten;
+         return .{
+             .day = state.day.addConstant(1),
+             .pack = state.pack.sub(eaten),
++            .eaten = eaten,
+         };
+     }
+ };
+@@ -187,6 +185,7 @@
+         var x = pack;
+         for (leg_factors, 0..) |factor, i| {
+             compiler.pushLocationFmt(@src(), "leg[{d}]", .{i});
++            defer compiler.popLocation();
+ 
+             if (cairnStanding()) cairns.on_the_legs += 1;
+             x = x.scale(factor);
+@@ -196,9 +195,9 @@
+         const end = zml.ops.@"while"(
+             Rations,
+             .{ .ration = self.ration, .days = days },
+-            .{ .day = zml.Tensor.scalar(0, .i32), .pack = x },
++            .{ .day = zml.Tensor.scalar(0, .i32), .pack = x, .eaten = zml.Tensor.zeroes(x.shape()) },
+         );
+-        return end.pack.add(pocket);
++        return end.pack.add(end.eaten);
+     }
+ };
+ 
+@@ -220,7 +219,7 @@
+     const pack: zml.Tensor = .init(.{ .item = 4 }, .f32);
+     const days: zml.Tensor = .init(.{}, .i32);
+ 
+-    const options: zml.Compiler.Options = .{};
++    const options: zml.Compiler.Options = .{ .program_name = "the_hike" };
+     var exe = try platform.compile(gpa, io, hike, .forward, .{ pack, days }, options);
+     defer exe.deinit();
+ 

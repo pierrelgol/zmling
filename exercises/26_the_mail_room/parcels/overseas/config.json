@@ -1,0 +1,23 @@
+{
+  "_name_or_path": "/mnt/scratch/kenji/run_0412/final",
+  "architectures": [
+    "ConveyorForRouting"
+  ],
+  "model_type": "conveyor",
+  "vocab_size": 8,
+  "hidden_size": 8,
+  "num_hidden_layers": 2,
+  "hidden_act": "relu",
+  "initializer_range": 0.02,
+  "bos_token_id": 0,
+  "eos_token_id": [
+    6,
+    7
+  ],
+  "pad_token_id": null,
+  "max_length": null,
+  "tie_word_embeddings": false,
+  "torch_dtype": "float16",
+  "transformers_version": "4.51.3",
+  "use_cache": true
+}

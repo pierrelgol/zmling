@@ -1,0 +1,54 @@
+--- exercises/28_footprints_in_the_snow/191_plaster_casts.zig
++++ answers/28_footprints_in_the_snow/191_plaster_casts.zig
+@@ -113,19 +113,16 @@
+ fn morning(depth: zml.Tensor, wind: zml.Tensor) zml.Tensor {
+     const reading = depth.add(wind);
+ 
+-    notebook.depth_has_value = ???;
+-    notebook.wind_has_value = ???;
+-    notebook.reading_has_value = ???;
++    notebook.depth_has_value = depth._value != null;
++    notebook.wind_has_value = wind._value != null;
++    notebook.reading_has_value = reading._value != null;
+ 
+     return reading;
+ }
+ 
+-/// Ingrid's shelf: the `wind` placeholder, put there by `main`.
+-var shelf: zml.Tensor = undefined;
+-
+-/// depth: {.print} -> {.print}
+-fn evening(depth: zml.Tensor) zml.Tensor {
+-    return depth.scale(0.5).add(shelf);
++/// depth: {.print}, wind: {} -> {.print}
++fn evening(depth: zml.Tensor, wind: zml.Tensor) zml.Tensor {
++    return depth.scale(0.5).add(wind);
+ }
+ 
+ const depth_data = [4]f32{ 12, 30, 8, 20 };
+@@ -143,7 +140,6 @@
+ 
+     const depth: zml.Tensor = .init(.{ .print = 4 }, .f32);
+     const wind: zml.Tensor = .init(.{}, .f32);
+-    shelf = wind;
+ 
+     try stdout.print("in main, the placeholder carries a pointer: {}\n", .{depth._value != null});
+ 
+@@ -156,7 +152,7 @@
+         notebook.reading_has_value,
+     });
+ 
+-    var evening_exe = try platform.compileFn(gpa, io, evening, .{depth}, .{});
++    var evening_exe = try platform.compileFn(gpa, io, evening, .{ depth, wind }, .{});
+     defer evening_exe.deinit();
+ 
+     try stdout.print("two placeholders, two compiles: {d} + {d} inputs\n", .{ morning_exe.input_shapes.len, evening_exe.input_shapes.len });
+@@ -170,7 +166,7 @@
+     defer morning_reading.deinit();
+     try stdout.print("morning: {any}\n", .{try morning_reading.getValue([4]f32, io)});
+ 
+-    var evening_reading: zml.Buffer = ???;
++    var evening_reading: zml.Buffer = try evening_exe.eval(gpa, io, .{ depth_buffer, wind_buffer });
+     defer evening_reading.deinit();
+     try stdout.print("evening: {any}\n", .{try evening_reading.getValue([4]f32, io)});
+ 

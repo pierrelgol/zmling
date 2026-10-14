@@ -1,0 +1,59 @@
+--- exercises/29_lost_property/200_the_wrong_coat.zig
++++ answers/29_lost_property/200_the_wrong_coat.zig
+@@ -111,7 +111,7 @@
+ 
+ /// coat, person: {measure}, in cm -> a scalar, in cm.
+ fn tooSmall(coat: zml.Tensor, person: zml.Tensor) zml.Tensor {
+-    return ???;
++    return person.sub(coat).relu().sum(.measure).squeeze(.measure);
+ }
+ 
+ const Clerk = struct {
+@@ -120,7 +120,10 @@
+     results: zml.Exe.Results,
+ 
+     pub fn init(exe: *const zml.Exe, allocator: std.mem.Allocator) !Clerk {
+-        return ???;
++        var args = try exe.args(allocator);
++        errdefer args.deinit(allocator);
++        const results = try exe.results(allocator);
++        return .{ .exe = exe, .args = args, .results = results };
+     }
+ 
+     pub fn deinit(self: *Clerk, allocator: std.mem.Allocator) void {
+@@ -131,7 +134,14 @@
+     /// inputs: a tuple of Buffers. outputs: a tuple of pointers.
+     /// Waits for the result.
+     pub fn serve(self: *Clerk, io: std.Io, inputs: anytype, outputs: anytype) !void {
+-        return ???;
++        if (inputs.len != self.exe.input_shapes.len) return error.WrongCount;
++        inline for (inputs, 0..) |b, i| {
++            const expected = self.exe.input_shapes[i];
++            if (expected.eql(b.shape()) and !expected.eqlWithTags(b.shape())) return error.WrongLabel;
++        }
++        self.args.set(inputs);
++        self.exe.call(io, self.args, &self.results, .{ .wait = true });
++        self.results.fill(outputs);
+     }
+ };
+ 
+@@ -167,8 +177,8 @@
+     defer tweed.deinit();
+ 
+     // Mr Abbot, measured at the counter.
+-    const abbot = [3]i32{ 100, 62, 110 };
+-    var abbot_buffer: zml.Buffer = try .fromBytes(io, platform, .init(.{ .measure = 3 }, .i32), std.mem.sliceAsBytes(&abbot));
++    const abbot = [3]f32{ 100, 62, 110 };
++    var abbot_buffer: zml.Buffer = try .fromBytes(io, platform, .init(.{ .measure = 3 }, .f32), std.mem.sliceAsBytes(&abbot));
+     defer abbot_buffer.deinit();
+ 
+     // The raw tables, the way of exercise 082.
+@@ -218,7 +228,7 @@
+         var person_buffer: zml.Buffer = try .fromBytes(io, platform, measures, std.mem.sliceAsBytes(&person));
+         defer person_buffer.deinit();
+ 
+-        try clerk.serve(io, .{ person_buffer, tweed }, .{&verdict});
++        try clerk.serve(io, .{ tweed, person_buffer }, .{&verdict});
+         defer verdict.deinit();
+         const cm = try verdict.getValue(f32, io);
+         try stdout.print("Odile: the tweed coat on {s}: too small by {d:.1} cm{s}\n", .{ name, cm, if (cm == 0) ", it fits" else "" });

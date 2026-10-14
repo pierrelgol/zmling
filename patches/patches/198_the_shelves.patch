@@ -1,0 +1,40 @@
+--- exercises/29_lost_property/198_the_shelves.zig
++++ answers/29_lost_property/198_the_shelves.zig
+@@ -121,7 +121,7 @@
+ 
+ /// book: {shelf, slot} -> {shelf}, the number of empty slots.
+ fn emptySlots(book: zml.Tensor) zml.Tensor {
+-    return ???;
++    return book.cmp(.EQ, .scalar(0, book.dtype())).convert(.i32).sum(.slot).squeeze(.slot);
+ }
+ 
+ fn restock(shelf: zml.Tensor, new: zml.Tensor) zml.Tensor {
+@@ -150,7 +150,7 @@
+         });
+     }
+ 
+-    const office: *zml.Platform = try .init(gpa, io, .cpu, ???);
++    const office: *zml.Platform = try .init(gpa, io, .cpu, .{ .cpu = .{ .device_count = 1 } });
+     defer office.deinit(gpa, io);
+ 
+     // The book, on the host. `alloc` gives garbage: fill it.
+@@ -178,7 +178,9 @@
+         (try book_buffer.getValue([3][4]i32, io))[1][1],
+     });
+ 
+-    var after = try count_exe.eval(gpa, io, .{book_buffer});
++    var fresh_buffer: zml.Buffer = try .fromSlice(io, office, book);
++    defer fresh_buffer.deinit();
++    var after = try count_exe.eval(gpa, io, .{fresh_buffer});
+     defer after.deinit();
+     try stdout.print("empty slots, cello shelved: {any}\n", .{try after.getValue([3]i32, io)});
+ 
+@@ -200,7 +202,7 @@
+ 
+     var restocked = try restock_exe.eval(gpa, io, .{ shelf_buffer, delivery_buffer });
+     defer restocked.deinit();
+-    try restocked.toSlice(io, book.subSlice(0, 1, 2));
++    try restocked.toSlice(io, book.subSlice(0, 1, 1));
+ 
+     try stdout.print("the book, after the 19:05:\n", .{});
+     for (0..3) |shelf| {

@@ -1,0 +1,53 @@
+--- exercises/29_lost_property/202_the_complaints_book.zig
++++ answers/29_lost_property/202_the_complaints_book.zig
+@@ -158,7 +158,10 @@
+ }
+ 
+ pub const std_options: std.Options = .{
+-    .log_level = .warn,
++    .log_level = .err,
++    .log_scope_levels = &.{
++        .{ .scope = .pjrt, .level = .warn },
++    },
+     .logFn = record,
+ };
+ 
+@@ -173,7 +176,8 @@
+ 
+ /// True when the contents of `b` are there, or will be.
+ fn readable(io: std.Io, b: zml.Buffer) bool {
+-    return ???;
++    b.await(io) catch return false;
++    return true;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -200,7 +204,7 @@
+ 
+     // The question behind those complaints, asked twice.
+     const device = platform.devices[0];
+-    const full: []const u8 = ???;
++    const full: []const u8 = if (device.pjrt_device.memoryStats(platform.pjrt_api)) |_| "no error" else |err| @errorName(err);
+     try stdout.print("PJRT, how full is the device? {s}\n", .{full});
+     try stdout.print("ZML, how full is the device? {d} bytes, and no error\n", .{device.memoryStats().bytes_in_use});
+ 
+@@ -214,7 +218,9 @@
+     defer args.deinit(gpa);
+     var results = try soak_exe.results(gpa);
+     defer results.deinit(gpa);
+-    ???;
++    args.set(.{bag_buffer});
++    soak_exe.call(io, args, &results, .{ .wait = true });
++    var soaked = results.get(zml.Buffer);
+ 
+     // After a raw call, the dead handle and the output are both yours.
+     defer bag_buffer.deinit();
+@@ -227,7 +233,7 @@
+         try stdout.print("reading it anyway: {t}\n", .{err});
+     }
+ 
+-    var weight = try weigh_exe.eval(gpa, io, .{bag_buffer});
++    var weight = try weigh_exe.eval(gpa, io, .{soaked});
+     defer weight.deinit();
+     try stdout.print("the wet bag weighs {d} lb\n", .{try weight.getValue(i32, io)});
+ 

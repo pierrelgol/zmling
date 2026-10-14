@@ -1,0 +1,51 @@
+--- exercises/27_the_hall_of_mirrors/184_single_file.zig
++++ answers/27_the_hall_of_mirrors/184_single_file.zig
+@@ -94,8 +94,8 @@
+ 
+ /// Gus's crate.
+ const Crate = struct {
+-    shift: zml.Buffer,
+     stretch: zml.Buffer,
++    shift: zml.Buffer,
+     tint: zml.Buffer,
+ };
+ 
+@@ -104,7 +104,8 @@
+     len: usize = 0,
+ 
+     fn join(self: *Queue, t: *const zml.Tensor) void {
+-        return ???;
++        self.shapes[self.len] = t.shape();
++        self.len += 1;
+     }
+ };
+ 
+@@ -128,16 +129,15 @@
+     const visitor: zml.Tensor = .init(.{ .d = 3 }, .f32);
+ 
+     var queue: Queue = .{};
+-    // The queue, as the Compiler will see it.
+-    ???;
++    zml.meta.visit(Queue.join, &queue, &.{ hall, visitor });
+ 
+     try stdout.print("Mr. Pym's list:\n", .{});
+     for (queue.shapes[0..queue.len], 0..) |shape, i| {
+         try stdout.print("  slot {d}: {f}\n", .{ i, shape });
+     }
+ 
+-    // `exe`.
+-    ???;
++    var exe = try platform.compile(gpa, io, hall, .forward, .{visitor}, .{});
++    defer exe.deinit();
+ 
+     // `a.eql(b)`: same dims, same tags, same dtype.
+     var same = queue.len == exe.input_shapes.len;
+@@ -163,7 +163,7 @@
+     defer out.deinit();
+     try stdout.print("Gus's crate: {any}\n", .{try out.getValue([3]f32, io)});
+ 
+-    var again: zml.Buffer = try exe.eval(gpa, io, .{ guest, stretch, shift, tint });
++    var again: zml.Buffer = try exe.eval(gpa, io, .{ stretch, shift, tint, guest });
+     defer again.deinit();
+     try stdout.print("No crate at all: {any}\n", .{try again.getValue([3]f32, io)});
+     try stdout.flush();

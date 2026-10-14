@@ -1,0 +1,46 @@
+--- exercises/27_the_hall_of_mirrors/186_the_blueprint.zig
++++ answers/27_the_hall_of_mirrors/186_the_blueprint.zig
+@@ -96,7 +96,10 @@
+     curved: bool,
+ 
+     pub fn forward(self: Mirror, x: zml.Tensor) zml.Tensor {
+-        return ???;
++        var y = self.glass.dot(x, .d);
++        if (self.frame) |frame| y = y.add(frame);
++        y = y.rename(.{ .out = .d });
++        return if (self.curved) y.relu() else y;
+     }
+ };
+ 
+@@ -120,10 +123,10 @@
+     bytes: usize,
+ };
+ 
+-const Ledger = ???;
++const Ledger = zml.meta.MapType(zml.Tensor, Price).map(Hall);
+ 
+ /// One Shape of the blueprint -> one placeholder.
+-fn pane(shape: zml.Shape) zml.Tensor {
++fn pane(_: void, shape: zml.Shape) zml.Tensor {
+     return .fromShape(shape);
+ }
+ 
+@@ -153,7 +156,7 @@
+     var drawn = [_]DrawnMirror{
+         .{ .glass = glass, .frame = frame, .curved = false },
+         .{ .glass = glass, .frame = null, .curved = true },
+-        .{ .glass = glass, .curved = true },
++        .{ .glass = glass, .frame = frame, .curved = true },
+     };
+     const blueprint: Blueprint = .{
+         .name = "Madame Ottoline's",
+@@ -172,8 +175,7 @@
+     try stdout.print("The name was copied, not borrowed: {}\n", .{hall.name.ptr != blueprint.name.ptr});
+ 
+     var ledger: Ledger = undefined;
+-    // Fill the ledger from the hall.
+-    ???;
++    try zml.meta.mapAlloc(price, arena.allocator(), {}, hall, &ledger);
+ 
+     try stdout.print("The ledger of {s}:\n", .{ledger.name});
+     try stdout.print("  door: {d} numbers, {d} bytes\n", .{ ledger.door.numbers, ledger.door.bytes });

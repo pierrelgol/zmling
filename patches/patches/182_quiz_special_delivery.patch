@@ -1,0 +1,258 @@
+--- exercises/26_the_mail_room/182_quiz_special_delivery.zig
++++ answers/26_the_mail_room/182_quiz_special_delivery.zig
+@@ -86,6 +86,15 @@
+ };
+ 
+ const Label = struct {
++    max_steps: ?u32 = null,
++    parallelism: usize = 1,
++    chunks: usize = 2,
++    chunk_size: flags.ByteSize = .{ .value = 4, .unit = .kib },
++    positional: struct {
++        repo: []const u8,
++        start: u32 = 0,
++    },
++
+     pub const help =
+         \\ mailroom [options] <repo> [<start>]
+         \\
+@@ -99,8 +108,236 @@
+     ;
+ };
+ 
++const EosTokens = union(enum) {
++    int: u32,
++    ints: []const u32,
++
++    const Helpers = json.UnionHelpers(@This());
++    pub const jsonParse = Helpers.jsonParse;
++    pub const jsonParseFromValue = Helpers.jsonParseFromValue;
++    pub const jsonStringify = Helpers.jsonStringify;
++
++    pub fn contains(self: EosTokens, token: u32) bool {
++        return switch (self) {
++            .int => |id| id == token,
++            .ints => |ids| std.mem.findScalar(u32, ids, token) != null,
++        };
++    }
++};
++
++const Config = struct {
++    model_type: []const u8,
++    num_hidden_layers: u32 = 0,
++    eos_token_id: EosTokens,
++    max_length: json.NeverNull(u32, 20) = .{},
++    tie_word_embeddings: bool = false,
++    torch_dtype: enum { float32, float16, bfloat16 } = .float32,
++};
++
++fn parseJson(comptime T: type, gpa: std.mem.Allocator, io: std.Io, repo: std.Io.Dir, name: []const u8) !std.json.Parsed(T) {
++    const file = try repo.openFile(io, name, .{});
++    defer file.close(io);
++
++    var buffer: [256]u8 = undefined;
++    var file_reader = file.reader(io, &buffer);
++    var reader: std.json.Reader = .init(gpa, &file_reader.interface);
++    defer reader.deinit();
++    return try std.json.parseFromTokenSource(T, gpa, &reader, .{ .ignore_unknown_fields = true });
++}
++
++fn linear(view: View) zml.nn.Linear {
++    return .init(
++        view.createReplicatedTensor("weight", .{ .dout, .d }),
++        view.maybeCreateTensor("bias", .{.dout}, .replicated, .{}),
++        .d,
++    );
++}
++
++const Chute = struct {
++    embed_tokens: zml.nn.TokenEmbedding,
++    lm_head: zml.nn.Linear,
++
++    pub fn init(_: std.mem.Allocator, view: View, _: Config) !Chute {
++        return .{
++            .embed_tokens = .{ .weight = view.withPrefix("model").withPrefix("embed_tokens").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .lm_head = linear(view.withPrefix("lm_head")),
++        };
++    }
++
++    pub fn deinit(_: Chute, _: std.mem.Allocator) void {}
++
++    pub fn unload(weights: *zml.Bufferized(Chute), _: std.mem.Allocator) void {
++        zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Chute, weights);
++    }
++
++    /// station: a rank-0 i32. Returns the next station, a rank-0 i32.
++    pub fn forward(self: Chute, station: zml.Tensor) zml.Tensor {
++        const x = self.embed_tokens.forward(station).convert(.f32);
++        return self.lm_head.forward(x, .f32).argMax(.dout).indices.squeeze(.dout);
++    }
++};
++
++const Conveyor = struct {
++    embed_tokens: zml.nn.TokenEmbedding,
++    layers: []zml.nn.Linear,
++    lm_head: ?zml.nn.Linear,
++
++    pub fn init(gpa: std.mem.Allocator, view: View, config: Config) !Conveyor {
++        const model = view.withPrefix("model");
++        const layers = try gpa.alloc(zml.nn.Linear, config.num_hidden_layers);
++        for (layers, 0..) |*layer, i| layer.* = linear(model.withPrefix("layers").withLayer(i).withPrefix("fc"));
++        return .{
++            .embed_tokens = .{ .weight = model.withPrefix("embed_tokens").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .layers = layers,
++            .lm_head = if (config.tie_word_embeddings) null else linear(view.withPrefix("lm_head")),
++        };
++    }
++
++    pub fn deinit(self: Conveyor, gpa: std.mem.Allocator) void {
++        gpa.free(self.layers);
++    }
++
++    pub fn unload(weights: *zml.Bufferized(Conveyor), gpa: std.mem.Allocator) void {
++        zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Conveyor, weights);
++        gpa.free(weights.layers);
++    }
++
++    /// station: a rank-0 i32. Returns the next station, a rank-0 i32.
++    pub fn forward(self: Conveyor, station: zml.Tensor) zml.Tensor {
++        var x = self.embed_tokens.forward(station).convert(.f32);
++        for (self.layers) |layer| x = layer.forward(x, .f32).relu().rename(.{ .dout = .d });
++        const scores = if (self.lm_head) |head|
++            head.forward(x, .f32).rename(.{ .dout = .voc })
++        else
++            x.dot(self.embed_tokens.weight.convert(.f32), .d);
++        return scores.argMax(.voc).indices.squeeze(.voc);
++    }
++};
++
++const ModelType = enum { chute, conveyor };
++
++const Router = union(ModelType) {
++    chute: Chute,
++    conveyor: Conveyor,
++
++    pub fn init(gpa: std.mem.Allocator, view: View, config: Config) !Router {
++        const model_type = std.meta.stringToEnum(ModelType, config.model_type) orelse return error.UnknownModelType;
++        return switch (model_type) {
++            inline else => |tag| @unionInit(Router, @tagName(tag), try .init(gpa, view, config)),
++        };
++    }
++
++    pub fn deinit(self: Router, gpa: std.mem.Allocator) void {
++        switch (self) {
++            inline else => |model| model.deinit(gpa),
++        }
++    }
++};
++
++/// What `deliver` needs besides the model.
++const Desk = struct {
++    gpa: std.mem.Allocator,
++    io: std.Io,
++    platform: *zml.Platform,
++    store: *zml.io.TensorStore,
++    stdout: *std.Io.Writer,
++};
++
++/// Compiles `model`, loads its weights, and prints the "device:" and
++/// "route:" lines of the report.
++fn deliver(comptime Model: type, model: Model, desk: Desk, label: Label, config: Config) !void {
++    const gpa = desk.gpa;
++    const io = desk.io;
++    const stdout = desk.stdout;
++
++    var exe = try desk.platform.compile(gpa, io, model, .forward, .{zml.Tensor.init(.{}, .i32)}, .{});
++    defer exe.deinit();
++
++    var weights = try zml.mem.bufferize(gpa, Model, &model);
++    defer Model.unload(&weights, gpa);
++    var loader: zml.io.Loader = try .init(gpa, desk.platform, .{
++        .parallelism = label.parallelism,
++        .dma_chunks = label.chunks,
++        .dma_chunk_size = label.chunk_size.bytes(),
++    });
++    defer loader.deinit();
++    try loader.load(io, Model, &model, &weights, desk.store, .{});
++    try loader.await(io);
++    try stdout.print("  device: {d} bytes\n", .{loader.bytes_loaded.load(.monotonic)});
++
++    const eos = config.eos_token_id;
++    const max_steps = label.max_steps orelse config.max_length.value;
++    var station = label.positional.start;
++    var count: u32 = 1;
++    try stdout.print("  route: {s}", .{stations[station]});
++    while (!eos.contains(station) and count < max_steps) : (count += 1) {
++        var here: zml.Buffer = try .scalar(io, desk.platform, station, .i32);
++        defer here.deinit();
++        var next = try exe.eval(gpa, io, .{ weights, here });
++        defer next.deinit();
++        station = @intCast(try next.getValue(i32, io));
++        try stdout.print(" > {s}", .{stations[station]});
++    }
++    if (!eos.contains(station)) try stdout.print(" ... (gave up after {d} stations)", .{count});
++    try stdout.print("\n", .{});
++}
++
+ pub fn main(init: std.process.Init) !void {
+-    // The slip, the models, the sorting table, the forklift, and Gus's
+-    // four reports.
+-    ???
++    const gpa = init.gpa;
++
++    var vfs_file: zml.io.VFS.File = .init(gpa, init.io, .{});
++    defer vfs_file.deinit();
++    var vfs: zml.io.VFS = try .init(gpa, init.io);
++    defer vfs.deinit();
++    try vfs.register("file", vfs_file.io());
++    const io = vfs.io();
++
++    var buffer: [4096]u8 = undefined;
++    var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
++    const stdout = &stdout_writer.interface;
++
++    const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
++    defer platform.deinit(gpa, io);
++
++    for (labels) |arguments| {
++        const label = flags.parse(.{ .vector = arguments }, Label);
++        try stdout.print("parcel: {s}\n", .{std.fs.path.basename(label.positional.repo)});
++
++        var repo = try zml.safetensors.resolveModelRepo(io, label.positional.repo);
++        defer repo.close(io);
++
++        const file, const entry_point = try zml.safetensors.resolveModelEntrypoint(io, repo);
++        file.close(io);
++        try stdout.print("  entry point: {s}\n", .{entry_point});
++
++        const parsed = try parseJson(Config, gpa, io, repo, "config.json");
++        defer parsed.deinit();
++        const config = parsed.value;
++
++        var registry: zml.safetensors.TensorRegistry = try .fromRepo(gpa, io, repo);
++        defer registry.deinit();
++        var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++        defer store.deinit();
++
++        const router = Router.init(gpa, store.view(), config) catch |err| {
++            try stdout.print("  slip: {s}: {}\n", .{ config.model_type, err });
++            try stdout.flush();
++            continue;
++        };
++        defer router.deinit(gpa);
++
++        try stdout.print("  slip: {s}, {d} layers, tied head: {}, {s}\n", .{
++            @tagName(router),
++            config.num_hidden_layers,
++            config.tie_word_embeddings,
++            @tagName(config.torch_dtype),
++        });
++        try stdout.print("  boxes: {d} tensors, {d} bytes\n", .{ registry.tensors.count(), registry.totalBytes() });
++
++        const desk: Desk = .{ .gpa = gpa, .io = io, .platform = platform, .store = &store, .stdout = stdout };
++        switch (router) {
++            inline else => |model| try deliver(@TypeOf(model), model, desk, label, config),
++        }
++        try stdout.flush();
++    }
+ }

@@ -1,0 +1,39 @@
+--- exercises/22_the_watchmaker/148_half_a_tick.zig
++++ answers/22_the_watchmaker/148_half_a_tick.zig
+@@ -65,7 +65,7 @@
+ 
+ /// What `x` is after being stored as `dtype` and read back.
+ fn through(x: zml.Tensor, dtype: zml.DataType) zml.Tensor {
+-    return ???;
++    return x.convert(dtype).convert(.f32);
+ }
+ 
+ fn throughBf16(x: zml.Tensor) zml.Tensor {
+@@ -78,7 +78,7 @@
+ 
+ /// The bytes needed to store a tensor of `shape` as `dtype`.
+ fn weigh(shape: zml.Shape, dtype: zml.DataType) usize {
+-    return ???;
++    return shape.withDtype(dtype).byteSize();
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -112,7 +112,17 @@
+         for (slice.items(f32)) |v| try stdout.print(" {d:.4}", .{v});
+         try stdout.print("\n", .{});
+     }
+-    // The .f16 line goes here, printed as "f16: " (two spaces).
++    {
++        var exe = try platform.compileFn(gpa, io, throughF16, .{x}, .{});
++        defer exe.deinit();
++        var out = try exe.eval(gpa, io, .{x_buffer});
++        defer out.deinit();
++        const slice = try out.toSliceAlloc(gpa, io);
++        defer slice.free(gpa);
++        try stdout.print("f16: ", .{});
++        for (slice.items(f32)) |v| try stdout.print(" {d:.4}", .{v});
++        try stdout.print("\n", .{});
++    }
+ 
+     // A 4096 x 4096 weight matrix: one layer of a mid-size model.
+     const layer: zml.Shape = .init(.{ .dout = 4096, .d = 4096 }, .f32);

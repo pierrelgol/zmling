@@ -1,0 +1,57 @@
+--- exercises/25_the_petting_zoo/172_who_stands_where.zig
++++ answers/25_the_petting_zoo/172_who_stands_where.zig
+@@ -100,7 +100,14 @@
+ 
+ /// The sinusoidal table {.s = len, .d = d}, f32. `d` is even.
+ fn sinusoidal(len: i64, d: i64) zml.Tensor {
+-    return ???;
++    const half = @divExact(d, 2);
++    const step: f32 = -2.0 * @log(10000.0) / @as(f32, @floatFromInt(d));
++
++    const pos = zml.Tensor.arange(.{ .end = len }, .f32).withTags(.{.s});
++    const inv_freq = zml.Tensor.arange(.{ .end = half }, .f32).withTags(.{.i}).scale(step).exp();
++    const angle = pos.outer(inv_freq);
++
++    return zml.Tensor.stack(&.{ angle.sin(), angle.cos() }, .last, .pair).merge(.{ .d = .{ .i, .pair } });
+ }
+ 
+ /// table: {.bucket = 2 * max + 1}, one number per clamped distance.
+@@ -111,7 +118,7 @@
+     const q = zml.Tensor.arange(.{ .end = len }, .i32).withTags(.{.q}).broad(grid);
+     const k = zml.Tensor.arange(.{ .end = len }, .i32).withTags(.{.k}).broad(grid);
+ 
+-    const distance = q.sub(k).clamp(.scalar(-max, .i32), .scalar(max, .i32));
++    const distance = k.sub(q).clamp(.scalar(-max, .i32), .scalar(max, .i32));
+     return table.gather(.{ .bucket = distance.addConstant(max) }, .{});
+ }
+ 
+@@ -123,12 +130,14 @@
+ 
+     /// tokens: {.s} word ids -> {.d}, one vector for the sentence.
+     pub fn forward(self: Reader, tokens: zml.Tensor) zml.Tensor {
+-        const x = self.words.forward(tokens);
++        var x = self.words.forward(tokens);
++        if (self.positions == .sinusoidal) x = x.add(sinusoidal(x.dim(.s), x.dim(.d)));
+ 
+         const d: f32 = @floatFromInt(x.dim(.d));
+         const q = x.rename(.{ .s = .q });
+         const k = x.rename(.{ .s = .k });
+-        const scores = q.dot(k, .d).scale(1.0 / @sqrt(d));
++        var scores = q.dot(k, .d).scale(1.0 / @sqrt(d));
++        if (self.positions == .relative) scores = scores.add(relativeBias(self.bias, x.dim(.s)));
+ 
+         const heard = scores.softmax(.k).dot(k, .k);
+         return heard.mean(.q).squeeze(.q);
+@@ -200,8 +209,10 @@
+ 
+     try stdout.print("\"goat bites boy\" and \"boy bites goat\":\n", .{});
+     for (families, family_names) |family, name| {
+-        // A Reader of this family, and its Exe: `exe`.
+-        ???;
++        const reader: Reader = .{ .words = .{ .weight = words }, .bias = bias, .positions = family };
++
++        var exe = try platform.compile(gpa, io, reader, .forward, .{tokens}, .{});
++        defer exe.deinit();
+ 
+         // The Buffers belong to `main`: nothing to free here.
+         const weights: zml.Bufferized(Reader) = .{ .words = .{ .weight = words_buffer }, .bias = bias_buffer };

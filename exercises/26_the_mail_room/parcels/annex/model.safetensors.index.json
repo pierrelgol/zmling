@@ -1,0 +1,10 @@
+{
+  "metadata": {
+    "total_size": 384
+  },
+  "weight_map": {
+    "model.embed_tokens.weight": "model-00001-of-00002.safetensors",
+    "model.layers.0.fc.weight": "model-00001-of-00002.safetensors",
+    "model.layers.1.fc.weight": "model-00002-of-00002.safetensors"
+  }
+}

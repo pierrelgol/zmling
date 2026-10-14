@@ -2278,4 +2278,769 @@ const exercises = [_]Exercise{
         ,
         .hint = "Build it in the order of the chapter: 142, 143, 144, 145, and get the greedy speech right WITHOUT a cache first. Then 146. Then `sampleTokens` instead of the argMax, and the Rng threaded like the cache. A wrong first line? Compare with `activations.safetensors`, layer by layer.\n",
     },
+    .{
+        .main_file = "22_the_watchmaker/148_half_a_tick.zig",
+        .output =
+        \\f32:  0.1000 3.1416 1000.0010 70000.0000 16777216.0000
+        \\bf16: 0.1001 3.1406 1000.0000 70144.0000 16777216.0000
+        \\f16:  0.1000 3.1406 1000.0000 inf inf
+        \\One layer in f32:  67108864 bytes
+        \\One layer in bf16: 33554432 bytes
+        \\One layer in f16:  33554432 bytes
+        ,
+        .hint = "Down then back up: two `convert`. A Shape can change dtype with `withDtype`, and knows its `byteSize`.\n",
+    },
+    .{
+        .main_file = "22_the_watchmaker/149_under_the_loupe.zig",
+        .output =
+        \\bits: 3f800000 3dcccccd c0200000 3e200000
+        \\{part=3,reading=4,u32}
+        \\1: sign 0, exponent 127 (2^0), mantissa 000000
+        \\0.1: sign 0, exponent 123 (2^-4), mantissa 4ccccd
+        \\-2.5: sign 1, exponent 128 (2^1), mantissa 200000
+        \\0.15625: sign 0, exponent 124 (2^-3), mantissa 200000
+        \\{reading=4,bitcast=4,u8}
+        \\1.0 on disk: 00 00 80 3f
+        ,
+        .hint = "The first line should show 3f800000 for 1.0, not 00000001. For the parts: shift right, then AND with a mask of the right width (8 bits, 23 bits).\n",
+    },
+    .{
+        .main_file = "22_the_watchmaker/150_the_slow_watch.zig",
+        .output =
+        \\bf16 ticks near 16: 0.125
+        \\bf16 ticks near 32: 0.25
+        \\f32 ticks near 32: 3.8146973e-6
+        \\The customer's watch: 32.1
+        \\After the repair: 100.0
+        ,
+        .hint = "`spacing`: 2 to the power (floor(log2(value)) - mantissa_bits). `windWell`: the step is rounded to bf16 once, then everything happens in f32 until the very last `convert`.\n",
+    },
+    .{
+        .main_file = "22_the_watchmaker/151_overwound.zig",
+        .output =
+        \\The overwound row:
+        \\  naive: 3 NaN, 3 not finite
+        \\  by hand: 0 not finite
+        \\  library: 0 not finite
+        \\  by hand: 0.6652 0.2447 0.0900 0.0000
+        \\  same as the library: true
+        \\  naive logsumexp: 1 not finite
+        \\  logsumexp by hand: 1000.4076, library: 1000.4076
+        \\The silent row:
+        \\  naive: 4 NaN, 4 not finite
+        \\  by hand: 4 not finite
+        \\  library: 0 not finite
+        ,
+        .hint = "A bool tensor becomes countable with `.convert(.i32)`; `flatten()` then `sum(0)` then `squeeze(0)` gives a rank-0 count. For the softmax: subtract `max(.score)` before `exp`.\n",
+    },
+    .{
+        .main_file = "22_the_watchmaker/152_the_wrong_gears.zig",
+        .output =
+        \\pixels:                { 0, 51, 128, 200, 255 }
+        \\trap 1, u8 / 255:      { 0, 0, 0, 0, 1 }
+        \\trap 2, u8 + 100:      { 100, 151, 228, 44, 99 }
+        \\brighten by 100:       { 100, 151, 228, 255, 255 }
+        \\trap 3, u8 as i8:      { 0, 51, -128, -56, -1 }
+        \\trap 4, p / 4 as i32:  { -1, 0, 0, 0, 2 }
+        \\bucket of width 4:     { -2, -1, 0, 0, 2 }
+        \\trap 5, p * 100 as u8: { 0, 0, 50, 255, 255 }
+        \\to the unit interval:  0.000 0.200 0.502 0.784 1.000
+        ,
+        .hint = "Each trap is cured by choosing WHERE the `convert` goes. `brighten`: widen to .i32, add, `clamp`, come back. `bucket`: `floor` before `convert`.\n",
+    },
+    .{
+        .main_file = "22_the_watchmaker/153_a_cheaper_movement.zig",
+        .output =
+        \\The file is an f16, bit for bit: true
+        \\The file is a bf16, bit for bit: true
+        \\1e-5, seen by the file: 0
+        \\1e-5, seen by a real f16: 1.001e-5
+        \\The squares, seen by an f16: { 0, 0, 0, 0 }
+        \\eps, seen by an f16: 0
+        \\The cheap norm: 4 values out of 4 are not finite
+        \\The careful norm: 0.098 -0.197 0.294 0.098
+        \\Same as zml.nn.rmsNorm, bit for bit: true
+        ,
+        .hint = "The numbers are in the table of exercise 148: (exponent bits, mantissa bits). `carefulNorm` is `cheapNorm` with one `convert` at the start and one at the end.\n",
+    },
+    .{
+        .main_file = "22_the_watchmaker/154_quiz_the_grand_complication.zig",
+        .output =
+        \\Wheels: 24
+        \\The cheap movement leaves the reference at wheel: 3
+        \\The mixed movement stays with the reference: true
+        \\At the last wheel, cheap is further off than mixed: true
+        \\The verdict: mixed goes to the collector
+        ,
+        .hint = "Write `movement` first and test `reference` alone. The stream is passed through `asSeenBy` once before the first wheel and once after each `add`; the weights once, before the loop. `worst` reads rows of 8 floats: `a[wheel * 8 ..][0..8]`.\n",
+    },
+    // Chapter 23: Hot Off the Press
+    .{
+        .main_file = "23_hot_off_the_press/155_the_forme.zig",
+        .output =
+        \\the forme holds 16 tokens; presses set up for 3 openings: 2
+        \\"Once upon a time": 5 tokens and 11 blanks
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted
+        \\"One day, a little dog": 8 tokens and 8 blanks
+        \\One day, a little dog named Max went to the park with his mom. They saw a big box with a big box. Max was very happy. He wanted to
+        \\"Lily and her mom went to the park": 12 tokens and 4 blanks
+        \\Lily and her mom went to the park. They saw a big box with a big box. Lily was very happy. She wanted to play with it, but she did not want to
+        \\the first story is PyTorch's, token for token: true
+        ,
+        .hint = "`forward` is exercise 146's without the `slice`: every position goes through the norm and the head. The story is not PyTorch's? The forme has 16 slugs and the opening 5: after WHICH one does the story go on? The decode loop is exercise 146's, and `len` is the true length.\n",
+    },
+    .{
+        .main_file = "23_hot_off_the_press/156_hot_metal.zig",
+        .output =
+        \\tensors the press takes: 51
+        \\tensors it melts down and recasts: 3
+        \\bytes of cache that are no longer copied, per token: 163840
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do.
+        \\the same story as PyTorch, token for token: true
+        \\by hand: after the BOS comes token 403
+        \\by hand: the plate that went in can no longer be read: true
+        ,
+        .hint = "`recasts: 0`: nothing in `forward` says `reuseBuffer`. Three outputs, three inputs, and the tokens need a `convert` first. In `feed`, the destinations are the very pointers you were given. A segfault in `PJRT_Buffer_Destroy`? You freed what the runner had already destroyed.\n",
+    },
+    .{
+        .main_file = "23_hot_off_the_press/157_standing_type.zig",
+        .output =
+        \\plates the press takes: 51
+        \\standing type, locked in once: 47
+        \\plates set for each page: 4
+        \\plates melted down and recast: 3
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do.
+        \\the same story as PyTorch, token for token: true
+        ,
+        .hint = "`ordered prefix`: which field is baked, and where does it sit in `Input`? `step` is last night's `forward` with everything read from `input` and both results named. `compile` wants a tuple holding ONE struct. The weights are given to the runner once, by name.\n",
+    },
+    .{
+        .main_file = "23_hot_off_the_press/158_stop_the_presses.zig",
+        .output =
+        \\the page opens with: { 1, 403, 407, 261, 378 }
+        \\the presses stop on: { 1, 2 }
+        \\--- 512 tokens of paper
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do. She said, "I want to play with your ball, but I can't find it."
+        \\Lily was sad and didn't know what to do. She said, "I'm sorry, Lily. I didn't know what to do."
+        \\Lily didn't want to help her mom, so she said, "I'm sorry, mom. I didn't know what to do." Her mom said, "Don't worry, Lily. We can help you."
+        \\Lily and her mom went to the park to play. They played together and had fun. After a while, Lily's mom came into the room and saw the park. She was so happy and said, "Thank you, Lily! You are a good friend."
+        \\--- 346 tokens printed, and the presses stopped: the story was over
+        \\--- 40 tokens of paper
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big,
+        \\--- 40 tokens printed, and the presses stopped: no more paper
+        ,
+        .hint = "The first line of output should be `{ 1, 403, 407, 261, 378 }`: `tokenId`, then `appendTokens` and `encode` on the same writer. `why` is a `while (true)` with two `break`s that carry a value, in the order of the lesson. The second text holds the first one: how many decoders are there?\n",
+    },
+    .{
+        .main_file = "23_hot_off_the_press/159_on_the_wire.zig",
+        .output =
+        \\in the type case: [<s>][▁Once][▁upon][▁a][▁time][,][▁there][▁was][▁a][▁little][▁g][ir][l]
+        \\off the decoder:  [][Once][ upon][ a][ time][,][ there][ was][ a][ little][ g][ir][l]
+        \\--- on the tape
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do. She said, "I want to play with your ball, but I can't find it."
+        \\Lily was sad and didn't know what to do. She said, "I'm sorry, Lily. I didn't know what to do."
+        \\Lily didn't want to help her mom, so she said, "I'm sorry, mom. I didn't know what to do." Her mom said, "Don't worry, Lily. We can help you."
+        \\Lily and her mom went to the park to play. They played together and had fun. After a while, Lily's mom came into the room and saw the park. She was so happy and said, "Thank you, Lily! You are a good friend."
+        \\--- 346 tokens printed, and the presses stopped: the story was over
+        ,
+        .hint = "`feedOne`, `writeAll`, `flush`, in that order, for the opening and then for each new token; `finalize` at the end. The proof: print each piece before the next `feedOne`. A space before `Once`? That decoder had already read thirteen tokens.\n",
+    },
+    .{
+        .main_file = "23_hot_off_the_press/160_the_dials.zig",
+        .output =
+        \\presses set up: 2, for 6 editions
+        \\plates melted down and recast at each run: 4
+        \\morning (top_k 1): the story of PyTorch: true
+        \\noon (top_p 0): the morning edition again: true
+        \\afternoon (min_p 1): the morning edition again: true
+        \\evening (top_k 8, the dice roll): another story: true
+        \\  it opens like the others: true
+        \\  every word of it is one of Tiny's 512: true
+        \\evening, reprinted from the same seed: the evening edition again: true
+        \\night (top_k 50, in a press that holds 8): the evening edition again: true
+        ,
+        .hint = "The draw gives two things back, and `Output` wants three. Four dials come from `setting`, and four Buffers need freeing. Night differs from evening: how many candidates can this press hold? Fix the reprint last: when were its dice seeded?\n",
+    },
+    .{
+        .main_file = "23_hot_off_the_press/161_quiz_the_front_page.zig",
+        .output =
+        \\Once upon a time, there was a little girl named Lily. She loved to play outside in the park. One day, she saw a big, red ball. She wanted to play with it, but it was too high.
+        \\Lily's mom said, "Lily, let's go to the park." Lily was sad and didn't know what to do. She said, "I want to play with your ball, but I can't find it."
+        \\Lily was sad and didn't know what to do. She said, "I'm sorry, Lily. I didn't know what to do."
+        \\Lily didn't want to help her mom, so she said, "I'm sorry, mom. I didn't know what to do." Her mom said, "Don't worry, Lily. We can help you."
+        \\Lily and her mom went to the park to play. They played together and had fun. After a while, Lily's mom came into the room and saw the park. She was so happy and said, "Thank you, Lily! You are a good friend."
+        \\--- morning edition: 346 tokens, and the presses stopped: the story was over
+        \\its first 106 tokens are PyTorch's: true
+        \\--- late edition: the dice rolled, and it is another story: true
+        \\it opens like the morning one: true
+        \\reprinted from the same seed, it is the same: true
+        \\--- the shop: standing type 47, set for each run 9, recast at each run 4
+        \\Put the paper to bed.
+        ,
+        .hint = "Build it night by night: a greedy press that tells `reference_story` first (155 to 157), then the stops and the page (158), the tape (159), and only then the dials (160). The names the last lines want are listed in the lesson.\n",
+    },
+    // Chapter 24: Window Shopping
+    .{
+        .main_file = "24_window_shopping/162_nose_against_the_glass.zig",
+        .output =
+        \\the street {t=8,f32}: { 1, 1, 1, 6, 6, 6, 2, 2 }
+        \\by hand    {t=6,f32}: { 0, 5, 5, 0, -4, -4 }
+        \\conv1d     {t=6,f32}: { 0, 5, 5, 0, -4, -4 }
+        \\same: true
+        ,
+        .hint = "`glance`: a slice of the street is still tagged `.t`, and `dot` wants `.k` on both sides. The last place to stand is where the kernel still fits. The panic counts the axes of the two tensors: which one was left behind?\n",
+    },
+    .{
+        .main_file = "24_window_shopping/163_how_many_steps.zig",
+        .output =
+        \\the regular             Odette says 6, ZML says 6: { 123, 234, 345, 456, 567, 678 }
+        \\the jogger              Odette says 3, ZML says 3: { 123, 345, 567 }
+        \\the council             Odette says 8, ZML says 8: { 12, 123, 234, 345, 456, 567, 678, 780 }
+        \\the daydreamer          Odette says 4, ZML says 4: { 135, 246, 357, 468 }
+        \\the daydreamer, padded  Odette says 8, ZML says 8: { 13, 24, 135, 246, 357, 468, 570, 680 }
+        \\all of it               Odette says 3, ZML says 3: { 24, 246, 468 }
+        \\the astronomer          Odette says 0, ZML says 0: {  }
+        ,
+        .hint = "`@divFloor`, and a walk with no place to stand gives 0, not a negative number. `samePad`: put out = in and stride = 1 in the formula. Thirteen glances for the daydreamer: who got spread apart, the kernel or the street?\n",
+    },
+    .{
+        .main_file = "24_window_shopping/164_the_right_side_of_the_glass.zig",
+        .output =
+        \\the photo    {b=1,h=3,w=7,c=3,f32}
+        \\careless     {b=1,h=1,w=5,c=1,f32}: { 3, 5, 7, 9, 13 }
+        \\by options   {b=1,h=1,w=5,c=1,f32}: { 0, 3, 3, 0, -3 }
+        \\by transpose {b=1,h=1,w=5,c=1,f32}: { 0, 3, 3, 0, -3 }
+        ,
+        .hint = "Line 1106 compares the kernel's axis 1 with the photo's channels: tags do not move data, and they do not tell `conv2d` anything. `byOptions`: six options, three for the input, three for the output, all from `photo.axis(...)`. Compare the SHAPES of the last two lines.\n",
+    },
+    .{
+        .main_file = "24_window_shopping/165_the_best_of_the_window.zig",
+        .output =
+        \\best              {b=1,c=1,h=2,w=2,f32}: 5 2 6 8
+        \\its column        {b=1,c=1,h=2,w=2,i32}: 0 3 1 2
+        \\pairs             {b=1,c=1,h=4,w=2,f32}: 3 2 5 1 0 7 6 8
+        \\average, folded   {b=1,c=1,h=2,w=2,f32}: 3.25 1 2 5.75
+        \\average, stride 2 {b=1,c=1,h=2,w=2,f32}: 3.25 1 2 5.75
+        \\average, stride 1 {b=1,c=1,h=3,w=3,f32}: 3.25 1.5 1 2.25 3 3 2 5.25 5.75
+        \\overall           {b=1,c=1,f32}: 3
+        ,
+        .hint = "Both compile errors are about what the max pools take and return: read the two signatures in the lesson. `reduceWindow` wants one entry per axis, batch and channels included, and returns an array. A sum is not an average yet.\n",
+    },
+    .{
+        .main_file = "24_window_shopping/166_the_blow_up.zig",
+        .output =
+        \\nearest {b=1,c=1,h=4,w=4,f32}
+        \\   0   0   4   4
+        \\   0   0   4   4
+        \\   8   8  12  12
+        \\   8   8  12  12
+        \\nearest, the photo {b=1,h=4,w=4,c=1,f32}
+        \\   0   0   4   4
+        \\   0   0   4   4
+        \\   8   8  12  12
+        \\   8   8  12  12
+        \\bilinear {b=1,c=1,h=4,w=4,f32}
+        \\   0   2   4   4
+        \\   4   6   8   8
+        \\   8  10  12  12
+        \\   8  10  12  12
+        \\the stripes, shrunk {b=1,c=1,h=2,w=2,f32}
+        \\   0   0
+        \\   0   0
+        \\the stripes, averaged {b=1,c=1,h=2,w=2,f32}
+        \\   4   4
+        \\   4   4
+        ,
+        .hint = "`{b=1,c=1,4,4}`: two tags are missing. `resizeBilinear` takes sizes, not factors. `blowUpPhoto`: `upsample` scales axes 2 and 3, wherever your height and width are; you already have a function for (b, c, h, w).\n",
+    },
+    .{
+        .main_file = "24_window_shopping/167_one_dresser_per_colour.zig",
+        .output =
+        \\the dressers {b=1,c=3,h=2,w=2,f32}: Rose, Olive, Marine
+        \\    1   2       9   9       9  15
+        \\    3   4       9   9       9  15
+        \\the decorator, 1 x 1 convolution {b=1,c=2,h=2,w=2,f32}
+        \\   19  26      -8 -13
+        \\   21  28      -6 -11
+        \\the decorator, Linear {b=1,c=2,h=2,w=2,f32}
+        \\   19  26      -8 -13
+        \\   21  28      -6 -11
+        \\same: true
+        \\weights: 27 + 6 = 33, against 54 for one full 3 x 3 convolution
+        ,
+        .hint = "Three dressers, one colour each: how many input channels does ONE kernel see? Then tell `conv2d` about the groups. `blendLinear`: drop the two axes of size 1, name the weight's axes the way a Linear wants them, and mind where `.dout` lands.\n",
+    },
+    .{
+        .main_file = "24_window_shopping/168_quiz_the_sign_inspector.zig",
+        .output =
+        \\strokes {b=6,d=8,f32}, scores {b=6,dout=5,f32}, letters {b=6,i32}
+        \\                             | | | |  - - - -   reads    L   7   U   C   O
+        \\Aux Parapluies de Cherbourg  4 4 4 4  0 0 3 3     U     -2 -14  10  -6   6
+        \\Blanchisserie Moderne        4 0 4 0  0 0 3 4     L      7 -23   3   3  -1
+        \\L'Epicerie du Coin           0 4 0 4  4 3 0 0     7    -23   7 -11 -13  -1
+        \\Optique Lumiere              4 4 4 4  3 3 3 3     O     -8  -8   4   0  12
+        \\La Cave a Fromages           4 0 4 0  3 4 3 4     C      0 -16  -4  10   6
+        \\Pressing Basile et Fils      3 0 3 0  0 0 2 3     L      3 -19  -1  -1  -5
+        ,
+        .hint = "Leaves first: `Conv`, `Inspector`, `main`. The bias has one number per output channel, and the output channels are tagged `.c`. One channel must be inserted before the first convolution. `maxPool2d` returns a struct. Merge while the axes are still (c, h, w).\n",
+    },
+    // Chapter 25: The Petting Zoo
+    .{
+        .main_file = "25_the_petting_zoo/169_the_head_count.zig",
+        .output =
+        \\"which one is loud?"
+        \\pooling        rabbit    goose tortoise
+        \\[CLS] token     0.800    0.000    1.000   -> the tortoise
+        \\plain mean      1.000   -0.982    0.737   -> the rabbit
+        \\masked mean     0.700    0.883   -0.789   -> the goose
+        \\the card says mean pooling, {doc=3,s=4,d=2,f32} -> {doc=3,f32}: go and pet the goose
+        ,
+        .hint = "Divide by how many real tokens there are, not by the length of the row: the mask knows, once it is f32 and has the shape of `hidden`. A cosine above 1 means one side is not a unit vector.\n",
+    },
+    .{
+        .main_file = "25_the_petting_zoo/170_the_short_queue.zig",
+        .output =
+        \\the short queue, as the mask sees it (x: may not listen):
+        \\  (pad) x x x
+        \\  hen   x . x
+        \\  duck  x . .
+        \\after 2 rounds, in the batch {b=2,s=3,d=2,f32}:
+        \\  goat   1.000  0.000
+        \\  pig    0.638  0.362
+        \\  cow    0.699  0.500
+        \\  (pad)  0.000  0.000
+        \\  hen    0.000  2.000
+        \\  duck   1.727  0.273
+        \\the short queue alone {b=1,s=2,d=2,f32}:
+        \\  hen    0.000  2.000
+        \\  duck   1.727  0.273
+        \\the padding is invisible: true
+        ,
+        .hint = "The picture shows which mask is missing. If you see `nan`: which row has nobody to listen to, and what does `Tensor.softmax` do for such a row?\n",
+    },
+    .{
+        .main_file = "25_the_petting_zoo/171_the_feeding_board.zig",
+        .output =
+        \\{s=3,d=4,f32} keepers read {m=4,dm=3,f32} notes: {s=3,d=4,f32}
+        \\     buckets         food  water
+        \\Ada   2.086  0.000  0.971  0.029
+        \\Bo    4.683  0.000  0.106  0.894
+        \\Cy    3.000  0.000  0.667  0.333
+        ,
+        .hint = "Keys and values come from `memory`, and their Linears contract `.dm`. The panic names a tag: who declared a Tensor without it?\n",
+    },
+    .{
+        .main_file = "25_the_petting_zoo/172_who_stands_where.zig",
+        .output =
+        \\the clocks {s=3,d=4,f32}:
+        \\  position 0:  0.000  1.000  0.000  1.000
+        \\  position 1:  0.841  0.540  0.010  1.000
+        \\  position 2:  0.909 -0.416  0.020  1.000
+        \\the bias {q=3,k=3,f32}, one row per listener:
+        \\   0 -2 -2
+        \\   2  0 -2
+        \\   2  2  0
+        \\"goat bites boy" and "boy bites goat":
+        \\  no positions  (1.000 1.000 0.387 0.387) (1.000 1.000 0.387 0.387)  the same file: true
+        \\  sinusoidal    (1.396 1.703 0.316 1.507) (1.575 1.445 0.356 1.508)  the same file: false
+        \\  relative bias (1.236 0.764 0.600 0.363) (0.916 1.084 0.139 0.223)  the same file: false
+        ,
+        .hint = "`stack` on `.last` then `merge` interleaves. In the bias, row = listener: a speaker BEHIND her has a smaller position. `forward` must read `self.positions` (and `const` may have to become `var`).\n",
+    },
+    .{
+        .main_file = "25_the_petting_zoo/173_second_opinions.zig",
+        .output =
+        \\4 vets, 2 opinions per animal: {b=1,s=3,d=2,f32} -> ids {b=1,s=3,topk=2,i32}
+        \\  pony   0.88 Dr. Hoof + 0.12 Dr. Both  ->  3.762 bandages, 0.000 syrup
+        \\  goose  0.88 Dr. Lung + 0.12 Dr. Both  ->  0.000 bandages, 3.762 syrup
+        \\  goat   0.73 Dr. Hoof + 0.27 Dr. Both  ->  2.462 bandages, 0.000 syrup
+        \\the backend ZML picks for this platform: UnimplementedMoEBackend
+        \\.stablehlo is available: true
+        \\the reference {b=1,s=3,d=2,f32} agrees: true
+        ,
+        .hint = "`topK` names its new axis; the weights must sum to 1 over it. `zml.moe.Options` has no defaults: all three fields. The two Linears of `forwardMoe` take the stacked weights and the tag they contract.\n",
+    },
+    .{
+        .main_file = "25_the_petting_zoo/174_the_tortoise.zig",
+        .output =
+        \\asked for 2 signs, his mood: curious 0.787, grumpy 0.935
+        \\asked for 3 signs, his mood: curious 0.978, grumpy 0.759
+        \\asked for 4 signs, his mood: curious 0.879, grumpy 0.997
+        \\asked for 9 signs, his mood: curious 0.879, grumpy 0.997
+        \\the trail {s=4,d=2,f32}:
+        \\  after LETTUCE   0.918  0.000
+        \\  after NO DOGS   0.787  0.935
+        \\  after LETTUCE   0.978  0.759
+        \\  after CLOSED    0.879  0.997
+        \\unrolled, 6 inputs against 7: the same mood: true
+        ,
+        .hint = "The context holds what never changes, the State what does. `body` must return every Tensor with the shape and dtype it came in with. Mind the 9: there are only 4 signs.\n",
+    },
+    .{
+        .main_file = "25_the_petting_zoo/175_quiz_the_new_arrival.zig",
+        .output =
+        \\{b=4,s=3,i32} sentences, {b=3,f32} cosines
+        \\  like the rabbit    0.996
+        \\  like the goose     0.061
+        \\  like the tortoise -0.252
+        \\the new arrival moves in with the rabbit
+        ,
+        .hint = "Leaves first: `Cell`, `Clinic`, then `Zoo`. A local named like one of the data arrays is a compile error. The mask is only needed in the pooling; the residual is `x.add(...)` with matching tags.\n",
+    },
+    // Chapter 26: The Mail Room
+    .{
+        .main_file = "26_the_mail_room/176_the_address_label.zig",
+        .output =
+        \\arguments from the runner: 0
+        \\
+        \\mailroom parcels/floor14
+        \\  repo: parcels/floor14
+        \\  start: dock
+        \\  max steps: ask the config
+        \\  chunk: 4096 bytes
+        \\  service: standard
+        \\  fragile: false
+        \\
+        \\mailroom --max-steps=3 --chunk=64KiB parcels/overseas 2
+        \\  repo: parcels/overseas
+        \\  start: x-ray
+        \\  max steps: 3
+        \\  chunk: 65536 bytes
+        \\  service: standard
+        \\  fragile: false
+        \\
+        \\mailroom --service=express --fragile parcels/annex
+        \\  repo: parcels/annex
+        \\  start: dock
+        \\  max steps: ask the config
+        \\  chunk: 4096 bytes
+        \\  service: express
+        \\  fragile: true
+        ,
+        .hint = "The help text gives each name, type and default; an underscore in a field is a dash in the flag. The compile error names the flag. Then `parse` says what is wrong with a label on stderr: `=` glues a value, and options come before positional arguments.\n",
+    },
+    .{
+        .main_file = "26_the_mail_room/177_the_customs_slip.zig",
+        .output =
+        \\floor14
+        \\  model type: chute
+        \\  layers: 0, tied head: false, stored as float32
+        \\  a route starts at: dock
+        \\  and ends at: [the 14th floor]
+        \\  or after 20 stations
+        \\overseas
+        \\  model type: conveyor
+        \\  layers: 2, tied head: false, stored as float16
+        \\  a route starts at: dock
+        \\  and ends at: [return to sender] [the basement]
+        \\  or after 20 stations
+        \\annex
+        \\  model type: conveyor
+        \\  layers: 2, tied head: true, stored as bfloat16
+        \\  a route starts at: dock
+        \\  and ends at: [the 14th floor]
+        \\  or after 6 stations
+        \\pneumatic_tube: error.UnknownModelType
+        \\sampling: max_new_tokens 8, top_k 50, temperature 0.7
+        ,
+        .hint = "`error.UnexpectedToken`: std.json needs to be told how to pick a tag of the union. `error.UnknownField`: exercise 121. `error.InvalidEnumTag`: read annex/config.json. A default only covers an ABSENT key; null is a value.\n",
+    },
+    .{
+        .main_file = "26_the_mail_room/178_three_boxes_one_parcel.zig",
+        .output =
+        \\the index of overseas, by hand:
+        \\  5 tensors, 528 bytes
+        \\  model-00001-of-00003.safetensors: 1
+        \\  model-00002-of-00003.safetensors: 3
+        \\  model-00003-of-00003.safetensors: 1
+        \\
+        \\floor14: entry point model.safetensors, 2 tensors, 512 bytes
+        \\overseas: entry point model.safetensors.index.json, 5 tensors, 528 bytes
+        \\annex: entry point model.safetensors.index.json, 3 tensors, 384 bytes
+        \\mop_closet: error.FileNotFound
+        \\the shelf itself: error.FileNotFound
+        \\
+        \\overseas, tensor by tensor:
+        \\  model.embed_tokens.weight {8,8,f16} in model-00001-of-00003.safetensors
+        \\  model.layers.0.fc.weight {8,8,f16} in model-00002-of-00003.safetensors
+        \\  model.layers.0.fc.bias {8,f16} in model-00002-of-00003.safetensors
+        \\  model.layers.1.fc.weight {8,8,f16} in model-00002-of-00003.safetensors
+        \\  lm_head.weight {8,8,f16} in model-00003-of-00003.safetensors
+        \\layers: 2
+        \\missing for a conveyor: 0
+        ,
+        .hint = "Count what Priya's registry holds against what the index promised. `fromRepo` takes the directory. Then read the names on the list: where do the layers live?\n",
+    },
+    .{
+        .main_file = "26_the_mail_room/179_the_loading_dock.zig",
+        .output =
+        \\zmling/26_the_mail_room/parcels/floor14
+        \\  model.safetensors
+        \\file://zmling/26_the_mail_room/parcels/floor14
+        \\  model.safetensors
+        \\file://zmling/26_the_mail_room/parcels/overseas
+        \\  model.safetensors.index.json
+        \\file://zmling/26_the_mail_room/parcels/mop_closet
+        \\  error.FileNotFound
+        \\hf://consolidated-tensor/router-v2
+        \\  error.InvalidPath
+        \\
+        \\in the parcel:
+        \\  model.embed_tokens.weight
+        \\  lm_head.weight
+        \\
+        \\route: dock > scale > x-ray > belt A > the 14th floor
+        ,
+        .hint = "The dock is in the lesson. The panic names the tensor ZML looked for; the program printed the two names the file really has. `argMax` keeps the axis it reduced.\n",
+    },
+    .{
+        .main_file = "26_the_mail_room/180_the_forklift.zig",
+        .output =
+        \\forklift: 4 at a time, 4 buffers of 65536 bytes
+        \\the slip says float16, the table is Tensor({voc=8,d=8,f16})
+        \\in the boxes: 528 bytes
+        \\on the device: 528 bytes
+        \\route: dock > scale > x-ray > belt B > the basement
+        ,
+        .hint = "`Loader.init` takes all three fields; `chunk_size.bytes()`. 512 bytes out of 528: which tensor is 16 bytes? Then: `Linear.forward` computes in the dtype of its INPUT. Convert once, early.\n",
+    },
+    .{
+        .main_file = "26_the_mail_room/181_the_sorting_table.zig",
+        .output =
+        \\floor14: a chute, 2 tensors
+        \\  dock > scale > x-ray > belt A > the 14th floor
+        \\overseas: a conveyor, 5 tensors
+        \\  dock > scale > x-ray > belt B > the basement
+        \\overseas: a conveyor, 5 tensors
+        \\  belt A > the basement
+        \\annex: a conveyor, 3 tensors
+        \\  dock > scale > belt A > belt B > belt A > belt B ... (gave up after 6 stations)
+        \\annex: a conveyor, 3 tensors
+        \\  dock > scale > belt A > belt B ... (gave up after 4 stations)
+        ,
+        .hint = "The panic in `main` names two fields of the union: one switch, compiled once per tag. A weight that may be absent is an optional field. And compare the number of layers on the slip with the number Priya allocated.\n",
+    },
+    .{
+        .main_file = "26_the_mail_room/182_quiz_special_delivery.zig",
+        .output =
+        \\parcel: floor14
+        \\  entry point: model.safetensors
+        \\  slip: chute, 0 layers, tied head: false, float32
+        \\  boxes: 2 tensors, 512 bytes
+        \\  device: 512 bytes
+        \\  route: dock > scale > x-ray > belt A > the 14th floor
+        \\parcel: overseas
+        \\  entry point: model.safetensors.index.json
+        \\  slip: conveyor, 2 layers, tied head: false, float16
+        \\  boxes: 5 tensors, 528 bytes
+        \\  device: 528 bytes
+        \\  route: dock > scale > x-ray > belt B > the basement
+        \\parcel: tube
+        \\  entry point: model.safetensors
+        \\  slip: pneumatic_tube: error.UnknownModelType
+        \\parcel: annex
+        \\  entry point: model.safetensors.index.json
+        \\  slip: conveyor, 2 layers, tied head: true, bfloat16
+        \\  boxes: 3 tensors, 384 bytes
+        \\  device: 384 bytes
+        \\  route: x-ray > belt A > belt B > belt A > belt B ... (gave up after 5 stations)
+        ,
+        .hint = "Everything is in exercises 176 to 181. An unknown architecture is an error to catch and report, not to `try`. stdout stays on `init.io`.\n",
+    },
+    // Chapter 27: The Hall of Mirrors
+    .{
+        .main_file = "27_the_hall_of_mirrors/183_the_inspection.zig",
+        .output =
+        \\Madame Ottoline's, pane by pane:
+        \\  {ticket=3,i32}
+        \\  {out=4,d=4,f32}
+        \\  {out=4,f32}
+        \\  {out=4,d=4,f32}
+        \\  {out=4,d=4,f32}
+        \\  {out=4,f32}
+        \\  {d=4,f32}
+        \\  {d=4,f32}
+        \\8 panes, 67 numbers, 268 bytes.
+        \\With the cheap glass: 8 panes, 67 numbers, 140 bytes.
+        \\The last mirror is now Tensor({out=4,d=4,f16}).
+        ,
+        .hint = "`visit` wants a pointer to the thing, and reads what to look for off your callback. A callback that writes needs everything on the way to be writable.\n",
+    },
+    .{
+        .main_file = "27_the_hall_of_mirrors/184_single_file.zig",
+        .output =
+        \\Mr. Pym's list:
+        \\  slot 0: {d=3,f32}
+        \\  slot 1: {d=3,f32}
+        \\  slot 2: {f32}
+        \\  slot 3: {d=3,f32}
+        \\The Exe has 4 slots. Same list: true
+        \\Gus's crate: { 30, 40, 50 }
+        \\No crate at all: { 30, 40, 50 }
+        ,
+        .hint = "Nothing but the place in the walk connects a Buffer to its Tensor. Read the slot number in the panic, then Mr. Pym's list. For the crate: which declaration decides the order?\n",
+    },
+    .{
+        .main_file = "27_the_hall_of_mirrors/185_the_other_side.zig",
+        .output =
+        \\A Hall has 3 fields, its reflection has 2.
+        \\The reflection of the sign is void: true
+        \\A Mirror can `forward`: true. Its reflection: false.
+        \\Fresh from `bufferize`: 6 crates, the first one says {d=2,f32}, full: false
+        \\After the pour: full: true, 0 numbers left on the strip.
+        \\A visitor { 3, 1 } comes out as { 4, 70 }
+        ,
+        .hint = "`bufferize` cannot write into a `[]const`, and has no case for arrays: `reached unreachable code` in `bufferizeInner` is that. Each crate already knows its shape: that says how much of the strip it takes.\n",
+    },
+    .{
+        .main_file = "27_the_hall_of_mirrors/186_the_blueprint.zig",
+        .output =
+        \\Madame Ottoline's: built from the blueprint, 7 slots.
+        \\The name was copied, not borrowed: true
+        \\The ledger of Madame Ottoline's:
+        \\  door: 3 numbers, 12 bytes
+        \\  corridor[0]: glass 9 numbers, frame 3, curved: false
+        \\  corridor[1]: glass 9 numbers, frame 0, curved: true
+        \\  corridor[2]: glass 9 numbers, frame 3, curved: true
+        ,
+        .hint = "The callback of `mapAlloc` always takes two parameters. If the Exe has fewer slots than Mr. Pym counted, look at what the blueprint says about each frame, and at what it does NOT say.\n",
+    },
+    .{
+        .main_file = "27_the_hall_of_mirrors/187_the_twins.zig",
+        .output =
+        \\The Twins have the same shape: true, the same id: false
+        \\  left <- bar.2.weight, right <- bar.2.weight
+        \\A copy of the left one has its id: true, and <- bar.2.weight
+        \\A lookalike has its id: false, and <- nothing
+        \\The hall:
+        \\  entrance.glass <- bar.0.weight
+        \\  entrance.frame <- bar.0.bias
+        \\  middle.glass <- bar.1.weight
+        \\  middle.frame <- bar.1.bias
+        \\Three mirrors on the way, 5 slots.
+        \\A visitor { 3, 1 } comes out as { 13, 1 }
+        ,
+        .hint = "`0 shards`: the Loader found no source for that id. Look at the list printed above the panic. A tie is one field used twice in `forward`, never two fields.\n",
+    },
+    .{
+        .main_file = "27_the_hall_of_mirrors/188_staff_only.zig",
+        .output =
+        \\A Hall has 4 fields, its reflection has 3.
+        \\The walk sees 6 panes. The Exe has 7 slots: the visitor, and a spare nobody looks into.
+        \\Pane by pane: {d=4,f32} {out=4,d=4,f32} {out=4,f32} {out=4,d=4,f32} {out=4,f32} {out=4,d=4,f32}
+        \\In all: 60 numbers of f32 glass.
+        ,
+        .hint = "The id in the panic is the placeholder you passed as the visitor: where else does the walk meet it? `collectBuf` fills the seats it is given and says nothing about the guests left standing.\n",
+    },
+    .{
+        .main_file = "27_the_hall_of_mirrors/189_quiz_the_grand_tour.zig",
+        .output =
+        \\The Grand Hall, pane by pane:
+        \\  0  hall.doors.entry           4  {d=4,f32}
+        \\  1  hall.doors.exit            4  {d=4,f32}
+        \\  2  hall.corridor[0].glass    24  {out=6,d=4,f32}
+        \\  3  hall.corridor[0].frame     6  {out=6,f32}
+        \\  4  hall.corridor[1].glass    30  {out=5,d=6,f32}
+        \\  5  hall.corridor[2].glass    20  {out=4,d=5,f32}
+        \\  6  hall.corridor[2].frame     4  {out=4,f32}
+        \\  7  hall.twins[0]              4  {d=4,f32}
+        \\  8  hall.twins[1]              4  {d=4,f32}
+        \\  9  visitor                    4  {d=4,f32}
+        \\10 panes, 104 numbers.
+        \\`zml.meta` agrees: true
+        \\The Exe agrees: true
+        ,
+        .hint = "Start with the Tensor case and the struct case, run, and read the register: it tells you which kind you are still walking past. An extra pane called `hall.notice.visitor` means a door was left open.\n",
+    },
+    // Chapter 28: Footprints in the Snow
+    .{
+        .main_file = "28_footprints_in_the_snow/190_fresh_snow.zig",
+        .output =
+        \\before the snow, a Compiler on the mountain: false
+        \\after the snow,  a Compiler on the mountain: false
+        \\1 compile: forward ran 1 time, and saw the Compiler 1 time
+        \\  hiker 1 climbs 7.5 m. forward ran 1 time
+        \\  hiker 2 climbs 6 m. forward ran 1 time
+        \\  hiker 3 climbs 8 m. forward ran 1 time
+        \\2 compiles: forward ran 2 times, and saw the Compiler 2 times
+        \\the trails: {step=4,f32} and {step=6,f32}
+        ,
+        .hint = "Three mistakes, three times. Zig stops at the first (count the fields of the args tuple, and the parameters of `forward` after `self`). The second trace goes through `emitMlir`: compare the two shapes in the message. The third does not: which Buffer is `argument 1`?\n",
+    },
+    .{
+        .main_file = "28_footprints_in_the_snow/191_plaster_casts.zig",
+        .output =
+        \\in main, the placeholder carries a pointer: false
+        \\while tracing: depth false, wind false, their sum true
+        \\two placeholders, two compiles: 2 + 2 inputs
+        \\morning: { 15, 33, 11, 23 }
+        \\evening: { 9, 18, 7, 13 }
+        ,
+        .hint = "`_value` is an optional pointer: `!= null`. Then the panic: `evening` asks `value()` for a Tensor that is not in the args of ITS compile call.\n",
+    },
+    .{
+        .main_file = "28_footprints_in_the_snow/192_carved_in_ice.zig",
+        .output =
+        \\carved: 1 input. surveyed: 2 inputs.
+        \\the camp is at 1200 m
+        \\  carved:        { 1201, 1202, 1205, 1205.5, 1207 }
+        \\  surveyed:      { 1201, 1202, 1205, 1205.5, 1207 }
+        \\the camp moves to 1500 m
+        \\  carved:        { 1201, 1202, 1205, 1205.5, 1207 }
+        \\  surveyed:      { 1501, 1502, 1505, 1505.5, 1507 }
+        \\  carved again:  { 1501, 1502, 1505, 1505.5, 1507 }
+        ,
+        .hint = "`constantTensor(shape, bytes)` wants a Shape and `std.mem.sliceAsBytes`. If `carved again` still shows 1201: which Exe is answering, and when was it traced?\n",
+    },
+    .{
+        .main_file = "28_footprints_in_the_snow/193_the_snow_cave.zig",
+        .output =
+        \\the stack: forward 1, cond 2, body 2, a branch 3
+        \\traced: cond 1 time, body 1 time, branches 2 times
+        \\3 days of sun:           { 6, 15, 0, 17 }
+        \\6 days, storm on day 2:  { 12, 15, 0, 25 }
+        \\after 9 days in the cave, body was traced 1 time
+        ,
+        .hint = "Follow the stack trace up from `value`: `cond`, then later `onFalse`. Both read the shelf. A Tensor reaches a block through the struct you pass to `ops.while` / `ops.if`, nothing else. Snow has no negative depth: one op floors at zero.\n",
+    },
+    .{
+        .main_file = "28_footprints_in_the_snow/194_the_measuring_stick.zig",
+        .output =
+        \\while the snow fell, the stick came out 2 times
+        \\new snow {day=3,print=3,f32}:
+        \\  day 0:   9.0   8.0  12.5
+        \\  day 1:  16.0  12.0  21.0
+        \\  day 2: -40.0  16.0  29.5
+        \\readings below zero: 1
+        \\two runs later, the stick came out 2 times
+        ,
+        .hint = "`hasTag(.day)` is a `?u3`: it can be compared with a number. Once the panic is your own message, fix the caller, not the stick. `belowZero`: `cmp`, `convert(.i32)`, then a `sum` that leaves a scalar.\n",
+    },
+    .{
+        .main_file = "28_footprints_in_the_snow/195_cairns_and_avalanches.zig",
+        .output =
+        \\"the_hike" compiled
+        \\cairns: on 3 legs of 3, back in the open: false, in camp: true
+        \\the last morning of 2 days: { 3, 2, 3.5, 0 }
+        \\the last morning of 3 days: { 2, 0, 3, 0 }
+        \\the last morning of 5 days: { 0, 0, 2, 0 }
+        ,
+        .hint = "In the dump, find the `%` that is defined between `({` and `})` and used after it. It leaves the loop as a third field of the State. `back in the open: true`: every push needs its `defer ... popLocation()`.\n",
+    },
+    .{
+        .main_file = "28_footprints_in_the_snow/196_quiz_the_cold_case.zig",
+        .output =
+        \\the case takes 4 inputs, the counting 2
+        \\day 1, sun  : { 10, 25, 4, 19 }, 3 deeper than 9.5
+        \\day 6, sun  : { 0, 0, 0, 14 }, 1 deeper than 9.5
+        \\day 6, shade: { 6, 15, 0, 17 }, 2 deeper than 9.5
+        \\day 3, shade: { 9, 22.5, 2, 18.5 }, 2 deeper than 9.5
+        \\4 questions, traced 1 time
+        ,
+        .hint = "Same message twice, two different Tensors: read which function is in the stack trace. Then the silent ones: anything read from a Zig variable inside `forward`, `cond` or `body` is a photograph. 4 inputs: melt, depth, days, shade.\n",
+    },
 };

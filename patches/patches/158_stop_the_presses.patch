@@ -1,0 +1,70 @@
+--- exercises/23_hot_off_the_press/158_stop_the_presses.zig
++++ answers/23_hot_off_the_press/158_stop_the_presses.zig
+@@ -155,7 +155,7 @@
+ 
+ /// model.py, RMSNorm.forward. x: {.s, .d}, weight: {.d}
+ fn rmsNorm(x: zml.Tensor, weight: zml.Tensor) zml.Tensor {
+-    return ???;
++    return zml.nn.rmsNorm(x, .d, norm_eps).mul(weight.broad(x.shape()));
+ }
+ 
+ /// A torch `nn.Linear(bias=False)`: its weight is {out, in}.
+@@ -351,7 +351,7 @@
+ const Stop = enum { the_end, no_paper };
+ 
+ fn isStop(stops: []const u32, token: u32) bool {
+-    return ???;
++    return std.mem.indexOfScalar(u32, stops, token) != null;
+ }
+ 
+ /// The page as Tiny expects it: the start token, then the opening.
+@@ -360,10 +360,12 @@
+     var encoder = try tokenizer.encoder();
+     defer encoder.deinit();
+ 
+-    // Gus: "The page starts with <s>. So I typed <s>."
+-    const typed = try std.mem.concat(gpa, u8, &.{ "<s>", text });
+-    defer gpa.free(typed);
+-    return encoder.encodeAlloc(gpa, typed);
++    const start = tokenizer.tokenId("<s>") orelse return error.NoSuchToken;
++    var tokens: std.Io.Writer.Allocating = .initAligned(gpa, .of(u32));
++    errdefer tokens.deinit();
++    try encoder.appendTokens(&tokens.writer, &.{start});
++    try encoder.encode(&tokens.writer, text);
++    return @ptrCast(@alignCast(try tokens.toOwnedSlice()));
+ }
+ 
+ /// Rolls the presses. `story[0..start]` is the page as it opens;
+@@ -397,7 +399,14 @@
+     defer plate.deinit();
+ 
+     var len = start;
+-    const why: Stop = ???;
++    const why: Stop = while (true) {
++        if (isStop(stops, next)) break .the_end;
++        story[len] = next;
++        len += 1;
++        if (len == story.len) break .no_paper;
++        try feed(io, platform, decode_man, &cache, &plate, len - 1);
++        next = (try plate.getValue([1]u32, io))[0];
++    };
+     return .{ len, why };
+ }
+ 
+@@ -485,14 +494,13 @@
+     try stdout.print("the page opens with: {any}\n", .{page});
+     try stdout.print("the presses stop on: {any}\n", .{stops});
+ 
+-    var decoder = try tokenizer.decoder();
+-    defer decoder.deinit();
+-
+     for (orders) |paper| {
+         var story: [rows]u32 = undefined;
+         @memcpy(story[0..page.len], page);
+         const len, const why = try roll(gpa, io, platform, &prefill_man, &decode_man, cache_shape, story[0..paper], page.len, &stops);
+ 
++        var decoder = try tokenizer.decoder();
++        defer decoder.deinit();
+         var text = try decoder.decodeAlloc(gpa, story[0..len]);
+         defer text.deinit(gpa);
+ 

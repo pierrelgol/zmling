@@ -1,0 +1,9 @@
+load("//zmling/harness:defs.bzl", "zmling_exercises")
+
+# Tiny, her words and her reference activations are chapter 21's.
+zmling_exercises(data = ["//zmling/21_the_graduation:" + f for f in [
+    "stories260K.safetensors",
+    "activations.safetensors",
+    "config.json",
+    "tok512.pb",
+]])

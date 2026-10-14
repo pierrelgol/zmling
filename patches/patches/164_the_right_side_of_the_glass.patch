@@ -1,0 +1,54 @@
+--- exercises/24_window_shopping/164_the_right_side_of_the_glass.zig
++++ answers/24_window_shopping/164_the_right_side_of_the_glass.zig
+@@ -125,14 +125,21 @@
+ /// The convolution of an NHWC photo, without moving it.
+ /// photo: {.b, .h, .w, .c}, kernel: {.o, .i, .kh, .kw} -> {.b, .h, .w, .c}
+ fn byOptions(photo: zml.Tensor, kernel: zml.Tensor) zml.Tensor {
+-    return ???;
++    return photo.conv2d(kernel, .{
++        .input_batch_dimension = photo.axis(.b),
++        .input_feature_dimension = photo.axis(.c),
++        .input_spatial_dimensions = &.{ photo.axis(.h), photo.axis(.w) },
++        .output_batch_dimension = photo.axis(.b),
++        .output_feature_dimension = photo.axis(.c),
++        .output_spatial_dimensions = &.{ photo.axis(.h), photo.axis(.w) },
++    });
+ }
+ 
+ /// The same, by turning the photo to NCHW and back.
+ /// photo: {.b, .h, .w, .c}, kernel: {.o, .i, .kh, .kw} -> {.b, .h, .w, .c}
+ fn byTranspose(photo: zml.Tensor, kernel: zml.Tensor) zml.Tensor {
+     const turned = photo.transpose(.{ .b, .c, .h, .w });
+-    return turned.conv2d(kernel, .{});
++    return turned.conv2d(kernel, .{}).transpose(.{ .b, .h, .w, .c });
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -147,7 +154,7 @@
+     defer platform.deinit(gpa, io);
+ 
+     const photo: zml.Tensor = .init(.{ .b = 1, .h = 3, .w = 7, .c = 3 }, .f32);
+-    const kernel: zml.Tensor = .init(.{ .i = 3, .o = 1, .kh = 3, .kw = 3 }, .f32);
++    const kernel: zml.Tensor = .init(.{ .o = 1, .i = 3, .kh = 3, .kw = 3 }, .f32);
+ 
+     // One row of pixels: (red, green, blue) seven times.
+     const row = [7][3]f32{ .{ 0, 5, 0 }, .{ 0, 5, 1 }, .{ 0, 5, 2 }, .{ 1, 5, 3 }, .{ 1, 5, 4 }, .{ 1, 5, 5 }, .{ 0, 5, 6 } };
+@@ -167,9 +174,15 @@
+     var careless_result = try careless_exe.eval(gpa, io, .{ photo_buffer, kernel_buffer });
+     defer careless_result.deinit();
+ 
+-    // Compile and run `byOptions` and `byTranspose`: the results
+-    // are `options_result` and `transpose_result`.
+-    ???;
++    var options_exe = try platform.compileFn(gpa, io, byOptions, .{ photo, kernel }, .{});
++    defer options_exe.deinit();
++    var options_result = try options_exe.eval(gpa, io, .{ photo_buffer, kernel_buffer });
++    defer options_result.deinit();
++
++    var transpose_exe = try platform.compileFn(gpa, io, byTranspose, .{ photo, kernel }, .{});
++    defer transpose_exe.deinit();
++    var transpose_result = try transpose_exe.eval(gpa, io, .{ photo_buffer, kernel_buffer });
++    defer transpose_result.deinit();
+ 
+     try stdout.print("the photo    {f}\n", .{photo.shape()});
+     try stdout.print("careless     {f}: {any}\n", .{ careless_result.shape(), try careless_result.getValue([5]f32, io) });

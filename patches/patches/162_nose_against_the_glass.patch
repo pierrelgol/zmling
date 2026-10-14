@@ -1,0 +1,46 @@
+--- exercises/24_window_shopping/162_nose_against_the_glass.zig
++++ answers/24_window_shopping/162_nose_against_the_glass.zig
+@@ -110,15 +110,15 @@
+ /// in front of them: a rank 0 tensor.
+ /// street: {.t}, kernel: {.k}
+ fn glance(street: zml.Tensor, kernel: zml.Tensor, at: i64) zml.Tensor {
+-    return ???;
++    const seen = street.slice(.t, .{ .start = at, .end = at + kernel.dim(.k) });
++    return seen.rename(.{ .t = .k }).dot(kernel, .k);
+ }
+ 
+ /// The whole walk, by hand: one glance per position where the
+ /// kernel fits. street: {.t}, kernel: {.k} -> {.t}
+ fn stroll(street: zml.Tensor, kernel: zml.Tensor) zml.Tensor {
+     var glances: [16]zml.Tensor = undefined;
+-    // How many places are there to stand?
+-    const positions: usize = @intCast(???);
++    const positions: usize = @intCast(street.dim(.t) - kernel.dim(.k) + 1);
+     for (glances[0..positions], 0..) |*g, at| g.* = glance(street, kernel, @intCast(at));
+     return zml.Tensor.stack(glances[0..positions], 0, .t);
+ }
+@@ -126,7 +126,8 @@
+ /// The same walk, by `conv1d`. street: {.t}, kernel: {.k} -> {.t}
+ fn strollConv(street: zml.Tensor, kernel: zml.Tensor) zml.Tensor {
+     const input = street.insertAxes(0, .{ .b, .c });
+-    return input.conv1d(kernel, .{}).squeeze(.b).squeeze(.c);
++    const weights = kernel.insertAxes(0, .{ .o, .i });
++    return input.conv1d(weights, .{}).squeeze(.b).squeeze(.c);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -157,9 +158,11 @@
+     var by_hand = try by_hand_exe.eval(gpa, io, .{ street_buffer, kernel_buffer });
+     defer by_hand.deinit();
+ 
+-    // Compile `strollConv` and run it on the same two Buffers:
+-    // the result is `by_conv`.
+-    ???;
++    var conv_exe = try platform.compileFn(gpa, io, strollConv, .{ street, kernel }, .{});
++    defer conv_exe.deinit();
++
++    var by_conv = try conv_exe.eval(gpa, io, .{ street_buffer, kernel_buffer });
++    defer by_conv.deinit();
+ 
+     const hand = try by_hand.getValue([6]f32, io);
+     const conv = try by_conv.getValue([6]f32, io);

@@ -1,0 +1,37 @@
+--- exercises/29_lost_property/199_unclaimed.zig
++++ answers/29_lost_property/199_unclaimed.zig
+@@ -188,7 +188,9 @@
+ 
+ /// One raw call, waited for. The caller owns what comes back.
+ fn examine(io: std.Io, ledger: *Ledger, exe: *const zml.Exe, args: *zml.Exe.Arguments, results: *zml.Exe.Results, object: zml.Buffer) zml.Buffer {
+-    return ???;
++    args.set(.{object});
++    exe.call(io, args.*, results, .{ .wait = true });
++    return ledger.issue(results.get(zml.Buffer));
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -222,12 +224,11 @@
+         defer ledger.claim(&object_buffer);
+ 
+         var length = examine(io, &ledger, &exe, &args, &results, object_buffer);
+-        var spare = length; // Basile: "in case I lose the first one"
+-        defer ledger.claim(&spare);
+         defer ledger.claim(&length);
+ 
+         // The note, on the host.
+         const note = try length.toSliceAlloc(counted, io);
++        defer note.free(counted);
+         try stdout.print("{s}: {d} cm of string ({d} handles out, {d} allocations)\n", .{
+             name, note.constItems(i32)[0], ledger.out, turnstile.out,
+         });
+@@ -250,7 +251,9 @@
+     try stdout.print("claimed twice through the same variable: it holds {d} handles, the copy still says {d}\n", .{ twice.numShards(), spare.numShards() });
+ 
+     ledger.claim(&thrice);
++    ledger.claim(&again);
+     runner.deinit(counted);
++    results.deinit(counted);
+     args.deinit(counted);
+ 
+     try stdout.print("closing time. host allocations still out: {d}\n", .{turnstile.out});

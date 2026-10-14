@@ -1,0 +1,53 @@
+--- exercises/24_window_shopping/165_the_best_of_the_window.zig
++++ answers/24_window_shopping/165_the_best_of_the_window.zig
+@@ -113,7 +113,7 @@
+ /// The busiest pane of each quarter of the window.
+ /// stops: {.b, .c, .h, .w} -> {.b, .c, .h / 2, .w / 2}
+ fn best(stops: zml.Tensor) zml.Tensor {
+-    return stops.maxPool2d(.{ .window_dimensions = .{ 2, 2 } });
++    return stops.maxPool2d(.{ .window_dimensions = .{ 2, 2 } }).values;
+ }
+ 
+ /// In which column of the window that pane was. i32.
+@@ -124,13 +124,17 @@
+ /// The busiest pane of each pair, row by row.
+ /// stops: {.b, .c, .h, .w} -> {.b, .c, .h, .w / 2}
+ fn pairs(stops: zml.Tensor) zml.Tensor {
+-    return stops.maxPool1d(.{ .window_dimensions = 2 }).values;
++    return stops.maxPool1d(.{ .window_dimensions = 2, .window_strides = null }).values;
+ }
+ 
+ /// The average of each quarter, the way of exercise 53.
+ /// stops: {.b, .c, .h, .w} -> {.b, .c, .h / 2, .w / 2}
+ fn averageByFolding(stops: zml.Tensor) zml.Tensor {
+-    return ???;
++    return stops
++        .splitAxis(.h, .{ .h = .auto, .dh = 2 })
++        .splitAxis(.w, .{ .w = .auto, .dw = 2 })
++        .mean(.dh).squeeze(.dh)
++        .mean(.dw).squeeze(.dw);
+ }
+ 
+ /// What `reduceWindow` needs to compute a sum.
+@@ -141,12 +145,19 @@
+ /// The average of every 2 x 2 window, moving `stride` panes at a
+ /// time in both directions. stops: {.b, .c, .h, .w}
+ fn average(stops: zml.Tensor, stride: i64) zml.Tensor {
+-    return ???;
++    const sums = zml.ops.reduceWindow(1, .{stops}, .{zml.Tensor.scalar(0, stops.dtype())}, .{
++        .window_dimensions = &.{ 1, 1, 2, 2 },
++        .window_strides = &.{ 1, 1, stride, stride },
++        .base_dilations = &.{ 1, 1, 1, 1 },
++        .window_dilations = &.{ 1, 1, 1, 1 },
++        .padding = &.{ .{ 0, 0 }, .{ 0, 0 }, .{ 0, 0 }, .{ 0, 0 } },
++    }, &plus);
++    return sums[0].divByConst(4);
+ }
+ 
+ /// One number for the whole window: {.b, .c, .h, .w} -> {.b, .c}
+ fn overall(stops: zml.Tensor) zml.Tensor {
+-    return stops.mean(.h).mean(.w);
++    return stops.mean(.h).mean(.w).squeeze(.h).squeeze(.w);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

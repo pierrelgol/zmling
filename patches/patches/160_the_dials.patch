@@ -1,0 +1,66 @@
+--- exercises/23_hot_off_the_press/160_the_dials.zig
++++ answers/23_hot_off_the_press/160_the_dials.zig
+@@ -338,7 +338,15 @@
+     for (model.layers, 0..) |layer, i| x, filed = layer.forward(x, input.pos, filed, i);
+ 
+     const logits = rmsNorm(x, model.norm).dot(model.tok_embeddings.weight, .d);
+-    return ???;
++    const next, const rng = zml.nn.sampleTokensDynamic(logits, input.dials, input.rng);
++    return .{
++        .tokens = next.convert(.u32).reuseBuffer(input.tokens),
++        .cache = .{
++            .k = filed.k.reuseBuffer(input.cache.k),
++            .v = filed.v.reuseBuffer(input.cache.v),
++        },
++        .rng = rng,
++    };
+ }
+ 
+ /// The press: an Exe that knows the names of what it takes.
+@@ -361,7 +369,10 @@
+ fn feed(io: std.Io, platform: *zml.Platform, pressman: *Pressman, desk: *Desk, plate: *zml.Buffer, pos: usize) !void {
+     var pos_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(pos)), .i32);
+     defer pos_buffer.deinit();
+-    ???;
++    pressman.run(io, .{
++        .inputs = .{ .tokens = plate.*, .pos = pos_buffer, .cache = desk.cache, .dials = desk.dials, .rng = desk.rng.* },
++        .outputs = .{ .tokens = plate, .cache = &desk.cache, .rng = desk.rng },
++    }, .{ .wait = true });
+ }
+ 
+ fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
+@@ -423,7 +434,8 @@
+     std.debug.assert(start <= forme and start < story.len and story.len <= rows);
+ 
+     // `dials`: the Buffers of `setting`.
+-    ???;
++    var dials = try Dials.makeBuffers(io, platform, .f32, setting);
++    defer Dials.deinitBuffers(&dials);
+ 
+     var desk: Desk = .{ .cache = try blankCache(gpa, io, platform, cache_shape), .dials = dials, .rng = rng };
+     defer desk.cache.k.deinit();
+@@ -503,7 +515,7 @@
+     const pos: zml.Tensor = .init(.{}, .i32);
+ 
+     // The dials and the dice: ghosts, like the rest.
+-    const dials: Dials = .init(.f32, 0);
++    const dials: Dials = .init(.f32, type_cases);
+     const rng: zml.Tensor.Rng = .init();
+ 
+     // One function, two presses, and a pressman for each. Whatever
+@@ -544,11 +556,11 @@
+ 
+     var stories: [editions.len][paper]u32 = undefined;
+     var lens: [editions.len]usize = undefined;
+-    // The dice.
+-    var rng_buffers = try rng.initBuffer(io, platform, seed);
+-    defer zml.Tensor.Rng.deinitBuffer(&rng_buffers);
+-
+     for (editions, &stories, &lens) |edition, *story, *len| {
++        // The dice of this edition.
++        var rng_buffers = try rng.initBuffer(io, platform, seed);
++        defer zml.Tensor.Rng.deinitBuffer(&rng_buffers);
++
+         @memcpy(story[0..page.len], page);
+         len.* = try roll(gpa, io, platform, &prefill_man, &decode_man, cache_shape, story, page.len, &stops, edition.dials, &rng_buffers);
+     }

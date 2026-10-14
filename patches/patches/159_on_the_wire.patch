@@ -1,0 +1,63 @@
+--- exercises/23_hot_off_the_press/159_on_the_wire.zig
++++ answers/23_hot_off_the_press/159_on_the_wire.zig
+@@ -200,7 +200,10 @@
+         const layout: zml.nn.RopeOpts = .{ .layout = .interleaved };
+ 
+         const at = .{ .layer = zml.Tensor.scalar(layer, .i32), .k = pos };
+-        const filed: Cache = ???;
++        const filed: Cache = .{
++            .k = cache.k.dynamicUpdateSlice(at, zml.nn.rope(k, positions, layout).rename(.{ .s = .k })),
++            .v = cache.v.dynamicUpdateSlice(at, v.rename(.{ .s = .k })),
++        };
+ 
+         const heard = zml.nn.sdpa(
+             zml.nn.rope(q, positions, layout).rename(.{ .s = .q }),
+@@ -378,9 +381,24 @@
+     var plate: zml.Buffer = try .fromBytes(io, platform, .init(.{ .s = 1 }, .u32), std.mem.asBytes(&next));
+     defer plate.deinit();
+ 
+-    // `len`, `why`, and every piece of text on the tape on its way.
++    // The opening is text too.
+     var scratch: [64]u8 = undefined;
+-    ???;
++    for (story[0..start]) |id| try tape.writeAll(try decoder.feedOne(id, &scratch));
++    try tape.flush();
++
++    var len = start;
++    const why: Stop = while (true) {
++        if (isStop(stops, next)) break .the_end;
++        story[len] = next;
++        len += 1;
++        try tape.writeAll(try decoder.feedOne(next, &scratch));
++        try tape.flush();
++        if (len == story.len) break .no_paper;
++        try feed(io, platform, decode_man, &cache, &plate, len - 1);
++        next = (try plate.getValue([1]u32, io))[0];
++    };
++    try tape.writeAll(try decoder.finalize(&scratch));
++    try tape.flush();
+     return .{ len, why };
+ }
+ 
+@@ -471,9 +489,7 @@
+     defer proof.deinit();
+     var scratch: [64]u8 = undefined;
+     try stdout.print("\noff the decoder:  ", .{});
+-    var pieces: [proof_ids.len][]const u8 = undefined;
+-    for (proof_ids, &pieces) |id, *piece| piece.* = try proof.feedOne(id, &scratch);
+-    for (pieces) |piece| try stdout.print("[{s}]", .{piece});
++    for (proof_ids) |id| try stdout.print("[{s}]", .{try proof.feedOne(id, &scratch)});
+     try stdout.print("\n--- on the tape\n", .{});
+ 
+     const page = try openPage(gpa, &tokenizer, opening);
+@@ -481,7 +497,9 @@
+     var story: [rows]u32 = undefined;
+     @memcpy(story[0..page.len], page);
+ 
+-    const len, const why = try roll(gpa, io, platform, &prefill_man, &decode_man, cache_shape, &story, page.len, &stops, &proof, stdout);
++    var decoder = try tokenizer.decoder();
++    defer decoder.deinit();
++    const len, const why = try roll(gpa, io, platform, &prefill_man, &decode_man, cache_shape, &story, page.len, &stops, &decoder, stdout);
+ 
+     try stdout.print("\n--- {d} tokens printed, and the presses stopped: {s}\n", .{ len, switch (why) {
+         .the_end => "the story was over",

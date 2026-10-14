@@ -1,0 +1,46 @@
+--- exercises/24_window_shopping/167_one_dresser_per_colour.zig
++++ answers/24_window_shopping/167_one_dresser_per_colour.zig
+@@ -82,7 +82,7 @@
+ /// Each dresser on her own colour.
+ /// photo: {.b, .c, .h, .w}, kernels: {.o, .i, .kh, .kw} with .i = 1
+ fn dress(photo: zml.Tensor, kernels: zml.Tensor) zml.Tensor {
+-    return photo.conv2d(kernels, .{});
++    return photo.conv2d(kernels, .{ .feature_group_count = photo.dim(.c) });
+ }
+ 
+ /// The decorator, as a 1 x 1 convolution.
+@@ -95,7 +95,9 @@
+ /// x: {.b, .c, .h, .w}, mixer: {.o, .i, .kh = 1, .kw = 1}
+ /// -> {.b, .c, .h, .w}, like `blend`.
+ fn blendLinear(x: zml.Tensor, mixer: zml.Tensor) zml.Tensor {
+-    return ???;
++    const weight = mixer.squeeze(.kw).squeeze(.kh).rename(.{ .o = .dout, .i = .c });
++    const layer: zml.nn.Linear = .init(weight, null, .c);
++    return layer.forward(x, x.dtype()).rename(.{ .dout = .c }).transpose(.{ .b, .c, .h, .w });
+ }
+ 
+ /// The whole window: dressers, then decorator.
+@@ -130,8 +132,8 @@
+     defer platform.deinit(gpa, io);
+ 
+     const photo: zml.Tensor = .init(.{ .b = 1, .c = 3, .h = 4, .w = 4 }, .f32);
+-    // One 3 x 3 kernel per dresser: tags .o, .i, .kh, .kw.
+-    const kernels: zml.Tensor = .init(???, .f32);
++    // One 3 x 3 kernel per dresser.
++    const kernels: zml.Tensor = .init(.{ .o = 3, .i = 1, .kh = 3, .kw = 3 }, .f32);
+     const mixer: zml.Tensor = .init(.{ .o = 2, .i = 3, .kh = 1, .kw = 1 }, .f32);
+ 
+     const pixels = [3][4][4]f32{
+@@ -164,8 +166,10 @@
+     var window_result = try window_exe.eval(gpa, io, .{ photo_buffer, kernels_buffer, mixer_buffer });
+     defer window_result.deinit();
+ 
+-    // Compile and run `windowLinear`: the result is `linear_result`.
+-    ???;
++    var linear_exe = try platform.compileFn(gpa, io, windowLinear, .{ photo, kernels, mixer }, .{});
++    defer linear_exe.deinit();
++    var linear_result = try linear_exe.eval(gpa, io, .{ photo_buffer, kernels_buffer, mixer_buffer });
++    defer linear_result.deinit();
+ 
+     const by_conv = try window_result.getValue([1][2][2][2]f32, io);
+     const by_linear = try linear_result.getValue([1][2][2][2]f32, io);

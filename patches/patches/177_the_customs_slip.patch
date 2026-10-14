@@ -1,0 +1,59 @@
+--- exercises/26_the_mail_room/177_the_customs_slip.zig
++++ answers/26_the_mail_room/177_the_customs_slip.zig
+@@ -130,9 +130,17 @@
+     int: u32,
+     ints: []const u32,
+ 
++    const Helpers = json.UnionHelpers(@This());
++    pub const jsonParse = Helpers.jsonParse;
++    pub const jsonParseFromValue = Helpers.jsonParseFromValue;
++    pub const jsonStringify = Helpers.jsonStringify;
++
+     /// Does a route end at this station?
+     pub fn contains(self: EosTokens, token: u32) bool {
+-        return ???;
++        return switch (self) {
++            .int => |id| id == token,
++            .ints => |ids| std.mem.findScalar(u32, ids, token) != null,
++        };
+     }
+ };
+ 
+@@ -143,8 +151,9 @@
+     num_hidden_layers: u32 = 0,
+     bos_token_id: u32,
+     eos_token_id: EosTokens,
++    max_length: json.NeverNull(u32, 20) = .{},
+     tie_word_embeddings: bool = false,
+-    // max_length and torch_dtype go here.
++    torch_dtype: enum { float32, float16, bfloat16 } = .float32,
+ };
+ 
+ /// The sampling slip. Everything in it may be null.
+@@ -161,12 +170,13 @@
+ 
+     var buffer: [256]u8 = undefined;
+     var file_reader = file.reader(io, &buffer);
+-    // A json reader on top of `file_reader`, and the parse.
+-    return ???;
++    var reader: std.json.Reader = .init(gpa, &file_reader.interface);
++    defer reader.deinit();
++    return try std.json.parseFromTokenSource(T, gpa, &reader, .{ .ignore_unknown_fields = true });
+ }
+ 
+ fn modelType(config: Config) !ModelType {
+-    return ???;
++    return std.meta.stringToEnum(ModelType, config.model_type) orelse error.UnknownModelType;
+ }
+ 
+ pub fn main(init: std.process.Init) !void {
+@@ -221,7 +231,8 @@
+     defer repo.close(io);
+     const parsed = try parseJson(Generation, gpa, io, repo, "generation_config.json");
+     defer parsed.deinit();
+-    const generation = parsed.value;
++    var generation = parsed.value;
++    try json.fillDefaultStructValues(Generation, &generation);
+     try stdout.print("sampling: max_new_tokens {?d}, top_k {?d}, temperature {?d:.1}\n", .{
+         generation.max_new_tokens,
+         generation.top_k,

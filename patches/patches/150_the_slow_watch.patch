@@ -1,0 +1,23 @@
+--- exercises/22_the_watchmaker/150_the_slow_watch.zig
++++ answers/22_the_watchmaker/150_the_slow_watch.zig
+@@ -68,7 +68,7 @@
+ 
+ /// The gap between `value` and the next representable number.
+ fn spacing(value: f32, mantissa_bits: f32) f32 {
+-    return ???;
++    return std.math.pow(f32, 2, @floor(std.math.log2(value)) - mantissa_bits);
+ }
+ 
+ /// step: {} f32 -> {} bf16. Everything in .bf16.
+@@ -81,7 +81,10 @@
+ 
+ /// step: {} f32 -> {} bf16. The step is still stored in .bf16.
+ fn windWell(step: zml.Tensor) zml.Tensor {
+-    return ???;
++    const tenth = step.convert(.bf16).convert(.f32);
++    var dial: zml.Tensor = .scalar(0, .f32);
++    for (0..turns) |_| dial = dial.add(tenth);
++    return dial.convert(.bf16);
+ }
+ 
+ /// Only here to read a .bf16 result from `main`.

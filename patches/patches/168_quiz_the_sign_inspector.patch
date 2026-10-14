@@ -1,0 +1,135 @@
+--- exercises/24_window_shopping/168_quiz_the_sign_inspector.zig
++++ answers/24_window_shopping/168_quiz_the_sign_inspector.zig
+@@ -206,11 +206,85 @@
+     },
+ };
+ 
+-// TODO: `Conv`. Its weight, its bias, an `init` from a view, a
+-// `forward` from {.b, .c, .h, .w} to {.b, .c, .h, .w}.
++/// One convolution of the file: "weight" and "bias" under `view`.
++const Conv = struct {
++    weight: zml.Tensor,
++    bias: zml.Tensor,
++
++    pub fn init(view: zml.io.TensorStore.View) Conv {
++        return .{
++            .weight = view.createReplicatedTensor("weight", .{ .o, .i, .kh, .kw }),
++            .bias = view.createReplicatedTensor("bias", .{.c}),
++        };
++    }
++
++    /// x: {.b, .c, .h, .w} -> {.b, .c, .h, .w}
++    pub fn forward(self: Conv, x: zml.Tensor) zml.Tensor {
++        const y = x.conv2d(self.weight, .{});
++        return y.add(self.bias.broad(y.shape()));
++    }
++};
++
++const Inspector = struct {
++    conv1: Conv,
++    conv2: Conv,
++    fc: zml.nn.Linear,
++
++    pub const Verdict = struct {
++        letter: zml.Tensor,
++        scores: zml.Tensor,
++        strokes: zml.Tensor,
++    };
++
++    /// `view` stands at the root of the file.
++    pub fn init(view: zml.io.TensorStore.View) Inspector {
++        const fc = view.withPrefix("fc");
++        return .{
++            .conv1 = .init(view.withPrefix("conv1")),
++            .conv2 = .init(view.withPrefix("conv2")),
++            .fc = .init(
++                fc.createReplicatedTensor("weight", .{ .dout, .d }),
++                fc.createReplicatedTensor("bias", .{.dout}),
++                .d,
++            ),
++        };
++    }
++
++    /// signs: {.b, .h, .w}, f32
++    pub fn forward(self: Inspector, painted: zml.Tensor) Verdict {
++        var x = painted.insertAxes(.h, .{.c});
++        x = self.conv1.forward(x).relu().maxPool2d(.{ .window_dimensions = .{ 2, 2 } }).values;
++        x = self.conv2.forward(x).relu().maxPool2d(.{ .window_dimensions = .{ 2, 2 } }).values;
++
++        const strokes = x.merge(.{ .d = .{ .c, .h, .w } });
++        const scores = self.fc.forward(strokes, .f32);
++        return .{
++            .letter = scores.argMax(.dout).indices.squeeze(.dout),
++            .scores = scores,
++            .strokes = strokes,
++        };
++    }
++
++    /// Brings every tensor of the inspector from the file to the
++    /// device. The caller owns the Buffers.
++    pub fn load(
++        self: *const Inspector,
++        gpa: std.mem.Allocator,
++        io: std.Io,
++        platform: *const zml.Platform,
++        store: *const zml.io.TensorStore,
++    ) !zml.Bufferized(Inspector) {
++        var buffers = try zml.mem.bufferize(gpa, Inspector, self);
++
++        var loader: zml.io.Loader = try .init(gpa, platform, .default);
++        defer loader.deinit();
++
++        try loader.load(io, Inspector, self, &buffers, store, .{});
++        try loader.await(io);
+ 
+-// TODO: `Inspector`, with its `Verdict`, `init`, `forward` and
+-// `load`.
++        return buffers;
++    }
++};
+ 
+ pub fn main(init: std.process.Init) !void {
+     const gpa = init.gpa;
+@@ -231,14 +305,34 @@
+         }
+     }
+ 
+-    // TODO: the file, its registry, its store.
+-    // TODO: the inspector, from a view.
+-    // TODO: the placeholder of the signs, {.b, .h, .w}: all the
+-    // shops at once.
+-    // TODO: the Exe.
+-    // TODO: the weights. Free them at the end.
+-    // TODO: `pixels`, as a Buffer.
+-    // TODO: the run. The three results go in `verdict`.
++    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
++    defer gpa.free(path);
++
++    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
++    defer registry.deinit();
++
++    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
++    defer store.deinit();
++
++    const inspector: Inspector = .init(store.view());
++
++    const painted: zml.Tensor = .init(.{ .b = shops.len, .h = 14, .w = 14 }, .f32);
++
++    var exe = try platform.compile(gpa, io, inspector, .forward, .{painted}, .{});
++    defer exe.deinit();
++
++    var weights = try inspector.load(gpa, io, platform, &store);
++    defer zml.Buffer.deinitAll(Inspector, &weights);
++
++    var painted_buffer: zml.Buffer = try .fromBytes(io, platform, painted.shape(), std.mem.sliceAsBytes(&pixels));
++    defer painted_buffer.deinit();
++
++    var runner = try exe.runner(gpa);
++    defer runner.deinit(gpa);
++
++    var verdict: zml.Bufferized(Inspector.Verdict) = undefined;
++    runner.run(io, .{ weights, painted_buffer }, .{&verdict}, .{ .wait = true });
++    defer zml.Buffer.deinitAll(Inspector.Verdict, &verdict);
+ 
+     try stdout.print("strokes {f}, scores {f}, letters {f}\n", .{
+         verdict.strokes.shape(),

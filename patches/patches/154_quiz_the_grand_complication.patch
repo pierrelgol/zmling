@@ -1,0 +1,92 @@
+--- exercises/22_the_watchmaker/154_quiz_the_grand_complication.zig
++++ answers/22_the_watchmaker/154_quiz_the_grand_complication.zig
+@@ -80,7 +80,55 @@
+ /// Where the eight hands start.
+ const noon: [d]f32 = .{ 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.4, 5.8 };
+ 
+-// asSeenBy, movement, reference, cheap, mixed, worst: yours.
++/// `x`, same dtype, rounded as `dtype` would store it.
++fn asSeenBy(x: zml.Tensor, dtype: zml.DataType) zml.Tensor {
++    return switch (dtype) {
++        .f32 => x,
++        .f16 => x.reducePrecision(5, 10),
++        .bf16 => x.reducePrecision(8, 7),
++        else => @panic("asSeenBy: f32, f16 or bf16"),
++    };
++}
++
++/// w: {.dout, .d}, hands: {.d} -> {.wheel, .d}
++fn movement(w: zml.Tensor, hands: zml.Tensor, weights_dtype: zml.DataType, stream_dtype: zml.DataType) zml.Tensor {
++    const gears = asSeenBy(w, weights_dtype);
++    var stream = asSeenBy(hands, stream_dtype);
++    var after: [wheels]zml.Tensor = undefined;
++    for (&after) |*a| {
++        const nudge = gears.dot(stream, .d).rename(.{ .dout = .d }).tanh().scale(0.05);
++        stream = asSeenBy(stream.add(nudge), stream_dtype);
++        a.* = stream;
++    }
++    return .stack(&after, 0, .wheel);
++}
++
++fn reference(w: zml.Tensor, hands: zml.Tensor) zml.Tensor {
++    return movement(w, hands, .f32, .f32);
++}
++
++fn cheap(w: zml.Tensor, hands: zml.Tensor) zml.Tensor {
++    return movement(w, hands, .bf16, .bf16);
++}
++
++fn mixed(w: zml.Tensor, hands: zml.Tensor) zml.Tensor {
++    return movement(w, hands, .bf16, .f32);
++}
++
++/// The largest |a - b| among the 8 hands after wheel `wheel` (from 0).
++fn worst(a: []const f32, b: []const f32, wheel: usize) f32 {
++    var max: f32 = 0;
++    for (a[wheel * d ..][0..d], b[wheel * d ..][0..d]) |x, y| max = @max(max, @abs(x - y));
++    return max;
++}
++
++/// The first wheel (from 1) where `a` is further than `tolerance` from `b`.
++fn leavesAt(a: []const f32, b: []const f32) ?usize {
++    for (0..wheels) |wheel| {
++        if (worst(a, b, wheel) > tolerance) return wheel + 1;
++    }
++    return null;
++}
+ 
+ pub fn main(init: std.process.Init) !void {
+     const gpa = init.gpa;
+@@ -93,9 +141,29 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // The three movements, compiled and run: yours. The prints below
+-    // expect `ref`, `cheap_hands` and `mixed_hands` ([]const f32), and
+-    // `cheap_leaves` and `mixed_leaves` (?usize, counted from 1).
++    const w: zml.Tensor = .init(.{ .dout = d, .d = d }, .f32);
++    const hands: zml.Tensor = .init(.{ .d = d }, .f32);
++    var w_buffer: zml.Buffer = try .fromBytes(io, platform, w.shape(), std.mem.sliceAsBytes(&gear_train));
++    defer w_buffer.deinit();
++    var hands_buffer: zml.Buffer = try .fromBytes(io, platform, hands.shape(), std.mem.sliceAsBytes(&noon));
++    defer hands_buffer.deinit();
++
++    var results: [3]zml.Slice = undefined;
++    inline for (.{ reference, cheap, mixed }, &results) |func, *result| {
++        var exe = try platform.compileFn(gpa, io, func, .{ w, hands }, .{});
++        defer exe.deinit();
++        var out = try exe.eval(gpa, io, .{ w_buffer, hands_buffer });
++        defer out.deinit();
++        result.* = try out.toSliceAlloc(gpa, io);
++    }
++    defer for (results) |result| result.free(gpa);
++
++    const ref = results[0].items(f32);
++    const cheap_hands = results[1].items(f32);
++    const mixed_hands = results[2].items(f32);
++
++    const cheap_leaves = leavesAt(cheap_hands, ref);
++    const mixed_leaves = leavesAt(mixed_hands, ref);
+ 
+     try stdout.print("Wheels: {d}\n", .{wheels});
+     if (cheap_leaves) |wheel| {

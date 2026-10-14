@@ -1,0 +1,90 @@
+--- exercises/23_hot_off_the_press/157_standing_type.zig
++++ answers/23_hot_off_the_press/157_standing_type.zig
+@@ -286,10 +286,10 @@
+ 
+ /// What one run of the press takes...
+ const Input = struct {
++    weights: Llama,
+     tokens: zml.Tensor,
+     pos: zml.Tensor,
+     cache: Cache,
+-    weights: Llama,
+ };
+ 
+ /// ... and what comes out of it.
+@@ -302,7 +302,20 @@
+ /// Returns, for each position, the most likely token after it, in
+ /// the memory of `tokens`, and the cache, in its own memory.
+ fn step(input: Input) Output {
+-    return ???;
++    const model = input.weights;
++    var x = model.tok_embeddings.forward(input.tokens);
++    var filed = input.cache;
++    for (model.layers, 0..) |layer, i| x, filed = layer.forward(x, input.pos, filed, i);
++
++    const logits = rmsNorm(x, model.norm).dot(model.tok_embeddings.weight, .d);
++    const next = logits.argMax(.voc).indices.squeeze(.voc);
++    return .{
++        .tokens = next.convert(.u32).reuseBuffer(input.tokens),
++        .cache = .{
++            .k = filed.k.reuseBuffer(input.cache.k),
++            .v = filed.v.reuseBuffer(input.cache.v),
++        },
++    };
+ }
+ 
+ /// The press: an Exe that knows the names of what it takes.
+@@ -316,7 +329,10 @@
+ fn feed(io: std.Io, platform: *zml.Platform, pressman: *Pressman, cache: *zml.Bufferized(Cache), plate: *zml.Buffer, pos: usize) !void {
+     var pos_buffer: zml.Buffer = try .scalar(io, platform, @as(i32, @intCast(pos)), .i32);
+     defer pos_buffer.deinit();
+-    ???;
++    pressman.run(io, .{
++        .inputs = .{ .tokens = plate.*, .pos = pos_buffer, .cache = cache.* },
++        .outputs = .{ .tokens = plate, .cache = cache },
++    }, .{ .wait = true });
+ }
+ 
+ fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
+@@ -378,7 +394,13 @@
+     defer decoder.deinit();
+ 
+     // `weights`: Tiny's weights, on the device.
+-    ???;
++    var weights = try zml.mem.bufferize(gpa, Llama, &model);
++    defer gpa.free(weights.layers);
++    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Llama, &weights);
++    var loader: zml.io.Loader = try .init(gpa, platform, .default);
++    defer loader.deinit();
++    try loader.load(io, Llama, &model, &weights, &store, .{});
++    try loader.await(io);
+ 
+     // The cache: a ghost for the compiler.
+     const cache_shape: zml.Shape = .init(.{
+@@ -391,7 +413,25 @@
+     const pos: zml.Tensor = .init(.{}, .i32);
+ 
+     // One function, two presses, and a pressman for each.
+-    ???;
++    var prefill: Press = try .compile(gpa, io, platform, .{}, .{.{
++        .weights = model,
++        .tokens = zml.Tensor.init(.{ .s = forme }, .u32),
++        .pos = pos,
++        .cache = cache,
++    }});
++    defer prefill.deinit();
++    var prefill_man: Pressman = try .init(&prefill, gpa, .{ .weights = weights });
++    defer prefill_man.deinit(gpa);
++
++    var decode: Press = try .compile(gpa, io, platform, .{}, .{.{
++        .weights = model,
++        .tokens = zml.Tensor.init(.{ .s = 1 }, .u32),
++        .pos = pos,
++        .cache = cache,
++    }});
++    defer decode.deinit();
++    var decode_man: Pressman = try .init(&decode, gpa, .{ .weights = weights });
++    defer decode_man.deinit(gpa);
+ 
+     const standing = decode_man.args.baked_count;
+     try stdout.print("plates the press takes: {d}\n", .{decode.raw.input_shapes.len});

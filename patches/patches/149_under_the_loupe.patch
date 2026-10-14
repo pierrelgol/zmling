@@ -1,0 +1,27 @@
+--- exercises/22_the_watchmaker/149_under_the_loupe.zig
++++ answers/22_the_watchmaker/149_under_the_loupe.zig
+@@ -67,17 +67,21 @@
+ 
+ /// The 32 bits of each reading, as an integer.
+ fn asInteger(x: zml.Tensor) zml.Tensor {
+-    return x.convert(.u32);
++    return x.bitCast(.u32);
+ }
+ 
+ /// {reading} f32 -> {part=3, reading} u32: sign, exponent, mantissa.
+ fn anatomy(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    const bits = x.bitCast(.u32);
++    const sign = bits.shiftRightLogical(.scalar(31, .u32));
++    const exponent = bits.shiftRightLogical(.scalar(23, .u32)).logical(.AND, .scalar(0xff, .u32));
++    const mantissa = bits.logical(.AND, .scalar(0x7fffff, .u32));
++    return .stack(&.{ sign, exponent, mantissa }, 0, .part);
+ }
+ 
+ /// {reading} f32 -> {reading, bitcast=4} u8
+ fn bytesOf(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    return x.bitCast(.u8);
+ }
+ 
+ pub fn main(init: std.process.Init) !void {

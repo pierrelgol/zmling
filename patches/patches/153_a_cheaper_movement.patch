@@ -1,0 +1,27 @@
+--- exercises/22_the_watchmaker/153_a_cheaper_movement.zig
++++ answers/22_the_watchmaker/153_a_cheaper_movement.zig
+@@ -75,7 +75,12 @@
+ 
+ /// `x`, same dtype, rounded as `dtype` would store it.
+ fn asSeenBy(x: zml.Tensor, dtype: zml.DataType) zml.Tensor {
+-    return ???;
++    return switch (dtype) {
++        .f32 => x,
++        .f16 => x.reducePrecision(5, 10),
++        .bf16 => x.reducePrecision(8, 7),
++        else => @panic("asSeenBy: f32, f16 or bf16"),
++    };
+ }
+ 
+ /// x: {.d} f16 -> {.d} f16, every step in .f16.
+@@ -86,7 +91,9 @@
+ 
+ /// x: {.d} f16 -> {.d} f16
+ fn carefulNorm(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    const wide = x.convert(.f32);
++    const mean_square = wide.mul(wide).mean(.d);
++    return wide.mul(mean_square.addConstant(eps).rsqrt()).convert(x.dtype());
+ }
+ 
+ fn countBad(x: zml.Tensor) zml.Tensor {

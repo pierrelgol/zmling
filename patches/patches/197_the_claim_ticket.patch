@@ -1,0 +1,35 @@
+--- exercises/29_lost_property/197_the_claim_ticket.zig
++++ answers/29_lost_property/197_the_claim_ticket.zig
+@@ -118,7 +118,7 @@
+ 
+ /// bag: {thing} -> its weight, a scalar.
+ fn weigh(bag: zml.Tensor) zml.Tensor {
+-    return ???;
++    return bag.sum(.thing).squeeze(.thing);
+ }
+ 
+ /// Three pence a pound.
+@@ -172,11 +172,11 @@
+     for (bags, 0..) |things, i| {
+         bag_buffers[i] = try .fromBytes(io, platform, bag.shape(), std.mem.sliceAsBytes(&things));
+ 
+-        // Queue the weighing of this bag: its weight goes in `weights[i]`.
+-        ???;
++        weigher.run(io, .{bag_buffers[i]}, .{&weights[i]}, .{});
+         pricer.run(io, .{weights[i]}, .{&fees[i]}, .{});
+ 
+-        bookkeeper.run(io, .{ opening, fees[i] }, .{&ledgers[i]}, .{});
++        const so_far = if (i == 0) opening else ledgers[i - 1];
++        bookkeeper.run(io, .{ so_far, fees[i] }, .{&ledgers[i]}, .{});
+     }
+     // Every ticket is freed at closing time, after the last read.
+     defer for (&bag_buffers, &weights, &fees, &ledgers) |*b, *w, *f, *l| {
+@@ -190,7 +190,7 @@
+ 
+     // One wait, for the end of the chain. Whatever it depends on is
+     // done by then.
+-    try ledgers[2].???(io);
++    try ledgers[2].await(io);
+ 
+     for (0..3) |i| {
+         try stdout.print("bag {d}: {d} lb, fee {d}p, ledger {d}p\n", .{

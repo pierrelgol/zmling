@@ -1,0 +1,59 @@
+--- exercises/26_the_mail_room/181_the_sorting_table.zig
++++ answers/26_the_mail_room/181_the_sorting_table.zig
+@@ -199,17 +199,16 @@
+ const Conveyor = struct {
+     embed_tokens: zml.nn.TokenEmbedding,
+     layers: []zml.nn.Linear,
+-    lm_head: zml.nn.Linear,
++    lm_head: ?zml.nn.Linear,
+ 
+-    pub fn init(gpa: std.mem.Allocator, view: View, _: Config) !Conveyor {
++    pub fn init(gpa: std.mem.Allocator, view: View, config: Config) !Conveyor {
+         const model = view.withPrefix("model");
+-        // Priya: "every conveyor I have seen has one layer."
+-        const layers = try gpa.alloc(zml.nn.Linear, 1);
++        const layers = try gpa.alloc(zml.nn.Linear, config.num_hidden_layers);
+         for (layers, 0..) |*layer, i| layer.* = linear(model.withPrefix("layers").withLayer(i).withPrefix("fc"));
+         return .{
+             .embed_tokens = .{ .weight = model.withPrefix("embed_tokens").createReplicatedTensor("weight", .{ .voc, .d }) },
+             .layers = layers,
+-            .lm_head = linear(view.withPrefix("lm_head")),
++            .lm_head = if (config.tie_word_embeddings) null else linear(view.withPrefix("lm_head")),
+         };
+     }
+ 
+@@ -226,7 +225,10 @@
+     pub fn forward(self: Conveyor, station: zml.Tensor) zml.Tensor {
+         var x = self.embed_tokens.forward(station).convert(.f32);
+         for (self.layers) |layer| x = layer.forward(x, .f32).relu().rename(.{ .dout = .d });
+-        const scores = self.lm_head.forward(x, .f32).rename(.{ .dout = .voc });
++        const scores = if (self.lm_head) |head|
++            head.forward(x, .f32).rename(.{ .dout = .voc })
++        else
++            x.dot(self.embed_tokens.weight.convert(.f32), .d);
+         return scores.argMax(.voc).indices.squeeze(.voc);
+     }
+ };
+@@ -238,7 +240,10 @@
+     conveyor: Conveyor,
+ 
+     pub fn init(gpa: std.mem.Allocator, view: View, config: Config) !Router {
+-        return ???;
++        const model_type = std.meta.stringToEnum(ModelType, config.model_type) orelse return error.UnknownModelType;
++        return switch (model_type) {
++            inline else => |tag| @unionInit(Router, @tagName(tag), try .init(gpa, view, config)),
++        };
+     }
+ 
+     pub fn deinit(self: Router, gpa: std.mem.Allocator) void {
+@@ -334,7 +339,9 @@
+ 
+         const desk: Desk = .{ .gpa = gpa, .io = io, .platform = platform, .store = &store, .stdout = stdout };
+         const max_steps = label.max_steps orelse config.max_length.value;
+-        try deliver(Chute, router.chute, desk, label.positional.start, config.eos_token_id, max_steps);
++        switch (router) {
++            inline else => |model| try deliver(@TypeOf(model), model, desk, label.positional.start, config.eos_token_id, max_steps),
++        }
+         try stdout.flush();
+     }
+ }

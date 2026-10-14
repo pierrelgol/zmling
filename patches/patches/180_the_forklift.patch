@@ -1,0 +1,54 @@
+--- exercises/26_the_mail_room/180_the_forklift.zig
++++ answers/26_the_mail_room/180_the_forklift.zig
+@@ -169,7 +169,7 @@
+         const fc = view.withPrefix("fc");
+         return .{ .fc = .init(
+             fc.createReplicatedTensor("weight", .{ .dout, .d }),
+-            null,
++            fc.maybeCreateTensor("bias", .{.dout}, .replicated, .{}),
+             .d,
+         ) };
+     }
+@@ -186,7 +186,14 @@
+     lm_head: zml.nn.Linear,
+ 
+     pub fn init(gpa: std.mem.Allocator, view: View, config: Config) !Conveyor {
+-        return ???;
++        const model = view.withPrefix("model");
++        const layers = try gpa.alloc(Layer, config.num_hidden_layers);
++        for (layers, 0..) |*layer, i| layer.* = .init(model.withPrefix("layers").withLayer(i));
++        return .{
++            .embed_tokens = .{ .weight = model.withPrefix("embed_tokens").createReplicatedTensor("weight", .{ .voc, .d }) },
++            .layers = layers,
++            .lm_head = .init(view.withPrefix("lm_head").createReplicatedTensor("weight", .{ .dout, .d }), null, .d),
++        };
+     }
+ 
+     pub fn deinit(self: Conveyor, gpa: std.mem.Allocator) void {
+@@ -195,7 +202,7 @@
+ 
+     /// station: a rank-0 i32. Returns the next station, a rank-0 i32.
+     pub fn forward(self: Conveyor, station: zml.Tensor) zml.Tensor {
+-        var x = self.embed_tokens.forward(station);
++        var x = self.embed_tokens.forward(station).convert(.f32);
+         for (self.layers) |layer| x = layer.forward(x);
+         const scores = self.lm_head.forward(x, x.dtype());
+         return scores.argMax(.dout).indices.squeeze(.dout);
+@@ -255,9 +262,14 @@
+     defer gpa.free(weights.layers);
+     defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Conveyor, &weights);
+ 
+-    // The forklift: `loader`, with the options of the label, at work
+-    // under `progress`.
+-    ???
++    var loader: zml.io.Loader = try .init(gpa, platform, .{
++        .parallelism = label.parallelism,
++        .dma_chunks = label.chunks,
++        .dma_chunk_size = label.chunk_size.bytes(),
++    });
++    defer loader.deinit();
++    try loader.load(io, Conveyor, &model, &weights, &store, .{ .progress = &progress });
++    try loader.await(io);
+ 
+     try stdout.print("in the boxes: {d} bytes\n", .{registry.totalBytes()});
+     try stdout.print("on the device: {d} bytes\n", .{loader.bytes_loaded.load(.monotonic)});

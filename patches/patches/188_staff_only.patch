@@ -1,0 +1,40 @@
+--- exercises/27_the_hall_of_mirrors/188_staff_only.zig
++++ answers/27_the_hall_of_mirrors/188_staff_only.zig
+@@ -95,6 +95,8 @@
+ 
+ /// What a visitor must look like.
+ const Notice = struct {
++    pub const zml_no_meta_visit: void = {};
++
+     visitor: zml.Tensor,
+ };
+ 
+@@ -115,7 +117,9 @@
+     spare: zml.Tensor,
+ 
+     pub fn forward(self: Hall, visitor: zml.Tensor) zml.Tensor {
+-        return ???;
++        var v = visitor.mul(self.door);
++        for (self.corridor) |mirror| v = mirror.forward(v);
++        return v;
+     }
+ };
+ 
+@@ -154,14 +158,14 @@
+         exe.input_shapes.len,
+     });
+ 
+-    // `shapes`.
+-    ???;
++    const shapes = try zml.meta.collectAlloc(zml.Tensor.shape, {}, gpa, &hall);
++    defer gpa.free(shapes);
+ 
+     try stdout.print("Pane by pane:", .{});
+     for (shapes) |shape| try stdout.print(" {f}", .{shape});
+     try stdout.print("\n", .{});
+ 
+-    var sizes: [4]usize = undefined;
++    var sizes: [6]usize = undefined;
+     zml.meta.collectBuf(zml.Tensor.count, {}, &hall, &sizes);
+ 
+     var total: usize = 0;

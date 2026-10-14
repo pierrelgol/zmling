@@ -1,0 +1,72 @@
+--- exercises/25_the_petting_zoo/171_the_feeding_board.zig
++++ answers/25_the_petting_zoo/171_the_feeding_board.zig
+@@ -88,14 +88,30 @@
+ const zml = @import("zml");
+ 
+ const CrossAttention = struct {
+-    // `q_proj`, `k_proj`, `v_proj` and `heads`.
+-    ???,
++    q_proj: zml.nn.Linear,
++    k_proj: zml.nn.Linear,
++    v_proj: zml.nn.Linear,
++    heads: u32,
+ 
+     /// x: {.s, .d}, the ones who ask.
+     /// memory: {.m, .dm}, what they read. memory_mask: {.m}, i32, 0 for an empty slot.
+     /// Returns {.s, .d}.
+     pub fn forward(self: CrossAttention, x: zml.Tensor, memory: zml.Tensor, memory_mask: zml.Tensor) zml.Tensor {
+-        return ???;
++        const split = .{ .h = self.heads, .hd = .auto };
++        const q = self.q_proj.forward(x, x.dtype()).splitAxis(.dout, split);
++        const k = self.k_proj.forward(memory, x.dtype()).splitAxis(.dout, split);
++        const v = self.v_proj.forward(memory, x.dtype()).splitAxis(.dout, split);
++
++        const pinned = memory_mask.rename(.{ .m = .k }).cmp(.EQ, .scalar(1, memory_mask.dtype()));
++        const mask = pinned.select(.scalar(0, .f32), .scalar(-std.math.inf(f32), .f32));
++
++        const read = zml.nn.sdpa(
++            q.rename(.{ .s = .q }),
++            k.rename(.{ .m = .k }),
++            v.rename(.{ .m = .k }),
++            .{ .attn_mask = mask },
++        );
++        return read.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
+     }
+ };
+ 
+@@ -162,15 +178,30 @@
+     };
+ 
+     const x: zml.Tensor = .init(.{ .s = 3, .d = 4 }, .f32);
+-    const memory: zml.Tensor = .init(.{ .s = 4, .dm = 3 }, .f32);
+-    const memory_mask: zml.Tensor = .init(.{ .s = 4 }, .i32);
++    const memory: zml.Tensor = .init(.{ .m = 4, .dm = 3 }, .f32);
++    const memory_mask: zml.Tensor = .init(.{ .m = 4 }, .i32);
+ 
+     var exe = try platform.compile(gpa, io, hut, .forward, .{ x, memory, memory_mask }, .{});
+     defer exe.deinit();
+ 
+-    // The weights of the hut, in a `zml.Bufferized(CrossAttention)`
+-    // named `weights`. Free them at the end.
+-    ???;
++    var weights: zml.Bufferized(CrossAttention) = .{
++        .q_proj = .{
++            .weight = try .fromBytes(io, platform, hut.q_proj.weight.shape(), std.mem.sliceAsBytes(&q_weight)),
++            .bias = null,
++            .quantization = null,
++        },
++        .k_proj = .{
++            .weight = try .fromBytes(io, platform, hut.k_proj.weight.shape(), std.mem.sliceAsBytes(&k_weight)),
++            .bias = null,
++            .quantization = null,
++        },
++        .v_proj = .{
++            .weight = try .fromBytes(io, platform, hut.v_proj.weight.shape(), std.mem.sliceAsBytes(&v_weight)),
++            .bias = null,
++            .quantization = null,
++        },
++    };
++    defer zml.Buffer.deinitAll(CrossAttention, &weights);
+ 
+     var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&thoughts));
+     defer x_buffer.deinit();

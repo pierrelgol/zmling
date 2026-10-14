@@ -1,0 +1,172 @@
+--- exercises/25_the_petting_zoo/175_quiz_the_new_arrival.zig
++++ answers/25_the_petting_zoo/175_quiz_the_new_arrival.zig
+@@ -81,11 +81,84 @@
+ const std = @import("std");
+ const zml = @import("zml");
+ 
+-// TODO: `Cell`, with something that walks a whole batch.
++const Cell = struct {
++    gate_x: zml.nn.Linear,
++    gate_h: zml.nn.Linear,
++    cand_x: zml.nn.Linear,
++    cand_h: zml.nn.Linear,
++
++    /// One token x and the mood h, both {.b, .d} -> the new mood.
++    pub fn step(self: Cell, x: zml.Tensor, h: zml.Tensor) zml.Tensor {
++        const z = self.gate_x.forward(x, x.dtype()).add(self.gate_h.forward(h, x.dtype())).sigmoid();
++        const c = self.cand_x.forward(x, x.dtype()).add(self.cand_h.forward(h, x.dtype())).tanh();
++        return h.add(z.mul(c.sub(h)).rename(.{ .dout = .d }));
++    }
++
++    /// xs: {.b, .s, .d} -> the trail {.b, .s, .d}
++    pub fn walk(self: Cell, xs: zml.Tensor) zml.Tensor {
++        var h = zml.Tensor.zeroes(xs.shape().drop(.s));
++        var trail = zml.Tensor.zeroes(xs.shape());
++        for (0..@intCast(xs.dim(.s))) |i| {
++            h = self.step(xs.slice(.s, .single(@intCast(i))), h);
++            trail = trail.dynamicUpdateSlice(.{ .s = zml.Tensor.scalar(i, .i32) }, h);
++        }
++        return trail;
++    }
++};
+ 
+-// TODO: `Clinic`.
++const Clinic = struct {
++    router: zml.nn.Linear,
++    up: zml.Tensor,
++    down: zml.Tensor,
++    top_k: u32,
++
++    /// x: {.b, .s, .d} -> {.b, .s, .d}
++    pub fn forward(self: Clinic, x: zml.Tensor) zml.Tensor {
++        const confidence = self.router.forward(x, x.dtype()).softmax(.expert);
++        const top = confidence.topK(.{ .topk = .expert }, self.top_k, .{});
++        const weights = top.values.div(top.values.sum(.topk));
++
++        const up = self.up.gather(.{ .expert = top.indices }, .{});
++        const down = self.down.gather(.{ .expert = top.indices }, .{});
++
++        const hidden = x.dot(up, .d).relu();
++        return hidden.dot(down, .hid).dot(weights, .topk).rename(.{ .dout = .d });
++    }
++};
+ 
+-// TODO: `Zoo`, its `forward`, and the struct `forward` returns.
++const Zoo = struct {
++    words: zml.nn.TokenEmbedding,
++    cell: Cell,
++    clinic: Clinic,
++
++    pub const Verdict = struct {
++        scores: zml.Tensor,
++        best: zml.Tensor,
++    };
++
++    /// tokens, mask: {.b, .s}, i32 -> one unit vector per sentence, {.b, .d}
++    pub fn embed(self: Zoo, tokens: zml.Tensor, mask: zml.Tensor) zml.Tensor {
++        const trail = self.cell.walk(self.words.forward(tokens));
++        const treated = trail.add(self.clinic.forward(trail));
++
++        const keep = mask.convert(treated.dtype()).broad(treated.shape());
++        const pooled = treated.mul(keep).sum(.s).div(keep.sum(.s)).squeeze(.s);
++        return zml.nn.normalizeL2(pooled, 1e-12);
++    }
++
++    /// Row 0 is the newcomer, the other rows are the residents.
++    pub fn forward(self: Zoo, tokens: zml.Tensor, mask: zml.Tensor) Verdict {
++        const sentences = self.embed(tokens, mask);
++        const newcomer = sentences.slice(.b, .single(0));
++        const residents = sentences.slice(.b, .{ .start = 1 });
++
++        const scores = residents.dot(newcomer, .d);
++        return .{
++            .scores = scores,
++            .best = scores.argMax(.b).indices.squeeze(.b),
++        };
++    }
++};
+ 
+ /// {.voc = 7, .d = 2}: (fluffy, loud)
+ const words_weight = [7][2]f32{
+@@ -150,11 +223,76 @@
+     const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
+     defer platform.deinit(gpa, io);
+ 
+-    // TODO: the zoo: every weight, as a placeholder with its tags.
+-    // TODO: the placeholders of the two inputs, and the Exe.
+-    // TODO: the weights, as Buffers. Free them all at the end.
+-    // TODO: `sentence_tokens` and `sentence_masks`, as Buffers.
+-    // TODO: the run. The two results go in `verdict`.
++    const zoo: Zoo = .{
++        .words = .{ .weight = .init(.{ .voc = 7, .d = 2 }, .f32) },
++        .cell = .{
++            .gate_x = .init(.init(.{ .dout = 2, .d = 2 }, .f32), .init(.{ .dout = 2 }, .f32), .d),
++            .gate_h = .init(.init(.{ .dout = 2, .d = 2 }, .f32), null, .d),
++            .cand_x = .init(.init(.{ .dout = 2, .d = 2 }, .f32), null, .d),
++            .cand_h = .init(.init(.{ .dout = 2, .d = 2 }, .f32), null, .d),
++        },
++        .clinic = .{
++            .router = .init(.init(.{ .expert = 4, .d = 2 }, .f32), null, .d),
++            .up = .init(.{ .expert = 4, .hid = 2, .d = 2 }, .f32),
++            .down = .init(.{ .expert = 4, .dout = 2, .hid = 2 }, .f32),
++            .top_k = 2,
++        },
++    };
++
++    const tokens: zml.Tensor = .init(.{ .b = 4, .s = 3 }, .i32);
++    const mask: zml.Tensor = .init(.{ .b = 4, .s = 3 }, .i32);
++
++    var exe = try platform.compile(gpa, io, zoo, .forward, .{ tokens, mask }, .{});
++    defer exe.deinit();
++
++    const cell = zoo.cell;
++    var weights: zml.Bufferized(Zoo) = .{
++        .words = .{ .weight = try .fromBytes(io, platform, zoo.words.weight.shape(), std.mem.sliceAsBytes(&words_weight)) },
++        .cell = .{
++            .gate_x = .{
++                .weight = try .fromBytes(io, platform, cell.gate_x.weight.shape(), std.mem.sliceAsBytes(&gate_x_weight)),
++                .bias = try .fromBytes(io, platform, cell.gate_x.bias.?.shape(), std.mem.sliceAsBytes(&gate_x_bias)),
++                .quantization = null,
++            },
++            .gate_h = .{
++                .weight = try .fromBytes(io, platform, cell.gate_h.weight.shape(), std.mem.sliceAsBytes(&gate_h_weight)),
++                .bias = null,
++                .quantization = null,
++            },
++            .cand_x = .{
++                .weight = try .fromBytes(io, platform, cell.cand_x.weight.shape(), std.mem.sliceAsBytes(&cand_x_weight)),
++                .bias = null,
++                .quantization = null,
++            },
++            .cand_h = .{
++                .weight = try .fromBytes(io, platform, cell.cand_h.weight.shape(), std.mem.sliceAsBytes(&cand_h_weight)),
++                .bias = null,
++                .quantization = null,
++            },
++        },
++        .clinic = .{
++            .router = .{
++                .weight = try .fromBytes(io, platform, zoo.clinic.router.weight.shape(), std.mem.sliceAsBytes(&router_weight)),
++                .bias = null,
++                .quantization = null,
++            },
++            .up = try .fromBytes(io, platform, zoo.clinic.up.shape(), std.mem.sliceAsBytes(&up_weight)),
++            .down = try .fromBytes(io, platform, zoo.clinic.down.shape(), std.mem.sliceAsBytes(&down_weight)),
++        },
++    };
++    defer zml.Buffer.deinitAll(Zoo, &weights);
++
++    var tokens_buffer: zml.Buffer = try .fromBytes(io, platform, tokens.shape(), std.mem.sliceAsBytes(&sentence_tokens));
++    defer tokens_buffer.deinit();
++    var mask_buffer: zml.Buffer = try .fromBytes(io, platform, mask.shape(), std.mem.sliceAsBytes(&sentence_masks));
++    defer mask_buffer.deinit();
++
++    var runner = try exe.runner(gpa);
++    defer runner.deinit(gpa);
++
++    var verdict: zml.Bufferized(Zoo.Verdict) = undefined;
++    runner.run(io, .{ weights, tokens_buffer, mask_buffer }, .{&verdict}, .{ .wait = true });
++    defer zml.Buffer.deinitAll(Zoo.Verdict, &verdict);
+ 
+     try stdout.print("{f} sentences, {f} cosines\n", .{ tokens.shape(), verdict.scores.shape() });
+     for (resident_names, try verdict.scores.getValue([3]f32, io)) |resident, score| {

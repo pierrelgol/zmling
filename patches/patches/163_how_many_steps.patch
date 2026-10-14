@@ -1,0 +1,49 @@
+--- exercises/24_window_shopping/163_how_many_steps.zig
++++ answers/24_window_shopping/163_how_many_steps.zig
+@@ -98,13 +98,16 @@
+ /// How many glances a walk gives, on a street of `in` windows
+ /// with a kernel of `k` weights.
+ fn glances(in: i64, k: i64, w: Walk) i64 {
+-    return ???;
++    const span = w.dilation * (k - 1) + 1;
++    const padded = in + 2 * w.pad;
++    if (span > padded) return 0;
++    return @divFloor(padded - span, w.stride) + 1;
+ }
+ 
+ /// The padding, on each side, that keeps the size of the street
+ /// when the stride is 1. `k` is odd.
+ fn samePad(k: i64, dilation: i64) i64 {
+-    return ???;
++    return @divExact(dilation * (k - 1), 2);
+ }
+ 
+ /// street: {.b, .c, .t}, kernel: {.o, .i, .k} -> {.b, .c, .t}
+@@ -112,7 +115,7 @@
+     return street.conv1d(kernel, .{
+         .window_strides = w.stride,
+         .padding = &.{w.pad},
+-        .lhs_dilation = w.dilation,
++        .rhs_dilation = w.dilation,
+     });
+ }
+ 
+@@ -149,10 +152,14 @@
+     };
+ 
+     for (walks) |w| {
+-        // Compile `walk` for this walk, run it: the result is
+-        // `seen`, a Buffer, and `values` its content as a
+-        // `zml.Slice` (exercise 13). Free everything.
+-        ???;
++        var exe = try platform.compileFn(gpa, io, walk, .{ street, kernel, w }, .{});
++        defer exe.deinit();
++
++        var seen = try exe.eval(gpa, io, .{ street_buffer, kernel_buffer });
++        defer seen.deinit();
++
++        const values = try seen.toSliceAlloc(gpa, io);
++        defer values.free(gpa);
+ 
+         try stdout.print("{s:<23} Odette says {d}, ZML says {d}: {any}\n", .{
+             w.name,

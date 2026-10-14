@@ -1,0 +1,24 @@
+--- exercises/22_the_watchmaker/152_the_wrong_gears.zig
++++ answers/22_the_watchmaker/152_the_wrong_gears.zig
+@@ -65,17 +65,18 @@
+ 
+ /// pixels: {.px} u8 in 0..255 -> {.px} f32 in 0..1
+ fn toUnit(pixels: zml.Tensor) zml.Tensor {
+-    return pixels.div(.scalar(255, .u8)).convert(.f32);
++    return pixels.convert(.f32).div(.scalar(255, .f32));
+ }
+ 
+ /// pixels: {.px} u8 -> {.px} u8, `amount` brighter, at most 255.
+ fn brighten(pixels: zml.Tensor, amount: u8) zml.Tensor {
+-    return ???;
++    const wide = pixels.convert(.i32).addConstant(amount);
++    return wide.clamp(.scalar(0, .i32), .scalar(255, .i32)).convert(.u8);
+ }
+ 
+ /// positions: {.px} f32 -> {.px} i32
+ fn bucket(positions: zml.Tensor, width: f32) zml.Tensor {
+-    return ???;
++    return positions.divByConst(width).floor().convert(.i32);
+ }
+ 
+ const Tray = struct {

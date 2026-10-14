@@ -1,0 +1,34 @@
+--- exercises/22_the_watchmaker/151_overwound.zig
++++ answers/22_the_watchmaker/151_overwound.zig
+@@ -71,12 +71,12 @@
+ 
+ /// How many NaN in `x`: {} i32
+ fn countNan(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    return x.cmp(.NE, x).convert(.i32).flatten().sum(0).squeeze(0);
+ }
+ 
+ /// How many values of `x` are not finite: {} i32
+ fn countBad(x: zml.Tensor) zml.Tensor {
+-    return ???;
++    return x.isFinite().not().convert(.i32).flatten().sum(0).squeeze(0);
+ }
+ 
+ /// scores: {.score} -> {.score}
+@@ -87,12 +87,14 @@
+ 
+ /// scores: {.score} -> {.score}
+ fn stableSoftmax(scores: zml.Tensor) zml.Tensor {
+-    return ???;
++    const e = scores.sub(scores.max(.score)).exp();
++    return e.div(e.sum(.score));
+ }
+ 
+ /// scores: {.score} -> {}
+ fn stableLogSumExp(scores: zml.Tensor) zml.Tensor {
+-    return ???;
++    const m = scores.max(.score);
++    return m.add(scores.sub(m).exp().sum(.score).log()).squeeze(.score);
+ }
+ 
+ const Report = struct {

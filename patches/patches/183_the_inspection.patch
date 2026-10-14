@@ -1,0 +1,54 @@
+--- exercises/27_the_hall_of_mirrors/183_the_inspection.zig
++++ answers/27_the_hall_of_mirrors/183_the_inspection.zig
+@@ -107,7 +107,7 @@
+     name: []const u8,
+     /// The price list at the door, in pennies.
+     prices: zml.Tensor,
+-    corridor: []const Mirror,
++    corridor: []Mirror,
+     /// Left and right of the exit.
+     twins: [2]zml.Tensor,
+     lights: u8,
+@@ -119,7 +119,9 @@
+     bytes: usize = 0,
+ 
+     fn see(self: *Census, pane: *const zml.Tensor) void {
+-        return ???;
++        self.panes += 1;
++        self.numbers += pane.count();
++        self.bytes += pane.byteSize();
+     }
+ };
+ 
+@@ -143,11 +145,13 @@
+     const frame_shape: zml.Shape = .init(.{ .out = 4 }, .f32);
+ 
+     var corridor: [3]Mirror = undefined;
+-    // Three mirrors. Only the first one is flat, and the middle
+-    // one has no frame.
+-    ???;
++    for (&corridor, 0..) |*mirror, i| mirror.* = .{
++        .glass = .fromShape(glass_shape),
++        .frame = if (i == 1) null else .fromShape(frame_shape),
++        .curved = i != 0,
++    };
+ 
+-    const hall: Hall = .{
++    var hall: Hall = .{
+         .name = "Madame Ottoline's",
+         .prices = .init(.{ .ticket = 3 }, .i32),
+         .corridor = &corridor,
+@@ -156,11 +160,10 @@
+     };
+ 
+     var census: Census = .{};
+-    zml.meta.visit(Census.see, &census, hall);
++    zml.meta.visit(Census.see, &census, &hall);
+ 
+     try stdout.print("{s}, pane by pane:\n", .{hall.name});
+-    // `list` goes through the hall.
+-    ???;
++    try zml.meta.visit(list, stdout, &hall);
+     try stdout.print("{d} panes, {d} numbers, {d} bytes.\n", .{ census.panes, census.numbers, census.bytes });
+ 
+     zml.meta.visit(cheapen, {}, &hall);

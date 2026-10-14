@@ -1,0 +1,44 @@
+--- exercises/25_the_petting_zoo/169_the_head_count.zig
++++ answers/25_the_petting_zoo/169_the_head_count.zig
+@@ -113,13 +113,17 @@
+ /// The mean over the real tokens only.
+ /// `mask` has the shape of `hidden` without `.d`: 1 for a token, 0 for padding.
+ fn maskedMeanPool(hidden: zml.Tensor, mask: zml.Tensor) zml.Tensor {
+-    return ???;
++    const keep = mask.convert(hidden.dtype()).broad(hidden.shape());
++    const total = hidden.mul(keep).sum(.s);
++    const count = keep.sum(.s);
++    return total.div(count).squeeze(.s);
+ }
+ 
+ /// The cosine of the query {.d} with each document {.doc, .d}: {.doc}
+ fn cosine(query: zml.Tensor, docs: zml.Tensor) zml.Tensor {
++    const q = zml.nn.normalizeL2(query, 1e-12);
+     const d = zml.nn.normalizeL2(docs, 1e-12);
+-    return d.dot(query, .d);
++    return d.dot(q, .d);
+ }
+ 
+ const Advice = struct {
+@@ -198,14 +202,17 @@
+     defer question_buffer.deinit();
+     var signs_buffer: zml.Buffer = try .fromBytes(io, platform, signs.shape(), std.mem.sliceAsBytes(&signs_hidden));
+     defer signs_buffer.deinit();
+-    // The two masks, as Buffers.
+-    ???;
++    var question_mask_buffer: zml.Buffer = try .fromBytes(io, platform, question_mask.shape(), std.mem.sliceAsBytes(&question_tokens));
++    defer question_mask_buffer.deinit();
++    var signs_mask_buffer: zml.Buffer = try .fromBytes(io, platform, signs_mask.shape(), std.mem.sliceAsBytes(&signs_tokens));
++    defer signs_mask_buffer.deinit();
+ 
+     var runner = try exe.runner(gpa);
+     defer runner.deinit(gpa);
+ 
+-    // The run. The four results go in `advice`: free them too.
+-    ???;
++    var advice: zml.Bufferized(Advice) = undefined;
++    runner.run(io, .{ question_buffer, question_mask_buffer, signs_buffer, signs_mask_buffer }, .{&advice}, .{ .wait = true });
++    defer zml.Buffer.deinitAll(Advice, &advice);
+ 
+     try stdout.print("\"which one is loud?\"\n", .{});
+     try stdout.print("{s:<12} {s:>8} {s:>8} {s:>8}\n", .{ "pooling", animals[0], animals[1], animals[2] });

@@ -1,0 +1,97 @@
+--- exercises/29_lost_property/203_quiz_closing_time.zig
++++ answers/29_lost_property/203_quiz_closing_time.zig
+@@ -77,7 +77,8 @@
+ 
+     /// things: {b, d} -> {b, out}
+     pub fn forward(self: Appraiser, things: zml.Tensor) zml.Tensor {
+-        return ???;
++        const scores = things.dot(self.weight, .d);
++        return scores.add(self.bias.broad(scores.shape()));
+     }
+ };
+ 
+@@ -114,7 +115,9 @@
+ 
+     fn alloc(ctx: *anyopaque, len: usize, alignment: std.mem.Alignment, ret_addr: usize) ?[*]u8 {
+         const self: *Turnstile = @ptrCast(@alignCast(ctx));
+-        return ???;
++        const memory = self.child.rawAlloc(len, alignment, ret_addr) orelse return null;
++        self.out += 1;
++        return memory;
+     }
+ 
+     fn resize(ctx: *anyopaque, memory: []u8, alignment: std.mem.Alignment, new_len: usize, ret_addr: usize) bool {
+@@ -129,7 +132,8 @@
+ 
+     fn free(ctx: *anyopaque, memory: []u8, alignment: std.mem.Alignment, ret_addr: usize) void {
+         const self: *Turnstile = @ptrCast(@alignCast(ctx));
+-        return ???;
++        self.out -= 1;
++        self.child.rawFree(memory, alignment, ret_addr);
+     }
+ };
+ 
+@@ -189,26 +193,57 @@
+     const counted = turnstile.allocator();
+     var ledger: Ledger = .{};
+ 
+-    // The platform, the model, its Exe, `weights` and `runner`.
+-    ???;
++    const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
++    defer platform.deinit(gpa, io);
++
++    const model: Appraiser = .{
++        .weight = .init(.{ .out = 2, .d = 3 }, .i32),
++        .bias = .init(.{ .out = 2 }, .i32),
++    };
++    const batch_shape: zml.Shape = .init(.{ .b = batch, .d = 3 }, .i32);
++
++    var exe = try platform.compile(gpa, io, model, .forward, .{zml.Tensor.fromShape(batch_shape)}, .{});
++    defer exe.deinit();
++
++    var weights: zml.Bufferized(Appraiser) = .{
++        .weight = ledger.issue(try .fromBytes(io, platform, model.weight.shape(), std.mem.sliceAsBytes(&weight_values))),
++        .bias = ledger.issue(try .fromBytes(io, platform, model.bias.shape(), std.mem.sliceAsBytes(&bias_values))),
++    };
++
++    var runner = try exe.runner(counted);
+ 
+     // What goes in, and the tickets for what comes out.
+     var inputs: [requests.len]zml.Buffer = undefined;
+     var tickets: [requests.len]zml.Buffer = undefined;
+ 
+     // The service. Nobody waits.
+-    ???;
++    var first: usize = 0;
++    for (requests, 0..) |count, i| {
++        var padded: [batch][3]i32 = @splat(@splat(0));
++        @memcpy(padded[0..count], objects[first..][0..count]);
++        first += count;
++
++        inputs[i] = ledger.issue(try .fromBytes(io, platform, batch_shape, std.mem.sliceAsBytes(&padded)));
++        runner.run(io, .{ weights, inputs[i] }, .{&tickets[i]}, .{});
++        tickets[i] = ledger.issue(tickets[i]);
++    }
+ 
+     try stdout.print("17:59. {d} requests fired, none read. handles out: {d}, host allocations out: {d}\n", .{ requests.len, ledger.out, turnstile.out });
+ 
+     // The collection, in the order of the queue.
+-    ???;
++    try tickets[requests.len - 1].await(io);
++    first = 0;
++    for (requests, 0..) |count, i| {
++        try printRequest(stdout, i + 1, first, count, try tickets[i].getValue([batch][2]i32, io));
++        first += count;
++    }
+ 
+-    // Basile's closing round.
++    // Closing round.
+     for (&tickets) |*ticket| ledger.claim(ticket);
++    for (&inputs) |*input| ledger.claim(input);
+     ledger.claim(&weights.weight);
+     ledger.claim(&weights.bias);
+-    runner.deinit(gpa);
++    runner.deinit(counted);
+ 
+     try stdout.print("18:00. device handles still out: {d}\n", .{ledger.out});
+     try stdout.print("18:00. host allocations still out: {d}\n", .{turnstile.out});

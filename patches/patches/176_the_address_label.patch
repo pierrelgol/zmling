@@ -1,0 +1,28 @@
+--- exercises/26_the_mail_room/176_the_address_label.zig
++++ answers/26_the_mail_room/176_the_address_label.zig
+@@ -112,8 +112,10 @@
+ const stations = [_][]const u8{ "dock", "scale", "x-ray", "belt A", "belt B", "the 14th floor", "return to sender", "the basement" };
+ 
+ const Label = struct {
+-    // --max-steps, --chunk and --service go here.
+-    fragile: bool = true,
++    max_steps: ?u32 = null,
++    chunk: flags.ByteSize = .{ .value = 4, .unit = .kib },
++    service: enum { standard, express } = .standard,
++    fragile: bool = false,
+     positional: struct {
+         repo: []const u8,
+         start: u32 = 0,
+@@ -163,10 +165,10 @@
+     try stdout.flush();
+ 
+     try stdout.print("\nmailroom --max-steps=3 --chunk=64KiB parcels/overseas 2\n", .{});
+-    try describe(stdout, flags.parse(.{ .vector = &.{ "mailroom", "--max-steps=3", "--chunk", "64KiB", "parcels/overseas", "2" } }, Label));
++    try describe(stdout, flags.parse(.{ .vector = &.{ "mailroom", "--max-steps=3", "--chunk=64KiB", "parcels/overseas", "2" } }, Label));
+     try stdout.flush();
+ 
+     try stdout.print("\nmailroom --service=express --fragile parcels/annex\n", .{});
+-    try describe(stdout, flags.parse(.{ .vector = &.{ "mailroom", "parcels/annex", "--service=express", "--fragile" } }, Label));
++    try describe(stdout, flags.parse(.{ .vector = &.{ "mailroom", "--service=express", "--fragile", "parcels/annex" } }, Label));
+     try stdout.flush();
+ }
