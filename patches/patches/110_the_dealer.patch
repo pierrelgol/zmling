@@ -23,10 +23,10 @@
 -    ???;
 +    // A placeholder for the state of the generator.
 +    const rng: zml.Tensor.Rng = .init();
-+
+ 
 +    var exe = try platform.compileFn(gpa, io, deal, .{rng}, .{});
 +    defer exe.deinit();
- 
++
      // Three evenings at table 4. The first two start from the
      // same seed, the third from another one.
      var evenings: [3][2][5]i32 = undefined;

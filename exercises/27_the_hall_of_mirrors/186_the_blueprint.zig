@@ -43,13 +43,13 @@
 //     all, is a perfectly good `to`;
 //   - every From on the way goes through the callback, and
 //     everything else is copied;
-//   - slices are ALLOCATED, with the allocator you gave, and
-//     that includes the innocent ones, like a `[]const u8`
-//     name. Give it an arena and forget about them.
+//   - slices and pointers that lead to a From are ALLOCATED,
+//     with the allocator you gave. Give it an arena and forget
+//     about them. The innocent ones, with no From inside, like
+//     a `[]const u8` name, are copied AS THEY ARE: the slice,
+//     not the bytes. Both structs then share the same name.
 //
-// It cannot write through a `*const T` field ("cannot assign
-// to constant", inside `meta.zig`): hold your layers by value
-// or in a slice. And `To` must be a struct
+// And `To` must be a struct
 // (a Shape, a Buffer, one of yours): `mapAlloc` looks at each
 // field of the destination to decide whether to dig or to
 // copy, and a plain integer is always copied. Map Tensors to
@@ -169,7 +169,7 @@ pub fn main(init: std.process.Init) !void {
     defer exe.deinit();
 
     try stdout.print("{s}: built from the blueprint, {d} slots.\n", .{ hall.name, exe.input_shapes.len });
-    try stdout.print("The name was copied, not borrowed: {}\n", .{hall.name.ptr != blueprint.name.ptr});
+    try stdout.print("The name was borrowed, not copied: {}\n", .{hall.name.ptr == blueprint.name.ptr});
 
     var ledger: Ledger = undefined;
     // Fill the ledger from the hall.

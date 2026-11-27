@@ -35,7 +35,7 @@
 //     defer registry.deinit();
 //
 //     registry.tensors.count()    how many tensors
-//     registry.iterator()         all of them: `it.next()` gives
+//     registry.tensors.iterator() all of them: `it.next()` gives
 //                                 an entry, with `.key_ptr.*`
 //                                 (the name) and `.value_ptr.*`
 //     tensor.shape                a zml.Shape: `.rank()`,

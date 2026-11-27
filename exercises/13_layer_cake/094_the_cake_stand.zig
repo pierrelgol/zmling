@@ -17,7 +17,7 @@
 // To run it you need a `zml.Bufferized(Cake)`. For three
 // exercises now, things have been quietly disappearing from
 // those. Time to look at the conjuring trick properly. The doc
-// comment of `Bufferized` in zml/mem.zig says:
+// comment of `Bufferized` in zml/core/mem.zig says:
 //
 //     Return a clone of a type with Tensors replaced by Buffer.
 //     Non-Tensor metadata is stripped out of the resulting

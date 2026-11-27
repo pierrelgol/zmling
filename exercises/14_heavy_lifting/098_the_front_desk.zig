@@ -20,15 +20,16 @@
 //     var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
 //     defer registry.deinit();
 //
-// What you can ask her, straight from zml/safetensors.zig:
+// What you can ask her, straight from zml/core/safetensors.zig:
 //
 //     registry.tensors            a std.StringArrayHashMap: name -> Tensor,
 //                                 in the order of the file
 //     registry.tensors.count()    how many
 //     registry.tensors.get(name)  ?Tensor: one entry, if it exists
-//     registry.iterator()         all of them, one by one
+//     registry.tensors.iterator() all of them, one by one
 //     registry.totalBytes()       the size of all the data, in bytes
-//     registry.metadata           the "__metadata__" of the file
+//     registry.metadata           the "__metadata__" of the file,
+//                                 as raw JSON bytes
 //
 // Careful: the "Tensor" in there is NOT our ghost `zml.Tensor`.
 // It is `zml.safetensors.Tensor`, a plain logbook entry:
@@ -48,20 +49,17 @@
 //
 // The iterator is the one of Zig's hash maps:
 //
-//     var it = registry.iterator();
+//     var it = registry.tensors.iterator();
 //     while (it.next()) |entry| {
 //         entry.key_ptr.*      // the name, a []const u8
 //         entry.value_ptr.*    // the logbook entry
 //     }
 //
-// ONE QUIRK, and you will meet it within the minute.
-//
-// `fromPath` wants an ABSOLUTE path. With a relative one it
-// opens the directory part of the path, then looks for the
-// whole path again INSIDE that directory, and reports a
-// `FileNotFound` about a file that is sitting right there.
-// (An absolute path means the same thing wherever you stand,
-// so it survives the detour.) Zig will make one for you:
+// `fromPath` takes a path, relative to the directory the
+// program runs in, or absolute. The exercises from here on give
+// it an ABSOLUTE one: it means the same thing wherever you
+// stand, and a path that will travel through several functions
+// had better. Zig will make one for you:
 //
 //     const path = try std.Io.Dir.cwd().realPathFileAlloc(io, relative_path, gpa);
 //     defer gpa.free(path);
@@ -77,16 +75,15 @@
 //
 // What she wants, in order:
 //
-//  1. the registry. It is there, and it fails: see the quirk;
-//  2. the total size of the data;
-//  3. the table: one line per entry. The loop and the printing
+//  1. the total size of the data;
+//  2. the table: one line per entry. The loop and the printing
 //     are written, the name and the logbook entry of each line
 //     are not;
-//  4. "And how much of this is Magnus?" In the same loop, count
+//  3. "And how much of this is Magnus?" In the same loop, count
 //     the entries of the coach and add up their sizes. Names are
 //     plain text, and the coach's all start with "coach."
 //     (`std.mem.startsWith(u8, text, prefix)` returns a bool);
-//  5. two lookups by name: the plates, which are there (in
+//  4. two lookups by name: the plates, which are there (in
 //     exercise 097 you computed where they start: does Denise
 //     agree?), and a bias for layer 0 of the coach, which may or
 //     may not be. `get` returns an optional for a reason.
@@ -107,7 +104,7 @@ pub fn main(init: std.process.Init) !void {
     const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
     defer gpa.free(path);
 
-    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, weights_path);
+    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
     defer registry.deinit();
 
     try stdout.print("{d} tensors, {d} bytes of weights.\n\n", .{
@@ -120,7 +117,7 @@ pub fn main(init: std.process.Init) !void {
     var coach_bytes: u64 = 0;
 
     try stdout.print("name                 shape       bytes   at\n", .{});
-    var it = registry.iterator();
+    var it = registry.tensors.iterator();
     while (it.next()) |entry| {
         const name: []const u8 = ???;
         const locker: zml.safetensors.Tensor = ???;

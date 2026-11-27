@@ -17,7 +17,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -130,10 +132,13 @@
+@@ -130,11 +132,14 @@
  
      const q: zml.Tensor = .init(.{ .q = 4, .hd = 2 }, .f32);
      const k: zml.Tensor = .init(.{ .k = 4, .hd = 2 }, .f32);
@@ -28,13 +28,14 @@
 -    ???;
 +    var weights_exe = try platform.compileFn(gpa, io, attentionWeights, .{ q, k }, .{});
 +    defer weights_exe.deinit();
-+
+ 
 +    var gossip_exe = try platform.compileFn(gpa, io, gossip, .{ q, k, v }, .{});
 +    defer gossip_exe.deinit();
- 
++
      //                                        (grass, drama)
      var q_buffer: zml.Buffer = try .fromBytes(io, platform, q.shape(), std.mem.sliceAsBytes(&[4][2]f32{
-@@ -160,8 +165,11 @@
+         .{ 1, 0 }, // Tina wants grass news
+@@ -160,9 +165,12 @@
      }));
      defer v_buffer.deinit();
  
@@ -42,9 +43,10 @@
 -    ???;
 +    var weights: zml.Buffer = try weights_exe.eval(gpa, io, .{ q_buffer, k_buffer });
 +    defer weights.deinit();
-+
+ 
 +    var heard: zml.Buffer = try gossip_exe.eval(gpa, io, .{ q_buffer, k_buffer, v_buffer });
 +    defer heard.deinit();
- 
++
      try stdout.print("weights {f}, each row is a listener:\n", .{weights.shape()});
      try stdout.print("        Tina  Kuzco Paca  Dolly\n", .{});
+     for (names, try weights.getValue([4][4]f32, io)) |name, row| {

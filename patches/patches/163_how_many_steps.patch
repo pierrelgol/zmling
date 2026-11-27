@@ -28,7 +28,7 @@
      });
  }
  
-@@ -149,10 +152,14 @@
+@@ -149,11 +152,15 @@
      };
  
      for (walks) |w| {
@@ -38,12 +38,13 @@
 -        ???;
 +        var exe = try platform.compileFn(gpa, io, walk, .{ street, kernel, w }, .{});
 +        defer exe.deinit();
-+
+ 
 +        var seen = try exe.eval(gpa, io, .{ street_buffer, kernel_buffer });
 +        defer seen.deinit();
 +
 +        const values = try seen.toSliceAlloc(gpa, io);
 +        defer values.free(gpa);
- 
++
          try stdout.print("{s:<23} Odette says {d}, ZML says {d}: {any}\n", .{
              w.name,
+             glances(street.dim(.t), kernel.dim(.k), w),

@@ -20,7 +20,7 @@
 //
 //     y = W·x + b
 //
-// Here it is, straight from zml/nn.zig (minus the quantization
+// Here it is, straight from zml/nn/nn.zig (minus the quantization
 // machinery, which we'll ignore for the whole course):
 //
 //     pub const Linear = struct {

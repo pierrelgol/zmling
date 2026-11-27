@@ -39,7 +39,7 @@
 // uses a famous trick: add "Gumbel noise" from `rng.gumbel` to
 // each score and take the argMax. It is mathematically the same
 // as drawing from the softmax, and it never has to compute an
-// exponential. The comments in zml/nn.zig have the link.)
+// exponential. The comments in zml/nn/nn.zig have the link.)
 //
 // Now dice ARE rolled, so the Rng that comes back is a NEW
 // state. Thread it, like at the groundhog table: `&rng_buffer`

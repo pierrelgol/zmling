@@ -80,10 +80,10 @@
 // match the input, `conv2d` panics with one of the least
 // talkative messages of ZML:
 //
-//     Invalid inputs tensor.zig@convolution:1106
+//     Invalid inputs tensor.zig@convolution:1122
 //
 // That is a file, a function and a line. Open
-// zml/zml/tensor.zig at that line: every line around it is one
+// zml/zml/core/tensor.zig at that line: every line around it is one
 // condition a convolution must satisfy, and the one with the
 // number is the one you broke. This one says:
 //

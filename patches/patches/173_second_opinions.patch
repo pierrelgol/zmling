@@ -1,6 +1,6 @@
 --- exercises/25_the_petting_zoo/173_second_opinions.zig
 +++ answers/25_the_petting_zoo/173_second_opinions.zig
-@@ -138,7 +138,12 @@
+@@ -161,7 +161,12 @@
  
      /// x: {.b, .s, .d}
      pub fn route(self: Clinic, x: zml.Tensor) Routing {
@@ -14,7 +14,7 @@
      }
  
      /// The clinic, by hand. x: {.b, .s, .d}
-@@ -148,7 +153,7 @@
+@@ -171,7 +176,7 @@
          const up = self.up.gather(.{ .expert = routing.ids }, .{});
          const down = self.down.gather(.{ .expert = routing.ids }, .{});
  
@@ -23,25 +23,31 @@
          const opinions = hidden.dot(down, .hid);
  
          return .{
-@@ -160,7 +165,16 @@
+@@ -183,7 +188,22 @@
  
      /// The clinic, by the pantry. x: {.b, .s, .d} -> {.b, .s, .d}
      pub fn reference(self: Clinic, x: zml.Tensor) zml.Tensor {
 -        return ???;
 +        const routing = self.route(x);
++        const tokens = .{ .t = .{ .b, .s } };
 +        return zml.moe.forwardMoe(
-+            x,
-+            routing.ids,
-+            routing.weights,
++            x.merge(tokens),
++            routing.ids.merge(tokens),
++            routing.weights.merge(tokens),
 +            .init(self.up, null, .d),
 +            .init(self.down, null, .hid),
 +            .stablehlo,
++            zml.Compiler.current().mesh(.replicated),
++            .{
++                .in_specs = .{ .input = .replicated, .ids = .replicated, .weights = .replicated, .gate_up = .replicated, .down = .replicated },
++                .out_specs = .replicated,
++            },
 +            .{ .activation = .relu, .quantize_input = false, .routing_weight_placement = .after_down },
-+        );
++        ).reshape(x.shape());
      }
  };
  
-@@ -221,9 +235,16 @@
+@@ -244,9 +264,16 @@
      };
      const x: zml.Tensor = .init(.{ .b = 1, .s = 3, .d = 2 }, .f32);
  

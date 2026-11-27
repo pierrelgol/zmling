@@ -45,10 +45,10 @@
 -    // `store`, the key cabinet on top of it.
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
 +    defer registry.deinit();
-+
+ 
 +    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
 +    defer store.deinit();
- 
++
      const rack: Rack = .init(store.view());
  
 -    // TODO: `rack_buffers`, the rack, loaded. Free what you own.
@@ -58,7 +58,7 @@
  
      // Real Buffers, on the device. Bring them back to look at them.
      try stdout.print("plates      {f}: {any}\n", .{
-@@ -152,8 +168,11 @@
+@@ -152,9 +168,12 @@
          try rack_buffers.combination.getValue([3]i32, io),
      });
  
@@ -66,9 +66,10 @@
 -    // run on the plates you loaded. The result goes in `total`.
 +    var exe = try platform.compileFn(gpa, io, onTheBar, .{rack.plates}, .{});
 +    defer exe.deinit();
-+
+ 
 +    var total: zml.Buffer = try exe.eval(gpa, io, .{rack_buffers.plates});
 +    defer total.deinit();
- 
++
      try stdout.print("on the bar  {f}: {d} kg\n", .{ total.shape(), try total.getValue(f32, io) });
      try stdout.flush();
+ }

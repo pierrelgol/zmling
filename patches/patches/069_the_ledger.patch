@@ -27,27 +27,29 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -109,9 +107,8 @@
+@@ -109,10 +107,9 @@
  
      var exe = try platform.compileFn(gpa, io, payout, .{ loot, cursed, found }, .{});
      defer exe.deinit();
--
--    // The purse needs an Exe as well.
--    ???;
 +    var purse_exe = try platform.compileFn(gpa, io, purse, .{ loot, cursed, found }, .{});
 +    defer purse_exe.deinit();
  
+-    // The purse needs an Exe as well.
+-    ???;
+-
      var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
      defer loot_buffer.deinit();
-@@ -122,9 +119,8 @@
+     var cursed_buffer: zml.Buffer = try .fromBytes(io, platform, cursed.shape(), std.mem.sliceAsBytes(&[_]bool{ false, false, true, false, false, true }));
+@@ -122,10 +119,9 @@
  
      var result: zml.Buffer = try exe.eval(gpa, io, .{ loot_buffer, cursed_buffer, found_buffer });
      defer result.deinit();
--
--    // Run it into a Buffer called `total`.
--    ???;
 +    var total: zml.Buffer = try purse_exe.eval(gpa, io, .{ loot_buffer, cursed_buffer, found_buffer });
 +    defer total.deinit();
  
+-    // Run it into a Buffer called `total`.
+-    ???;
+-
      try stdout.print("The ledger: {any}\n", .{try result.getValue([6]i32, io)});
      try stdout.print("The crew's purse: {d} doubloons.\n", .{try total.getValue(i32, io)});
+     try stdout.flush();

@@ -56,6 +56,15 @@
 //     exe.input_shapes    []const zml.Shape
 //     exe.output_shapes   []const zml.Shape
 //
+// Print one of those Shapes and it ends with `@replicated`,
+// as in `{candles=7,f32}@replicated`. That is the MESH the Exe
+// was compiled for: how its tensors are spread over the devices
+// of the platform. `replicated` is the default mesh of every
+// platform: each device holds a whole copy. With one CPU there
+// is nothing else to do. A Shape you build yourself, like the
+// placeholder below, has no mesh yet and prints without the
+// `@`. Buffers, which live on the platform, have one too.
+//
 // Notice we've said nothing about actual candle flames yet. A
 // model is compiled for SHAPES, before any data exists. That
 // comes next. For now, complete the ritual and the séance. Then

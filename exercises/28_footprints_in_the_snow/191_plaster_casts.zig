@@ -5,7 +5,7 @@
 // another valley and it tells you nothing."
 //
 // She is describing `zml.Tensor`. Here is all of it, from
-// `zml/zml/tensor.zig` (minus one flag):
+// `zml/zml/core/tensor.zig` (minus one flag):
 //
 //     pub const Tensor = struct {
 //         id: Tensor.Id,

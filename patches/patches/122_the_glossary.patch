@@ -17,7 +17,7 @@
  }
  
  /// One tensor of a file of weights (or of activations), as a Buffer.
-@@ -179,13 +185,19 @@
+@@ -179,14 +185,20 @@
      try stdout.print("  PyTorch: {any}\n", .{reference.items(i32)});
      try stdout.print("  same ids: {}\n", .{sameIds(ids, reference.items(i32))});
  
@@ -32,11 +32,12 @@
 -    ???;
 +    const tangled = try encoder.encodeAlloc(gpa, tangled_sentence);
 +    defer gpa.free(tangled);
-+
+ 
 +    var decoder = try tokenizer.decoder();
 +    defer decoder.deinit();
 +    var text = try decoder.decodeAlloc(gpa, tangled);
 +    defer text.deinit(gpa);
- 
++
      try stdout.print("{s}\n ", .{tangled_sentence});
      for (tangled) |id| try stdout.print(" {s}", .{tokenizer.decode(id).?});
+     try stdout.print("\n  and back: {s}\n", .{text.items});

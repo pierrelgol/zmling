@@ -203,7 +203,7 @@ pub fn main(init: std.process.Init) !void {
 
     const prefix = "bert.embeddings.";
     try stdout.print("in the file, under {s}\n", .{prefix});
-    var it = registry.iterator();
+    var it = registry.tensors.iterator();
     while (it.next()) |entry| {
         const name = entry.key_ptr.*;
         if (!std.mem.startsWith(u8, name, prefix)) continue;

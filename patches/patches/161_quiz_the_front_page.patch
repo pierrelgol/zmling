@@ -1,6 +1,6 @@
 --- exercises/23_hot_off_the_press/161_quiz_the_front_page.zig
 +++ answers/23_hot_off_the_press/161_quiz_the_front_page.zig
-@@ -280,8 +280,163 @@
+@@ -280,9 +280,164 @@
      };
  }
  
@@ -130,7 +130,7 @@
 +            for (story[0..start]) |id| try t.writeAll(try decoder.feedOne(id, &scratch));
 +            try t.flush();
 +        }
-+
+ 
 +        // The forme.
 +        var locked: [forme]u32 = @splat(0);
 +        @memcpy(locked[0..start], story[0..start]);
@@ -163,10 +163,11 @@
 +        return .{ len, why };
 +    }
 +};
- 
++
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -317,8 +472,83 @@
+     const io = init.io;
+@@ -317,9 +472,84 @@
      const model: Llama = try .init(gpa, store.view().withPrefix("_orig_mod"), config);
      defer gpa.free(model.layers);
  
@@ -179,7 +180,7 @@
 +    defer loader.deinit();
 +    try loader.load(io, Llama, &model, &weights, &store, .{});
 +    try loader.await(io);
-+
+ 
 +    // The cache: a ghost for the compiler.
 +    const cache_shape: zml.Shape = .init(.{
 +        .layer = config.n_layers,
@@ -249,6 +250,7 @@
 +    }
 +    const late_story = late_paper[0][0..late_lens[0]];
 +    const reprint = late_paper[1][0..late_lens[1]];
- 
++
      try stdout.print("--- morning edition: {d} tokens, and the presses stopped: {s}\n", .{ morning_len, switch (morning_stop) {
          .the_end => "the story was over",
+         .no_paper => "no more paper",

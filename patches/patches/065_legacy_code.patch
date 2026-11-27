@@ -15,7 +15,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -116,10 +116,15 @@
+@@ -116,11 +116,16 @@
      }));
      defer recipes_buffer.deinit();
  
@@ -27,11 +27,12 @@
 +    defer exe.deinit();
 +    var per_quarry_exe = try platform.compileFn(gpa, io, partsPerQuarry, .{ orders, recipes }, .{});
 +    defer per_quarry_exe.deinit();
-+
+ 
 +    var result: zml.Buffer = try exe.eval(gpa, io, .{ orders_buffer, recipes_buffer });
 +    defer result.deinit();
 +    var per_quarry: zml.Buffer = try per_quarry_exe.eval(gpa, io, .{ orders_buffer, recipes_buffer });
 +    defer per_quarry.deinit();
- 
++
      try stdout.print("per quarry {f}: {any}\n", .{ per_quarry.shape(), try per_quarry.getValue([2][2]f32, io) });
      try stdout.print("parts {f}:\n", .{result.shape()});
+     try stdout.flush();

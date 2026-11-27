@@ -43,7 +43,7 @@
      }
  };
  
-@@ -337,9 +336,16 @@
+@@ -337,10 +336,17 @@
      var decoder = try tokenizer.decoder();
      defer decoder.deinit();
  
@@ -52,7 +52,7 @@
 -    ???;
 +    const model: GptNeo = try .init(gpa, store.view(), config);
 +    defer gpa.free(model.h);
-+
+ 
 +    var weights = try zml.mem.bufferize(gpa, GptNeo, &model);
 +    defer gpa.free(weights.h);
 +    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(GptNeo, &weights);
@@ -60,6 +60,7 @@
 +    defer loader.deinit();
 +    try loader.load(io, GptNeo, &model, &weights, &store, .{});
 +    try loader.await(io);
- 
++
      const ids = try encoder.encodeAlloc(gpa, prompt);
      defer gpa.free(ids);
+     const tokens: zml.Tensor = .init(.{ .s = ids.len }, .i32);

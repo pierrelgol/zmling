@@ -1,6 +1,6 @@
 --- exercises/10_treasure_maps/074_quiz_buried_treasure.zig
 +++ answers/10_treasure_maps/074_quiz_buried_treasure.zig
-@@ -60,10 +60,19 @@
+@@ -60,11 +60,20 @@
  
  /// Steps 1 and 2: the two best islands that are safe to land on.
  fn plan(gold: zml.Tensor, sharks: zml.Tensor) zml.Tensor.SortRes {
@@ -14,15 +14,16 @@
 +fn landingParties(gold: zml.Tensor, sharks: zml.Tensor, parties: zml.Tensor) zml.Tensor {
 +    return parties.gather(.{ .island = plan(gold, sharks).indices }, .{});
 +}
-+
+ 
 +/// Step 4: {role=2}, everybody who leaves the ship.
 +fn crew(gold: zml.Tensor, sharks: zml.Tensor, parties: zml.Tensor) zml.Tensor {
 +    return landingParties(gold, sharks, parties).sum(.best).squeeze(.best);
 +}
- 
++
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -88,9 +97,35 @@
+     const io = init.io;
+@@ -88,10 +97,36 @@
          .{ 8, 8 },
      };
  
@@ -32,7 +33,7 @@
 +    const gold: zml.Tensor = .init(.{ .island = 6 }, .i32);
 +    const sharks: zml.Tensor = .init(.{ .island = 6 }, .i32);
 +    const parties: zml.Tensor = .init(.{ .island = 6, .role = 2 }, .i32);
-+
+ 
 +    var plan_exe = try platform.compileFn(gpa, io, plan, .{ gold, sharks }, .{});
 +    defer plan_exe.deinit();
 +    var parties_exe = try platform.compileFn(gpa, io, landingParties, .{ gold, sharks, parties }, .{});
@@ -58,6 +59,7 @@
 +    defer landing.deinit();
 +    var party_total: zml.Buffer = try crew_exe.eval(gpa, io, .{ gold_buffer, sharks_buffer, parties_buffer });
 +    defer party_total.deinit();
- 
++
      try stdout.print("landing parties: {f}\n", .{landing.shape()});
      try stdout.flush();
+ 

@@ -24,7 +24,7 @@
      const rng: zml.Tensor.Rng = .init();
  
      var logits_buffer: zml.Buffer = try .fromBytes(io, platform, logits.shape(), std.mem.sliceAsBytes(&[3][6]f32{
-@@ -141,9 +141,18 @@
+@@ -141,10 +141,19 @@
  
      // With sampleTokens: two outputs, hence a runner.
      {
@@ -33,7 +33,7 @@
 -        ???;
 +        var exe = try platform.compileFn(gpa, io, pull, .{ logits, rng }, .{});
 +        defer exe.deinit();
-+
+ 
 +        var rng_buffer = try rng.initBuffer(io, platform, 777);
 +        defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
 +
@@ -43,6 +43,7 @@
 +        var result: zml.Buffer = undefined;
 +        runner.run(io, .{ logits_buffer, rng_buffer }, .{ &result, &rng_buffer }, .{ .wait = true });
 +        defer result.deinit();
- 
++
          try stdout.print("sampleTokens:", .{});
          for (try result.getValue([3]i32, io)) |token| try stdout.print(" {s}", .{symbols[@intCast(token)]});
+         try stdout.print("\n", .{});

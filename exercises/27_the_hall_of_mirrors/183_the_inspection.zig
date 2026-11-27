@@ -11,7 +11,7 @@
 // Tensors and it has "found the Tensors inside, in field
 // order". Exercise 081 said so, and you took its word for it.
 // This chapter opens the machine that does the finding. It is
-// one file, `zml/zml/meta.zig`, and its main entrance is one
+// one file, `zml/zml/meta/meta.zig`, and its main entrance is one
 // function:
 //
 //     zml.meta.visit(callback, ctx, &value)
@@ -70,7 +70,7 @@
 // what is wrong.
 //
 // This walk IS the Compiler's: `createBlockArguments`, in
-// `zml/zml/Compiler.zig`, is a `visit` with a `*const Tensor`
+// `zml/zml/core/Compiler.zig`, is a `visit` with a `*const Tensor`
 // callback that declares one input of the program per call.
 // What Mr. Pym counts this morning is what an Exe would ask
 // for. (Chapter 28 shows what happens next.)

@@ -27,7 +27,7 @@
 // winner.)
 //
 // ZML keeps all its decoding strategies behind one function,
-// in zml/nn.zig:
+// in zml/nn/nn.zig:
 //
 //     pub const SamplingStrategy = struct {
 //         topk: u32 = 1,

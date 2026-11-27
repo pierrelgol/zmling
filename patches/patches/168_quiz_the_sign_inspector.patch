@@ -1,6 +1,6 @@
 --- exercises/24_window_shopping/168_quiz_the_sign_inspector.zig
 +++ answers/24_window_shopping/168_quiz_the_sign_inspector.zig
-@@ -206,11 +206,85 @@
+@@ -206,12 +206,86 @@
      },
  };
  
@@ -10,7 +10,9 @@
 +const Conv = struct {
 +    weight: zml.Tensor,
 +    bias: zml.Tensor,
-+
+ 
+-// TODO: `Inspector`, with its `Verdict`, `init`, `forward` and
+-// `load`.
 +    pub fn init(view: zml.io.TensorStore.View) Conv {
 +        return .{
 +            .weight = view.createReplicatedTensor("weight", .{ .o, .i, .kh, .kw }),
@@ -64,7 +66,7 @@
 +            .strokes = strokes,
 +        };
 +    }
-+
+ 
 +    /// Brings every tensor of the inspector from the file to the
 +    /// device. The caller owns the Buffers.
 +    pub fn load(
@@ -81,16 +83,15 @@
 +
 +        try loader.load(io, Inspector, self, &buffers, store, .{});
 +        try loader.await(io);
- 
--// TODO: `Inspector`, with its `Verdict`, `init`, `forward` and
--// `load`.
++
 +        return buffers;
 +    }
 +};
- 
++
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -231,14 +305,34 @@
+     const io = init.io;
+@@ -231,15 +305,35 @@
          }
      }
  
@@ -104,7 +105,7 @@
 -    // TODO: the run. The three results go in `verdict`.
 +    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
 +    defer gpa.free(path);
-+
+ 
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
 +    defer registry.deinit();
 +
@@ -130,6 +131,7 @@
 +    var verdict: zml.Bufferized(Inspector.Verdict) = undefined;
 +    runner.run(io, .{ weights, painted_buffer }, .{&verdict}, .{ .wait = true });
 +    defer zml.Buffer.deinitAll(Inspector.Verdict, &verdict);
- 
++
      try stdout.print("strokes {f}, scores {f}, letters {f}\n", .{
          verdict.strokes.shape(),
+         verdict.scores.shape(),

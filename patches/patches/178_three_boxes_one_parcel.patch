@@ -1,6 +1,6 @@
 --- exercises/26_the_mail_room/178_three_boxes_one_parcel.zig
 +++ answers/26_the_mail_room/178_three_boxes_one_parcel.zig
-@@ -122,19 +122,29 @@
+@@ -124,20 +124,30 @@
  
  /// "model-00002-of-00003.safetensors" for (2, 3).
  fn shardName(buffer: []u8, number: usize, total: usize) ![]const u8 {
@@ -18,23 +18,24 @@
 +    return n;
  }
  
- /// Prints "entry point <name>, <n> tensors, <n> bytes" for the
+ /// Prints "<kind> entry point, <n> tensors, <n> bytes" for the
  /// repository at `path`.
  fn summary(gpa: std.mem.Allocator, io: std.Io, stdout: *std.Io.Writer, path: []const u8) !void {
--    // The repository, `entry_point` (a name), and `registry`.
+-    // The repository, `entry_point` (a FileType), and `registry`.
 -    ???
 +    var repo = try zml.safetensors.resolveModelRepo(io, path);
 +    defer repo.close(io);
-+
-+    const file, const entry_point = try zml.safetensors.resolveModelEntrypoint(io, repo);
+ 
++    const entry_point, const file = try zml.safetensors.resolveModelEntrypoint(io, repo);
 +    file.close(io);
 +
 +    var registry: zml.safetensors.TensorRegistry = try .fromRepo(gpa, io, repo);
 +    defer registry.deinit();
- 
-     try stdout.print("entry point {s}, {d} tensors, {d} bytes\n", .{
-         entry_point,
-@@ -145,12 +155,16 @@
++
+     try stdout.print("{s} entry point, {d} tensors, {d} bytes\n", .{
+         @tagName(entry_point),
+         registry.tensors.count(),
+@@ -147,12 +157,16 @@
  
  fn countLayers(view: View) u32 {
      var n: u32 = 0;
@@ -53,7 +54,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -201,10 +215,8 @@
+@@ -203,10 +217,8 @@
      summary(gpa, io, stdout, parcels) catch |err| try stdout.print("{}\n", .{err});
      try stdout.flush();
  

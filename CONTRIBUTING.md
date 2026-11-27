@@ -9,7 +9,9 @@ This is the authoring guide. Read `exercises/01_shape_shifters/` and
 - The runner keeps a symlink `zml/zmling -> ../exercises`, so each chapter directory is a Bazel
   package of the ZML workspace. `exercises/harness/defs.bzl` declares one binary per exercise:
   `exercises/03_foo/017_bar.zig` is the target `//zmling/03_foo:017` (number only, see the
-  comment in `defs.bzl` for why).
+  comment in `defs.bzl` for why). The real root of each binary is `exercises/harness/shim.zig`.
+  It references `zml.bazel`, because ZML always links a runfiles constructor that calls into it, and
+  an exercise that never uses ZML (097, 176, 177) would not link otherwise.
 - `runner/runner.zig` holds the ordered exercise table: file, expected **stdout**, optional hint.
   `zig build` builds it and runs exercises in order until one fails.
 - `answers/` (git-ignored) mirrors `exercises/` with the solved files. `zml/zmling_answers ->
@@ -94,9 +96,25 @@ This is the authoring guide. Read `exercises/01_shape_shifters/` and
 - Humor: each chapter has its own little world and recurring characters. Keep it light, keep it
   kind, and never let a joke get in the way of the explanation.
 
-## ZML facts that were verified by running code (ZML at the pinned submodule commit, Zig 0.17)
+## Moving to a newer ZML
 
-The docs under `zml/docs` are out of date. **The source in `zml/zml/*.zig` is the reference**:
+1. `cd zml && git fetch origin && git checkout <commit>`, then `git add zml` from the root.
+2. Copy the healed exercises to `answers/` while the old patches still apply. Fix the API breaks
+   in both trees, mirror every prose or scaffold edit into `exercises/`, then rerun
+   `./patches/mkpatch.sh` for every answer. Patches should change only where a gap changed.
+3. `./patches/heal.sh` must pass, then `./patches/verify_broken.sh`: read every "why" line.
+4. Re-check the facts below and grep the prose for "pinned" and "this commit".
+5. Update expected outputs in `runner/runner.zig` only from a run on Linux x86_64.
+
+## ZML facts that were verified by running code (Zig 0.17)
+
+First verified at ZML `00a0af4`. Rechecked at ZML master `518d41b` (2026-11-27): all 196 solved
+exercises, plus small probes for the claims that no exercise runs (`any`/`all`, `Decoder.reset`,
+`resizeBicubic`, `deinitAll` on a `Bufferized`, the convolution panic, the shape panics).
+
+The docs under `zml/docs` are out of date. **The source under `zml/zml/` is the reference** (most of
+the Tensor API is in `zml/zml/core/*.zig`, `zml.nn` in `zml/zml/nn/nn.zig`, `zml.meta` in
+`zml/zml/meta/meta.zig`):
 read the function you are about to teach, and its `test` blocks, before writing about it.
 Never write an API name from memory.
 
@@ -111,7 +129,7 @@ Never write an API name from memory.
   `buffer.getValue(T, io)` / `buffer.toSliceAlloc(gpa, io)`.
   Models with a `forward` method: `platform.compile(gpa, io, model, .forward, .{args...}, .{})`,
   see `zml/examples/mnist/mnist.zig`. Several outputs: `exe.runner(gpa)` + `runner.run(...)`, or
-  `exe.args/results/call`, see `zml/zml/ops.zig` (`test @"while"`) and `zml/zml/exe.zig`.
+  `exe.args/results/call`, see `zml/zml/core/ops.zig` (`test @"while"`) and `zml/zml/core/exe.zig`.
 - A Tensor operation outside a compile call panics with `attempt to use null value` in
   `Compiler.current`. This includes `Tensor.scalar`, `Tensor.constant`, `Tensor.arange`, ...
 - Passing the same placeholder twice to a compile call panics:
@@ -124,7 +142,9 @@ Never write an API name from memory.
   *right* operand are stretched, and only when both sides have the same tags in the same order
   (see `binaryOpHelper`). Element-wise ops do not compare tags when the sizes match.
 - `Tensor.any` and `Tensor.all` do not compile at the pinned commit.
-- Shapes print as `{2,3,f32}` / `{h=2,w=3,i32}`, tensors as `Tensor({2,3,f32})`.
+- Shapes print as `{2,3,f32}` / `{h=2,w=3,i32}`, tensors as `Tensor({2,3,f32})`. A Shape that
+  carries a mesh (the shape of a Buffer, `exe.input_shapes`, `exe.output_shapes`) ends with
+  `@replicated`, the name of the platform's default mesh: `{h=2,w=3,i32}@replicated`.
   `{any}` on an array prints `{ 1, 2, 3 }`. Don't print a `zml.Slice` with `{f}` (it has a pointer).
 - `Slice.items(T)` does not check `T` against the dtype.
 - `init.gpa` is a leak-checking allocator in debug builds: deinit everything.
@@ -154,6 +174,14 @@ Never write an API name from memory.
   `zml.Bufferized(T)` segfaults the Zig compiler without a message. For a model holding slices
   of layers: `zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(T, &buffers)`, then free the
   slices `bufferize` allocated.
+- Safetensors (14, 26). `TensorRegistry.fromPath` (and `Tokenizer.fromFile`) take a relative or an
+  absolute path; the
+  exercises pass an absolute one (`realPathFileAlloc`). Iterate with `registry.tensors.iterator()`.
+  `registry.metadata` is the raw JSON of `__metadata__`. `resolveModelEntrypoint` returns
+  `{ FileType, File }` (`.index`, `.safetensors`, ...), not the name of the file.
+- `zml.meta.mapAlloc` allocates the slices and pointers that lead to a `From`, and copies the
+  others as they are: a `[]const u8` name is shared, not duplicated.
+- A `zml.io.VFS` keeps handles 0, 1 and 2 for stdin, stdout and stderr.
 - `zml.tokenizer.Tokenizer.fromBytes` reads a HuggingFace `tokenizer.json` (BPE and WordPiece).
   The encoder does not add special tokens ([CLS], [SEP], BOS): the port adds them.
 - `Tensor.gelu` is the tanh approximation (HF `gelu_new`). The exact one is written with `erf`.
@@ -178,12 +206,14 @@ Never write an API name from memory.
   `max_top_k` without a word. A scatter with rank-0 indices is rewritten to `dynamicUpdateSlice`.
 - Convolutions (24). `conv1d` / `conv2d` / `maxPool*` / `nn.upsample` ignore tags and work by
   position (NCHW, OIHW by default): an NHWC input can run silently and give wrong numbers. A
-  channel or group mismatch panics with only `Invalid inputs tensor.zig@convolution:1106`.
+  channel or group mismatch panics with only `Invalid inputs tensor.zig@convolution:1122`.
   `conv2d` padding takes 1 or 4 values. `maxPool1d` has no default `window_strides`.
   `nn.resizeBilinear` takes sizes (not factors) and works by tag. `nn.resizeBicubic` is broken at
   the pinned commit: do not use it.
 - Building blocks (25). `zml.moe.Backend.auto` fails on CPU (`error.UnimplementedMoEBackend`);
-  `.stablehlo` works and wants `{.b,.s,.d}` input and `[expert, out, in]` weights.
+  `.stablehlo` works. `forwardMoe` wants `{.t,.d}` input (`merge(.{ .t = .{ .b, .s } })`),
+  `[expert, out, in]` weights, a mesh (`zml.Compiler.current().mesh(.replicated)` on one CPU) and a
+  `zml.moe.Partitioning` (all `.replicated`).
   `nn.normalizeL2` always works on the last axis. `dynSingle` past the end returns wrong numbers
   without a panic. The context of `ops.while` may hold `zml.nn.Linear` structs.
 - `zig fmt` cannot parse `???`: format the answer, then derive the exercise from it.

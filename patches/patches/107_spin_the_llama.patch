@@ -35,7 +35,7 @@
      return q.dot(k, .hd);
  }
  
-@@ -169,9 +180,15 @@
+@@ -169,25 +180,32 @@
          var herd_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&north_east));
          defer herd_buffer.deinit();
  
@@ -46,15 +46,15 @@
 +        defer by_hand_exe.deinit();
 +        var official_exe = try platform.compileFn(gpa, io, spin, .{x}, .{});
 +        defer official_exe.deinit();
-+
+ 
 +        var by_hand: zml.Buffer = try by_hand_exe.eval(gpa, io, .{herd_buffer});
 +        defer by_hand.deinit();
 +        var official: zml.Buffer = try official_exe.eval(gpa, io, .{herd_buffer});
 +        defer official.deinit();
- 
++
          try stdout.print("facing (3, 4), spun by hand, and by rope:\n", .{});
          for (try by_hand.getValue([4][2]f32, io), try official.getValue([4][2]f32, io), 0..) |mine, theirs, p| {
-@@ -179,14 +196,15 @@
+             try stdout.print("  position {d}: ({d:6.3}, {d:6.3})  ({d:6.3}, {d:6.3})\n", .{ p, mine[0], mine[1], theirs[0], theirs[1] });
          }
      }
  
@@ -70,9 +70,10 @@
 -        ???;
 +        var positions_buffer: zml.Buffer = try .fromBytes(io, platform, positions.shape(), std.mem.sliceAsBytes(&line));
 +        defer positions_buffer.deinit();
-+
+ 
 +        var scores: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, positions_buffer });
 +        defer scores.deinit();
- 
++
          try stdout.print("scores at positions {any}:\n", .{line});
          for (try scores.getValue([4][4]f32, io)) |row| {
+             try stdout.print(" ", .{});

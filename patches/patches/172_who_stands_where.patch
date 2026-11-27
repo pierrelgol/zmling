@@ -42,16 +42,17 @@
  
          const heard = scores.softmax(.k).dot(k, .k);
          return heard.mean(.q).squeeze(.q);
-@@ -200,8 +209,10 @@
+@@ -200,9 +209,11 @@
  
      try stdout.print("\"goat bites boy\" and \"boy bites goat\":\n", .{});
      for (families, family_names) |family, name| {
 -        // A Reader of this family, and its Exe: `exe`.
 -        ???;
 +        const reader: Reader = .{ .words = .{ .weight = words }, .bias = bias, .positions = family };
-+
+ 
 +        var exe = try platform.compile(gpa, io, reader, .forward, .{tokens}, .{});
 +        defer exe.deinit();
- 
++
          // The Buffers belong to `main`: nothing to free here.
          const weights: zml.Bufferized(Reader) = .{ .words = .{ .weight = words_buffer }, .bias = bias_buffer };
+ 

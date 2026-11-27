@@ -1,6 +1,6 @@
 --- exercises/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
 +++ answers/12_the_exe_files/088_quiz_the_truth_is_in_there.zig
-@@ -73,11 +73,24 @@
+@@ -73,12 +73,25 @@
      }
  };
  
@@ -13,7 +13,7 @@
 +    hidden: Layer,
 +    output: Layer,
 +    doubt: f32,
-+
+ 
 +    pub const Verdict = struct {
 +        score: zml.Tensor,
 +        alien: zml.Tensor,
@@ -27,9 +27,10 @@
 +        };
 +    }
 +};
- 
++
  //                                  glow hum speed
  const hidden_weight = [2][3]f32{ .{ 1, 0, 1 }, .{ 0, 2, -1 } };
+ const hidden_bias = [2]f32{ 0, -1 };
 @@ -97,6 +110,20 @@
      .{ -1, 0, -1 }, // a weather balloon, signed and dated
  };
@@ -51,7 +52,7 @@
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
      const io = init.io;
-@@ -108,24 +135,52 @@
+@@ -108,25 +135,53 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -70,7 +71,7 @@
 +    var scally = molder;
 +    scally.doubt = 10;
 +    const x: zml.Tensor = .init(.{ .d = 3 }, .f32);
-+
+ 
 +    var molder_exe = try platform.compile(gpa, io, molder, .forward, .{x}, .{});
 +    defer molder_exe.deinit();
 +    var scally_exe = try platform.compile(gpa, io, scally, .forward, .{x}, .{});
@@ -85,7 +86,7 @@
 +    defer molder_runner.deinit(gpa);
 +    var scally_runner = try scally_exe.runner(gpa);
 +    defer scally_runner.deinit(gpa);
- 
++
      try stdout.print("Each agent's Exe has {d} inputs and {d} outputs.\n", .{ molder_exe.input_shapes.len, molder_exe.output_shapes.len });
  
 -    // TODO, part 2: `approved` counts Skimmer's aliens.
@@ -99,7 +100,7 @@
 -        // Skimmer's weights. Is it an alien? (It is.)
 +        var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&case));
 +        defer x_buffer.deinit();
-+
+ 
 +        var molder_says: zml.Bufferized(Agent.Verdict) = undefined;
 +        molder_runner.run(io, .{ weights, x_buffer }, .{&molder_says}, .{ .wait = true });
 +        defer zml.Buffer.deinitAll(Agent.Verdict, &molder_says);
@@ -114,6 +115,7 @@
 +        defer zml.Buffer.deinitAll(Agent.Verdict, &skimmer_says);
 +
 +        if ((try skimmer_says.alien.getValue([1]bool, io))[0]) approved += 1;
- 
++
          const score = try molder_says.score.getValue([1]f32, io);
          const molder_believes = try molder_says.alien.getValue([1]bool, io);
+         const scally_believes = try scally_says.alien.getValue([1]bool, io);

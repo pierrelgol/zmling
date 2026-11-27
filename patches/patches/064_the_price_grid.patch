@@ -9,10 +9,10 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -90,16 +90,15 @@
+@@ -90,17 +90,16 @@
  
      // Three products and three tiers. The grid should come out
-     // as {products=3,tiers=3,f32}.
+     // as {products=3,tiers=3,f32}@replicated.
 -    const prices: zml.Tensor = .init(.{3}, .f32);
 -    const tiers: zml.Tensor = .init(.{3}, .f32);
 +    const prices: zml.Tensor = .init(.{ .products = 3 }, .f32);
@@ -23,23 +23,25 @@
  
      var exe = try platform.compileFn(gpa, io, priceGrid, .{ prices, tiers }, .{});
      defer exe.deinit();
--
--    // Marketing's follow-up question needs an Exe of its own.
--    ???;
 +    var sold_out_exe = try platform.compileFn(gpa, io, revenuePerTier, .{ prices, tiers, stock }, .{});
 +    defer sold_out_exe.deinit();
  
+-    // Marketing's follow-up question needs an Exe of its own.
+-    ???;
+-
      var prices_buffer: zml.Buffer = try .fromBytes(io, platform, prices.shape(), std.mem.sliceAsBytes(&[_]f32{ 5, 20, 1000 }));
      defer prices_buffer.deinit();
-@@ -111,9 +110,8 @@
+     // List price, friends of Chad, employees.
+@@ -111,10 +110,9 @@
  
      var result: zml.Buffer = try exe.eval(gpa, io, .{ prices_buffer, tiers_buffer });
      defer result.deinit();
--
--    // ...and an answer: a Buffer called `sold_out`.
--    ???;
 +    var sold_out: zml.Buffer = try sold_out_exe.eval(gpa, io, .{ prices_buffer, tiers_buffer, stock_buffer });
 +    defer sold_out.deinit();
  
+-    // ...and an answer: a Buffer called `sold_out`.
+-    ???;
+-
      try stdout.print("price grid {f}:\n", .{result.shape()});
      for (try result.getValue([3][3]f32, io)) |row| {
+         for (row) |price| try stdout.print(" {d:>7.2}", .{price});

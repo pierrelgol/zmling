@@ -61,7 +61,7 @@
  
      // The cache: a ghost for the compiler.
      const cache_shape: zml.Shape = .init(.{
-@@ -391,7 +413,25 @@
+@@ -391,8 +413,26 @@
      const pos: zml.Tensor = .init(.{}, .i32);
  
      // One function, two presses, and a pressman for each.
@@ -75,7 +75,7 @@
 +    defer prefill.deinit();
 +    var prefill_man: Pressman = try .init(&prefill, gpa, .{ .weights = weights });
 +    defer prefill_man.deinit(gpa);
-+
+ 
 +    var decode: Press = try .compile(gpa, io, platform, .{}, .{.{
 +        .weights = model,
 +        .tokens = zml.Tensor.init(.{ .s = 1 }, .u32),
@@ -85,6 +85,7 @@
 +    defer decode.deinit();
 +    var decode_man: Pressman = try .init(&decode, gpa, .{ .weights = weights });
 +    defer decode_man.deinit(gpa);
- 
++
      const standing = decode_man.args.baked_count;
      try stdout.print("plates the press takes: {d}\n", .{decode.raw.input_shapes.len});
+     try stdout.print("standing type, locked in once: {d}\n", .{standing});

@@ -1,6 +1,6 @@
 --- exercises/21_the_graduation/147_quiz_the_graduation.zig
 +++ answers/21_the_graduation/147_quiz_the_graduation.zig
-@@ -140,8 +140,267 @@
+@@ -140,9 +140,268 @@
      413, 409, 416, 327, 263, 415, 294, 267, 400, 426,
  };
  
@@ -169,7 +169,7 @@
 +        return .{ next, filed, new_rng };
 +    }
 +};
-+
+ 
 +fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
 +    const file = try std.Io.Dir.cwd().openFile(io, path, .{});
 +    defer file.close(io);
@@ -267,9 +267,10 @@
 +    }
 +    return story;
 +}
- 
++
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
+     const io = init.io;
 @@ -154,14 +413,63 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
@@ -282,7 +283,7 @@
 +    const parsed = try std.json.parseFromSlice(Config, gpa, config_bytes, .{ .ignore_unknown_fields = true });
 +    defer parsed.deinit();
 +    const config = parsed.value;
-+
+ 
 +    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, dir ++ "stories260K.safetensors", gpa);
 +    defer gpa.free(path);
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
@@ -331,7 +332,7 @@
 +
 +    var text = try decoder.decodeAlloc(gpa, &ceremony);
 +    defer text.deinit(gpa);
- 
++
      // `ceremony`, `photograph`, `party`: the three speeches, [story_len]u32.
      // `text`: the first one, decoded. `start`: the BOS and the prompt, []u32.
 -    // `config`: what config.json says. `in_vocabulary`: is every token of

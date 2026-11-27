@@ -30,7 +30,7 @@
 //
 //     pub fn rmsNorm(x: Tensor, axis: anytype, eps: f32) Tensor
 //
-// Read its five lines in zml/nn.zig and put them next to
+// Read its five lines in zml/nn/nn.zig and put them next to
 // `_norm`: same formula, and NO WEIGHT. `zml.nn.rmsNorm` is
 // `_norm`, not `forward`. The multiplication is yours, and the
 // weight is a `{.d}` vector meeting a `{.s, .d}` tensor

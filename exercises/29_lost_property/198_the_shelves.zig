@@ -9,7 +9,7 @@
 // copy. You have crossed many times since chapter 02 without
 // looking at the bridge. Today you look.
 //
-// THE HOST SIDE is `zml.Slice` (`zml/zml/slice.zig`): bytes, plus
+// THE HOST SIDE is `zml.Slice` (`zml/zml/core/slice.zig`): bytes, plus
 // a Shape that says how to read them. It is to the host what a
 // Buffer is to the device.
 //
@@ -66,7 +66,7 @@
 // any Buffer you have made since chapter 02: 4. And
 // `buffer.byteSize()`: four times what the shape says. A Buffer
 // holds one handle PER DEVICE of the platform, and your "CPU" has
-// four, because `zml/zml/platform.zig` asks for them:
+// four, because `zml/zml/core/platform.zig` asks for them:
 //
 //     pub const CreateOptions = struct {
 //         ...

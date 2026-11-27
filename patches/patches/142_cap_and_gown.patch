@@ -25,7 +25,7 @@
          return self.w2.forward(gate.mul(up).rename(.{ .dout = .d }), .f32).rename(.{ .dout = .d });
      }
  };
-@@ -245,8 +245,15 @@
+@@ -245,9 +245,16 @@
  
      // The cap.
      {
@@ -35,11 +35,12 @@
 +        defer h.deinit();
 +        var want = try reference(gpa, io, platform, &acts, "layers.0.feed_forward.out", .{ .s, .d });
 +        defer want.deinit();
-+
+ 
 +        var exe = try platform.compile(gpa, io, room, .cap, .{zml.Tensor.fromShape(h.shape())}, .{});
 +        defer exe.deinit();
 +        var got = try exe.eval(gpa, io, .{ weights, h });
 +        defer got.deinit();
- 
++
          try stdout.print("the cap {f} matches PyTorch: {}\n", .{ got.shape(), matches(io, want, got) });
      }
+     try stdout.flush();

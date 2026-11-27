@@ -40,7 +40,7 @@
 // `.map`, and on it `.keys()`, `.values()` (two slices, same
 // order as the file) and `.count()`.
 //
-// Now the ZML side, all of it in `zml/safetensors.zig`:
+// Now the ZML side, all of it in `zml/core/safetensors.zig`:
 //
 //     zml.safetensors.resolveModelRepo(io, path)   !std.Io.Dir
 //         `path` is a directory: opens it. `path` ends in
@@ -49,12 +49,14 @@
 //         InvalidPath. The Dir is yours to `close(io)`.
 //
 //     zml.safetensors.resolveModelEntrypoint(io, repo)
-//         !struct { std.Io.File, []const u8 }
+//         !struct { zml.safetensors.FileType, std.Io.File }
 //         Looks in the directory for
 //         `model.safetensors.index.json`, then for
-//         `model.safetensors`, in that order, and returns the
-//         open file and its name. Neither: `error.FileNotFound`.
-//         The File is yours to close too.
+//         `model.safetensors`, in that order (and for a few
+//         other spellings: `consolidated.*`, `*.full_index.json`),
+//         and returns WHAT it found, `.index` or
+//         `.safetensors`, and the open file. Neither:
+//         `error.FileNotFound`. The File is yours to close too.
 //
 //     zml.safetensors.TensorRegistry.fromRepo(gpa, io, repo)
 //         The two together: finds the entry point; if it is an
@@ -77,7 +79,7 @@
 // is the same machine with one more door:
 //
 //  - given a directory, it behaves like `fromRepo`;
-//  - given a file (an absolute path: the quirk of 098), it
+//  - given a file (an absolute path, as in 098), it
 //    reads THAT FILE. An index: the whole parcel. One piece:
 //    one piece, and no complaint, because a piece is a valid
 //    safetensors file. That was Priya.
@@ -130,14 +132,14 @@ fn tensorsIn(index: Index, shard: []const u8) usize {
     return ???;
 }
 
-/// Prints "entry point <name>, <n> tensors, <n> bytes" for the
+/// Prints "<kind> entry point, <n> tensors, <n> bytes" for the
 /// repository at `path`.
 fn summary(gpa: std.mem.Allocator, io: std.Io, stdout: *std.Io.Writer, path: []const u8) !void {
-    // The repository, `entry_point` (a name), and `registry`.
+    // The repository, `entry_point` (a FileType), and `registry`.
     ???
 
-    try stdout.print("entry point {s}, {d} tensors, {d} bytes\n", .{
-        entry_point,
+    try stdout.print("{s} entry point, {d} tensors, {d} bytes\n", .{
+        @tagName(entry_point),
         registry.tensors.count(),
         registry.totalBytes(),
     });

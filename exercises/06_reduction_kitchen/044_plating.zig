@@ -59,7 +59,7 @@
 //
 //     pub fn softmax(self: Tensor, axis_: anytype) Tensor
 //
-// Open zml/zml/tensor.zig and read it: it is your ritual 2,
+// Open zml/zml/core/tensor.zig and read it: it is your ritual 2,
 // plus two details that can wait (it computes in f32 whatever
 // the dtype, and it returns zeros for a row that is all -inf).
 // Somebody used it here already, and named the wrong axis. No

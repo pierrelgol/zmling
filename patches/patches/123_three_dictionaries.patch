@@ -26,7 +26,7 @@
          return self.norm.forward(x);
      }
  };
-@@ -233,8 +234,12 @@
+@@ -233,9 +234,13 @@
      try loader.load(io, Embeddings, &model, &weights, &store, .{});
      try loader.await(io);
  
@@ -35,9 +35,10 @@
 +    const tokens: zml.Tensor = .init(.{ .s = ids.shape().dim(0) }, .i32);
 +    var exe = try platform.compile(gpa, io, model, .forward, .{tokens}, .{});
 +    defer exe.deinit();
-+
+ 
 +    var got: zml.Buffer = try exe.eval(gpa, io, .{ weights, ids });
 +    defer got.deinit();
- 
++
      const same = if (zml.testing.expectClose(io, want, got, .{})) |_| true else |_| false;
      try stdout.print("embeddings: {f}\n", .{got.shape()});
+     try stdout.print("same as PyTorch: {}\n", .{same});

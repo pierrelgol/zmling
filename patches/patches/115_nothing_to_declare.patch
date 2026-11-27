@@ -6,7 +6,7 @@
  fn parameterCount(registry: *zml.safetensors.TensorRegistry) usize {
 -    return ???;
 +    var total: usize = 0;
-+    var it = registry.iterator();
++    var it = registry.tensors.iterator();
 +    while (it.next()) |entry| total += entry.value_ptr.shape.count();
 +    return total;
  }
@@ -27,7 +27,7 @@
      // `all_f32` must end up false if one of them is not f32.
      var all_f32 = true;
 -    ???;
-+    var it = registry.iterator();
++    var it = registry.tensors.iterator();
 +    while (it.next()) |entry| {
 +        const shape = entry.value_ptr.shape;
 +        try stdout.print("  {s:<10} {f}\n", .{ entry.key_ptr.*, shape });
@@ -41,7 +41,7 @@
      //     try stdout.print("  {s}: {d} numbers in, {d} numbers out\n", .{ name, in, out });
      try stdout.print("What the matrices say:\n", .{});
 -    ???;
-+    it = registry.iterator();
++    it = registry.tensors.iterator();
 +    while (it.next()) |entry| {
 +        const shape = entry.value_ptr.shape;
 +        if (shape.rank() != 2) continue;

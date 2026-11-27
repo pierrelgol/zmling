@@ -161,7 +161,7 @@
  fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
      const file = try std.Io.Dir.cwd().openFile(io, path, .{});
      defer file.close(io);
-@@ -94,10 +248,67 @@
+@@ -94,11 +248,68 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -174,7 +174,7 @@
 +    const parsed = try std.json.parseFromSlice(Config, gpa, config_bytes, .{ .ignore_unknown_fields = true });
 +    defer parsed.deinit();
 +    const config = parsed.value;
-+
+ 
 +    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, dir ++ "model.safetensors", gpa);
 +    defer gpa.free(path);
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
@@ -230,6 +230,7 @@
 +
 +    var text = try decoder.decodeAlloc(gpa, &story);
 +    defer text.deinit(gpa);
- 
++
      try stdout.print("{d} tokens in, {d} tokens out\n", .{ prompt_ids.len, story.len });
      try stdout.print("{s}\n", .{text.items});
+     try stdout.print("the same story as PyTorch: {}\n", .{std.mem.eql(u32, &story, &pytorch_story)});

@@ -6,7 +6,7 @@
 // is about what is checked there and, above all, what is NOT.
 //
 // The border is one function, `Arguments.set`, in
-// `zml/zml/exe.zig`. It walks through what you give it and, for
+// `zml/zml/core/exe.zig`. It walks through what you give it and, for
 // each Buffer it meets, in order:
 //
 //     stdx.debug.assert(

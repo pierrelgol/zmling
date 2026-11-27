@@ -22,10 +22,10 @@
 +    // One seed for the whole night.
 +    var rng_buffer = try rng.initBuffer(io, platform, 1234);
 +    defer zml.Tensor.Rng.deinitBuffer(&rng_buffer);
-+
+ 
 +    var runner = try exe.runner(gpa);
 +    defer runner.deinit(gpa);
- 
++
      var rounds: [3][5]i32 = undefined;
      for (&rounds) |*round| {
 -        // Deal one round into `round.*`. State in, state out.

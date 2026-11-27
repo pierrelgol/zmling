@@ -29,7 +29,7 @@
 +    shapes: [32]zml.Shape = undefined,
 +    panes: usize = 0,
 +    numbers: usize = 0,
-+
+ 
 +    const Error = std.Io.Writer.Error || std.fmt.BufPrintError;
 +
 +    fn walk(self: *Report, path: []const u8, v: anytype) Error!void {
@@ -63,7 +63,7 @@
 +        }
 +    }
 +};
- 
++
  fn sameShapes(a: []const zml.Shape, b: []const zml.Shape) bool {
 -    return ???;
 +    if (a.len != b.len) return false;
@@ -74,7 +74,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -166,11 +213,16 @@
+@@ -166,12 +213,17 @@
  
      try stdout.print("{s}, pane by pane:\n", .{hall.name});
  
@@ -87,12 +87,13 @@
 +    try report.walk("hall", hall);
 +    try report.walk("visitor", visitor);
 +    const register = report.shapes[0..report.panes];
-+
+ 
 +    const walked = try zml.meta.collectAlloc(zml.Tensor.shape, {}, gpa, &.{ hall, visitor });
 +    defer gpa.free(walked);
 +
 +    var exe = try platform.compile(gpa, io, hall, .forward, .{visitor}, .{});
 +    defer exe.deinit();
- 
++
      try stdout.print("{d} panes, {d} numbers.\n", .{ report.panes, report.numbers });
      try stdout.print("`zml.meta` agrees: {}\n", .{sameShapes(register, walked)});
+     try stdout.print("The Exe agrees: {}\n", .{sameShapes(register, exe.input_shapes)});

@@ -221,9 +221,9 @@
 +        var repo = try zml.safetensors.resolveModelRepo(io, label.positional.repo);
 +        defer repo.close(io);
 +
-+        const file, const entry_point = try zml.safetensors.resolveModelEntrypoint(io, repo);
++        const entry_point, const file = try zml.safetensors.resolveModelEntrypoint(io, repo);
 +        file.close(io);
-+        try stdout.print("  entry point: {s}\n", .{entry_point});
++        try stdout.print("  entry point: {s}\n", .{@tagName(entry_point)});
 +
 +        const parsed = try parseJson(Config, gpa, io, repo, "config.json");
 +        defer parsed.deinit();

@@ -21,7 +21,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -113,10 +125,12 @@
+@@ -113,11 +125,13 @@
      }));
      defer v_buffer.deinit();
  
@@ -32,9 +32,10 @@
 +    for ([_]u32{ 1, 2 }) |heads| {
 +        var exe = try platform.compileFn(gpa, io, listen, .{ x, v, heads }, .{});
 +        defer exe.deinit();
-+
+ 
 +        var heard: zml.Buffer = try exe.eval(gpa, io, .{ x_buffer, v_buffer });
 +        defer heard.deinit();
- 
++
          try stdout.print("{d} head(s), heard {f}:\n", .{ heads, heard.shape() });
          try stdout.print("         Tina  Kuzco | Tina  Kuzco\n", .{});
+         for (names, try heard.getValue([4][4]f32, io)) |name, row| {

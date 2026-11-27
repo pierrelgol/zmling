@@ -22,14 +22,14 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -146,7 +146,17 @@
+@@ -146,8 +146,18 @@
      // Compile `poster` for the stamp, put `ink` in a Buffer, run,
      // and copy the result to a zml.Slice called `squares`.
      // Release everything you create.
 -    ???;
 +    var poster_exe = try platform.compileFn(gpa, io, poster, .{stamp}, .{});
 +    defer poster_exe.deinit();
-+
+ 
 +    var stamp_buffer: zml.Buffer = try .fromBytes(io, platform, stamp.shape(), std.mem.sliceAsBytes(&ink));
 +    defer stamp_buffer.deinit();
 +
@@ -38,6 +38,7 @@
 +
 +    const squares: zml.Slice = try poster_result.toSliceAlloc(gpa, io);
 +    defer squares.free(gpa);
- 
++
      try stdout.print("Poster {f}\n", .{squares.shape});
  
+     const width: usize = @intCast(squares.shape.dim(-1));

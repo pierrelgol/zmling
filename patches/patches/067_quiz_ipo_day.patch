@@ -1,6 +1,6 @@
 --- exercises/09_dot_com_bubble/067_quiz_ipo_day.zig
 +++ answers/09_dot_com_bubble/067_quiz_ipo_day.zig
-@@ -69,10 +69,25 @@
+@@ -69,11 +69,26 @@
  
  /// One linear layer: contract `x` and `w` over `tag`, add the bias.
  fn layer(x: zml.Tensor, w: zml.Tensor, bias: zml.Tensor, comptime tag: @EnumLiteral()) zml.Tensor {
@@ -15,7 +15,7 @@
 +    const hidden = layer(x, w1, b1, .features).relu();
 +    return layer(hidden, w2, b2, .hidden);
 +}
-+
+ 
 +/// For each startup, 0 (BUY) or 1 (SELL).
 +fn recommendation(x: zml.Tensor, w1: zml.Tensor, b1: zml.Tensor, w2: zml.Tensor, b2: zml.Tensor) zml.Tensor {
 +    return analyst(x, w1, b1, w2, b2).argMax(.verdict).indices.squeeze(.verdict);
@@ -25,10 +25,11 @@
 +fn confidence(x: zml.Tensor, w1: zml.Tensor, b1: zml.Tensor, w2: zml.Tensor, b2: zml.Tensor) zml.Tensor {
 +    return analyst(x, w1, b1, w2, b2).softmax(.verdict).max(.verdict).squeeze(.verdict);
 +}
- 
++
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -104,9 +119,36 @@
+     const io = init.io;
+@@ -104,10 +119,37 @@
      // The bank underwrites the IPO. BUY starts 10 points ahead.
      const b2_data = [_]f32{ 10, 0 };
  
@@ -40,7 +41,7 @@
 +    const b1: zml.Tensor = .init(.{ .hidden = 3 }, .f32);
 +    const w2: zml.Tensor = .init(.{ .verdict = 2, .hidden = 3 }, .f32);
 +    const b2: zml.Tensor = .init(.{ .verdict = 2 }, .f32);
-+
+ 
 +    var scores_exe = try platform.compileFn(gpa, io, analyst, .{ x, w1, b1, w2, b2 }, .{});
 +    defer scores_exe.deinit();
 +    var picks_exe = try platform.compileFn(gpa, io, recommendation, .{ x, w1, b1, w2, b2 }, .{});
@@ -65,6 +66,7 @@
 +    defer picks.deinit();
 +    var sure: zml.Buffer = try sure_exe.eval(gpa, io, .{ x_buffer, w1_buffer, b1_buffer, w2_buffer, b2_buffer });
 +    defer sure.deinit();
- 
++
      const names = [_][]const u8{ "PetRocks.com", "Gravel.net", "Foosball.org" };
      const verdicts = [_][]const u8{ "BUY", "SELL" };
+ 

@@ -35,7 +35,7 @@
      const blueprint: Blueprint = .{
          .name = "Madame Ottoline's",
 @@ -172,8 +175,7 @@
-     try stdout.print("The name was copied, not borrowed: {}\n", .{hall.name.ptr != blueprint.name.ptr});
+     try stdout.print("The name was borrowed, not copied: {}\n", .{hall.name.ptr == blueprint.name.ptr});
  
      var ledger: Ledger = undefined;
 -    // Fill the ledger from the hall.

@@ -28,5 +28,5 @@ def zmling_exercises(data = []):
             name = name,
             main = "//zmling/harness:shim.zig",
             data = data,
-            deps = [":" + f[:-len(".zig")]],
+            deps = [":" + f[:-len(".zig")], "//zml"],
         )

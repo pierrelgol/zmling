@@ -96,7 +96,7 @@
 //
 // Top to bottom:
 //
-//  - the registry: exercise 098, from memory, quirk included;
+//  - the registry: exercise 098, from memory, absolute path included;
 //  - the key cabinet, on top of the registry;
 //  - how many entries are under "coach";
 //  - the key of the plates. It is there, and it panics;

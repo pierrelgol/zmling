@@ -47,10 +47,10 @@
 +    defer ids_buffer.deinit();
 +    var where_buffer: zml.Buffer = try .scalar(io, platform, where, .i32);
 +    defer where_buffer.deinit();
-+
+ 
 +    var got: zml.Buffer = try exe.eval(gpa, io, .{ weights, ids_buffer, where_buffer });
 +    defer got.deinit();
- 
++
      // The word with the highest score.
      const scores = try got.toSliceAlloc(gpa, io);
      defer scores.free(gpa);

@@ -23,7 +23,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -107,8 +108,11 @@
+@@ -107,9 +108,12 @@
      const level: RmsNorm = .{ .weight = .init(.{ .d = 2 }, .f32), .eps = 1e-6 };
      const cakes: zml.Tensor = .init(.{ .cake = 3, .d = 2 }, .f32);
  
@@ -31,12 +31,13 @@
 -    // `unit_exe`, the function `unitLength` compiled for `cakes`.
 +    var rms_exe = try platform.compile(gpa, io, level, .forward, .{cakes}, .{});
 +    defer rms_exe.deinit();
-+
+ 
 +    var unit_exe = try platform.compileFn(gpa, io, unitLength, .{cakes}, .{});
 +    defer unit_exe.deinit();
- 
++
      // The learned weight: double the first number, keep the second.
      var weight_buffer: zml.Buffer = try .fromBytes(io, platform, level.weight.shape(), std.mem.sliceAsBytes(&[2]f32{ 2, 1 }));
+     defer weight_buffer.deinit();
 @@ -122,14 +126,13 @@
      var cakes_buffer: zml.Buffer = try .fromBytes(io, platform, cakes.shape(), std.mem.sliceAsBytes(&recipes));
      defer cakes_buffer.deinit();

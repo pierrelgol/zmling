@@ -10,7 +10,7 @@
 // one report, and the reports are the specification:
 //
 //     parcel: overseas
-//       entry point: model.safetensors.index.json
+//       entry point: index
 //       slip: conveyor, 2 layers, tied head: false, float16
 //       boxes: 5 tensors, 528 bytes
 //       device: 528 bytes
@@ -26,8 +26,8 @@
 //    nothing else. Labels are parsed from the fixed lists in
 //    `labels`. "parcel:" is the last word of the repository
 //    path (`std.fs.path.basename`).
-//  - THE ENTRY POINT (178): the name `resolveModelEntrypoint`
-//    finds. Then one registry for the whole repository.
+//  - THE ENTRY POINT (178): the kind of file
+//    `resolveModelEntrypoint` finds. Then one registry for the whole repository.
 //  - THE SLIP (177). `model_type`; `num_hidden_layers`, absent
 //    for a chute; `eos_token_id`, a number or a list;
 //    `max_length`, absent or null or a number, 20 unless it is

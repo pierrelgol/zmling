@@ -19,19 +19,19 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -127,9 +131,8 @@
+@@ -127,22 +131,24 @@
  
      var exe = try platform.compileFn(gpa, io, threeBest, .{loot}, .{});
      defer exe.deinit();
--
--    // The quartermaster's number needs an Exe as well.
--    ???;
 +    var accuracy_exe = try platform.compileFn(gpa, io, topThreeAccuracy, .{ loot, bets }, .{});
 +    defer accuracy_exe.deinit();
  
+-    // The quartermaster's number needs an Exe as well.
+-    ???;
+-
      var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 95, 1 }));
      defer loot_buffer.deinit();
-@@ -137,12 +140,15 @@
+     // Anne says chest 4, Bart chest 1, Calico chest 0, Dread chest 3.
      var bets_buffer: zml.Buffer = try .fromBytes(io, platform, bets.shape(), std.mem.sliceAsBytes(&[_]i32{ 4, 1, 0, 3 }));
      defer bets_buffer.deinit();
  

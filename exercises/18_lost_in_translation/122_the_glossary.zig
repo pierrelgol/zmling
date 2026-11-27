@@ -17,8 +17,8 @@
 //     var tokenizer: zml.tokenizer.Tokenizer = try .fromFile(gpa, io, path);
 //     defer tokenizer.deinit();
 //
-// (`path` must be absolute: `realPathFileAlloc`, like for the
-// weights.) The tokenizer itself only answers questions about
+// (`path` is made absolute with `realPathFileAlloc`, like for
+// the weights.) The tokenizer itself only answers questions about
 // single tokens:
 //
 //     tokenizer.tokenId("[MASK]")   ?u32          text -> id

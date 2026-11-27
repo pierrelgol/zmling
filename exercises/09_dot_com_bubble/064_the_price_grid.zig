@@ -89,7 +89,7 @@ pub fn main(init: std.process.Init) !void {
     defer platform.deinit(gpa, io);
 
     // Three products and three tiers. The grid should come out
-    // as {products=3,tiers=3,f32}.
+    // as {products=3,tiers=3,f32}@replicated.
     const prices: zml.Tensor = .init(.{3}, .f32);
     const tiers: zml.Tensor = .init(.{3}, .f32);
     // Units in the warehouse, per product.

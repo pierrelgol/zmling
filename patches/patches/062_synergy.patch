@@ -21,27 +21,29 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -110,9 +110,8 @@
+@@ -110,10 +110,9 @@
      defer revenue_exe.deinit();
      var parts_exe = try platform.compileFn(gpa, io, partsNeeded, .{ orders, recipes }, .{});
      defer parts_exe.deinit();
--
--    // Nobody compiled the third report: `bestDay`, into `best_exe`.
--    ???;
 +    var best_exe = try platform.compileFn(gpa, io, bestDay, .{ orders, prices }, .{});
 +    defer best_exe.deinit();
  
+-    // Nobody compiled the third report: `bestDay`, into `best_exe`.
+-    ???;
+-
      // Units ordered: Pet Rock, Deluxe Rock, Family Pack, Enterprise Rock.
      var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[3][4]f32{
-@@ -136,9 +135,8 @@
+         .{ 10, 2, 0, 0 },
+@@ -136,10 +135,9 @@
      defer revenue.deinit();
      var parts: zml.Buffer = try parts_exe.eval(gpa, io, .{ orders_buffer, recipes_buffer });
      defer parts.deinit();
--
--    // ...and nobody ran it. The last print reads a Buffer called `best`.
--    ???;
 +    var best: zml.Buffer = try best_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
 +    defer best.deinit();
  
+-    // ...and nobody ran it. The last print reads a Buffer called `best`.
+-    ???;
+-
      try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([3]f32, io) });
      try stdout.print("parts {f}:\n", .{parts.shape()});
+     for (try parts.getValue([3][2]f32, io), 1..) |day, i| {

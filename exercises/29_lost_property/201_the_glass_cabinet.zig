@@ -12,7 +12,7 @@
 // chapter 23), it is a new shelf per umbrella.
 //
 // To do better you need to know that "device memory" is not one
-// thing. `zml/zml/platform.zig`:
+// thing. `zml/zml/core/platform.zig`:
 //
 //     pub const Memory = struct {
 //         pub const Kind = enum {
@@ -45,7 +45,7 @@
 // input is in pinned memory", `x.toMemory(.device)` copies it to
 // the accelerator inside the graph, and
 // `view.createHostPinnedTensor(...)` makes a placeholder whose
-// weights the loader will put there. Open `zml/zml/tensor.zig` and
+// weights the loader will put there. Open `zml/zml/core/tensor.zig` and
 // read the first lines of `onMemory` and `toMemory`:
 //
 //     switch (ctx.platform.target) {
@@ -62,7 +62,7 @@
 // is the tool built on pinned memory, which works everywhere:
 //
 //     zml.Buffer.HostAccessible
-//     (zml/zml/buffer/HostAccessible.zig)
+//     (zml/zml/core/buffer/HostAccessible.zig)
 //
 // A Buffer that the host may read and write IN PLACE.
 //

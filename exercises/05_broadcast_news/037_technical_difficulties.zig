@@ -6,7 +6,7 @@
 // don't, so that you meet it here and not at 3 a.m. in a model
 // that "trains fine but gives weird results".
 //
-// Open zml/zml/tensor.zig, find `pub fn broad`, and read the
+// Open zml/zml/core/tensor.zig, find `pub fn broad`, and read the
 // comment its authors left in the middle:
 //
 //     // TODO: broad is error prone because of this:

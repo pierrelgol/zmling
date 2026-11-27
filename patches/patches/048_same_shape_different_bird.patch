@@ -16,7 +16,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -123,11 +124,17 @@
+@@ -123,12 +124,18 @@
      defer result.deinit();
  
      // A nested Zig array is row-major too: one row per ROUND.
@@ -28,11 +28,12 @@
 -    ???;
 +    var gaps_exe = try platform.compileFn(gpa, io, gaps, .{scores}, .{});
 +    defer gaps_exe.deinit();
-+
+ 
 +    var gaps_result: zml.Buffer = try gaps_exe.eval(gpa, io, .{scores_buffer});
 +    defer gaps_result.deinit();
 +
 +    const gap = try gaps_result.getValue([3]i32, io);
- 
++
      try stdout.print("Scoreboard {f}\n", .{exe.output_shapes[0]});
      for (board, 1..) |round, i| {
+         try stdout.print("round {d}: Ingrid {d}, Timmy {d}\n", .{ i, round[0], round[1] });

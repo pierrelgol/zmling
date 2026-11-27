@@ -107,7 +107,7 @@ cd zml && bazel run //zmling/02_ghost_tensors:010
 ```
 
 The `zml` directory is the real ZML repository (a git submodule): when an exercise mentions a
-function, go read it in `zml/zml/tensor.zig`. Reading ZML's source is a skill this course wants
+function, go read it in `zml/zml/core/tensor.zig`. Reading ZML's source is a skill this course wants
 you to pick up.
 
 ## Troubleshooting

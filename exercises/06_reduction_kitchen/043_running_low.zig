@@ -37,7 +37,7 @@
 // least one value non-zero?" and "are all the values non-zero?"
 // with a .bool tensor. Sadly, in the version of ZML that zmling
 // is pinned to, both are OFF the menu: calling either one is a
-// compile error, and the error is inside zml/zml/tensor.zig, not
+// compile error, and the error is inside zml/zml/core/tensor.zig, not
 // in your code. (Try it, if you like reading other people's
 // compile errors.) The kitchen makes do with what's in the pan:
 // for values that are never negative, "any" is `max > 0` and

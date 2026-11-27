@@ -18,7 +18,7 @@
      }
  };
  
-@@ -345,14 +344,38 @@
+@@ -345,15 +344,39 @@
      const prompt_ids = try encoder.encodeAlloc(gpa, prompt);
      defer gpa.free(prompt_ids);
  
@@ -35,7 +35,7 @@
 +    const last: zml.Tensor = .init(.{}, .i32);
 +    var exe = try platform.compile(gpa, io, model, .forward, .{ tokens, last }, .{});
 +    defer exe.deinit();
-+
+ 
 +    // The page: the prompt, then blanks.
 +    var story: [max_len]u32 = @splat(blank);
 +    @memcpy(story[0..prompt_ids.len], prompt_ids);
@@ -62,6 +62,7 @@
 +        defer scores.free(gpa);
 +        story[len] = @intCast(std.mem.indexOfMax(f32, scores.items(f32)));
 +    }
- 
++
      var text = try decoder.decodeAlloc(gpa, &story);
      defer text.deinit(gpa);
+     try stdout.print("{s}\n", .{text.items});

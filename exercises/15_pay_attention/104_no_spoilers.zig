@@ -92,7 +92,7 @@
 // will warn you if you swap them. With a float `dtype` you get
 // 0 and -inf, ready to be added. Its body is the one you are
 // about to write, give or take a line: go and compare, in
-// zml/nn.zig, once yours works.
+// zml/nn/nn.zig, once yours works.
 //
 // To do:
 //

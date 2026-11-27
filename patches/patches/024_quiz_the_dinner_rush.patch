@@ -52,18 +52,19 @@
  
      // Dinner rush, then the rest of the evening.
      for ([_]f32{ 10, 0 }) |dollars_off| {
-@@ -119,7 +127,13 @@
+@@ -119,8 +127,14 @@
          // back on the host. That is more than one line: write
          // them above this one, cleanup included, and end with
          // `totals`.
 -        const totals = ???;
 +        var coupon_buffer: zml.Buffer = try .scalar(io, platform, dollars_off, .f32);
 +        defer coupon_buffer.deinit();
-+
+ 
 +        var result: zml.Buffer = try exe.eval(gpa, io, .{ plates_buffer, price_buffer, mood_buffer, coupon_buffer });
 +        defer result.deinit();
 +
 +        const totals = try result.getValue([4]i32, io);
- 
++
          try stdout.print("coupon {d}: {any}\n", .{ dollars_off, totals });
      }
+     try stdout.flush();

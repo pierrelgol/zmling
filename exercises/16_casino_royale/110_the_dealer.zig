@@ -50,7 +50,7 @@
 // plain Zig destructuring; write `_` for a part you don't want.
 //
 // The doc comment of the function underneath it all, in
-// zml/tensor.zig, says it plainly:
+// zml/core/tensor.zig, says it plainly:
 //
 //     /// The given Rng state should not be used anymore
 //     /// (or you'll get the same numbers again).

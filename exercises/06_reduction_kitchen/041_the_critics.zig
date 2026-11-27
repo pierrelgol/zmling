@@ -20,7 +20,7 @@
 // tensor and reduces an axis.)
 //
 // There is no magic in `mean`. Here is its whole body, straight
-// from zml/zml/tensor.zig:
+// from zml/zml/core/tensor.zig:
 //
 //     return self.sum(axis_).divByConst(self.dim(axis_));
 //

@@ -58,18 +58,19 @@
  
      try stdout.print("intensity 1:", .{});
      for (calm_fahrenheit) |f| try stdout.print(" {d:.1}", .{f});
-@@ -124,6 +124,14 @@
+@@ -124,7 +124,15 @@
      // you already hold. The lines below expect that result to be
      // a zml.Buffer called `shifted`. Every other name is yours to
      // choose.
 +    const before: zml.Tensor = .fromShape(exe.output_shapes[0]);
 +    const after: zml.Tensor = .fromShape(exe.output_shapes[0]);
-+
+ 
 +    var shift_exe = try platform.compileFn(gpa, io, shift, .{ before, after }, .{});
 +    defer shift_exe.deinit();
 +
 +    var shifted: zml.Buffer = try shift_exe.eval(gpa, io, .{ calm, wild });
 +    defer shifted.deinit();
- 
++
      // This one is on the house: the result, as a Slice.
      const photo: zml.Slice = try shifted.toSliceAlloc(gpa, io);
+     defer photo.free(gpa);

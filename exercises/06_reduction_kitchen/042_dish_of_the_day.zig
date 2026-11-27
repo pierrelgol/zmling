@@ -43,7 +43,7 @@
 // simple way to call an Exe, and simple means: ONE output.
 //
 // Running an Exe with several outputs takes more ceremony (if
-// you are curious, `test argMax` in zml/zml/tensor.zig does it,
+// you are curious, `test argMax` in zml/zml/core/tensor.zig does it,
 // with `exe.runner`). For today the way out is easier: you
 // rarely want both fields anyway. Return the one you want.
 // (The ritual then hands back a Tensor and not an `ArgMaxRes`

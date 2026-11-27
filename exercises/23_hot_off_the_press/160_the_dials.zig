@@ -40,7 +40,7 @@
 //
 // Same contract as `sampleTokens`: `logits` has a `.voc` axis,
 // the Rng goes in and a new one comes out. What happens in
-// between is `fixupLogits`, in zml/nn.zig, and it is short enough
+// between is `fixupLogits`, in zml/nn/nn.zig, and it is short enough
 // to read:
 //
 //  1. the candidates are sorted, best first, and only the best
@@ -86,7 +86,7 @@
 // Two details:
 //
 //  - you do not write `reuseBuffer` for it. `Rng` does it itself
-//    each time it draws (`Rng.update`, in zml/tensor.zig): the
+//    each time it draws (`Rng.update`, in zml/core/tensor.zig): the
 //    state that comes out is cast in the memory of the state that
 //    went in. Count the donations in tonight's first lines;
 //

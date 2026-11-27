@@ -1,6 +1,6 @@
 --- exercises/26_the_mail_room/179_the_loading_dock.zig
 +++ answers/26_the_mail_room/179_the_loading_dock.zig
-@@ -124,26 +124,39 @@
+@@ -124,27 +124,40 @@
      pub fn init(view: View) Chute {
          return .{
              .embed_tokens = .{ .weight = view.withPrefix("model").withPrefix("embed_tokens").createReplicatedTensor("weight", .{ .voc, .d }) },
@@ -18,12 +18,12 @@
      }
  };
  
- /// The name of the entry point of the repository at `address`.
- fn knock(io: std.Io, address: []const u8) ![]const u8 {
+ /// The kind of entry point of the repository at `address`.
+ fn knock(io: std.Io, address: []const u8) !zml.safetensors.FileType {
 -    return ???;
 +    var repo = try zml.safetensors.resolveModelRepo(io, address);
 +    defer repo.close(io);
-+    const file, const entry_point = try zml.safetensors.resolveModelEntrypoint(io, repo);
++    const entry_point, const file = try zml.safetensors.resolveModelEntrypoint(io, repo);
 +    file.close(io);
 +    return entry_point;
  }
@@ -36,12 +36,13 @@
 +    // The loading dock.
 +    var vfs_file: zml.io.VFS.File = .init(gpa, init.io, .{});
 +    defer vfs_file.deinit();
-+
+ 
 +    var vfs: zml.io.VFS = try .init(gpa, init.io);
 +    defer vfs.deinit();
 +    try vfs.register("file", vfs_file.io());
 +
 +    const io = vfs.io();
- 
++
      var buffer: [4096]u8 = undefined;
      var stdout_writer = std.Io.File.stdout().writer(init.io, &buffer);
+     const stdout = &stdout_writer.interface;

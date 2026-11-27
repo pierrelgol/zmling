@@ -18,27 +18,29 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -92,9 +92,8 @@
+@@ -92,10 +92,9 @@
  
      var exe = try platform.compileFn(gpa, io, worthDigging, .{ doubloons, curses }, .{});
      defer exe.deinit();
--
--    // The Captain's number needs an Exe as well.
--    ???;
 +    var holes_exe = try platform.compileFn(gpa, io, holesToDig, .{ doubloons, curses }, .{});
 +    defer holes_exe.deinit();
  
+-    // The Captain's number needs an Exe as well.
+-    ???;
+-
      var doubloons_buffer: zml.Buffer = try .fromBytes(io, platform, doubloons.shape(), std.mem.sliceAsBytes(&[_]i32{ 30, 5, 80, 12, 80, 1 }));
      defer doubloons_buffer.deinit();
-@@ -104,9 +103,8 @@
+     // 0 is no curse, 1 is "mild itching", 2 is "skeleton crew".
+@@ -104,10 +103,9 @@
  
      var result: zml.Buffer = try exe.eval(gpa, io, .{ doubloons_buffer, curses_buffer });
      defer result.deinit();
--
--    // Run it into a Buffer called `holes`.
--    ???;
 +    var holes: zml.Buffer = try holes_exe.eval(gpa, io, .{ doubloons_buffer, curses_buffer });
 +    defer holes.deinit();
  
+-    // Run it into a Buffer called `holes`.
+-    ???;
+-
      try stdout.print("Polly answers with a {f}.\n", .{result.shape()});
      try stdout.print("Worth the shovel: {any}\n", .{try result.getValue([6]bool, io)});
+     try stdout.print("Holes to dig: {d}. Polly will supervise.\n", .{try holes.getValue(i32, io)});

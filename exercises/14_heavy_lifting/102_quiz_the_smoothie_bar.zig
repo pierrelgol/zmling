@@ -58,7 +58,7 @@
 //  - the three blenders are three FIELDS of the Blendtron, one
 //    per layer number. Tempting as it is, do not make them an
 //    array `[3]zml.nn.Linear`: `zml.mem.bufferize` does not walk
-//    through arrays (in zml/mem.zig they end up in a branch
+//    through arrays (in zml/core/mem.zig they end up in a branch
 //    marked `unreachable`, and it means it);
 //  - a `forward` may take several Tensors. They are listed in
 //    the same order three times: in its signature, in the tuple

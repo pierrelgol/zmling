@@ -34,14 +34,14 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -108,14 +115,32 @@
+@@ -108,15 +115,33 @@
  
      // Before the loop: the placeholders, the two Exes (call the
      // one for `theUsual` `usual_exe`), and the tray's Buffer.
 -    ???;
 +    const tray: zml.Tensor = .init(.{ .pizzas = 3, .slices = 8 }, .i32);
 +    const which: zml.Tensor = .init(.{}, .i32);
-+
+ 
 +    var usual_exe = try platform.compileFn(gpa, io, theUsual, .{ tray, which }, .{});
 +    defer usual_exe.deinit();
 +    var bill_exe = try platform.compileFn(gpa, io, bill, .{ tray, which }, .{});
@@ -49,7 +49,7 @@
 +
 +    var tray_buffer: zml.Buffer = try .fromBytes(io, platform, tray.shape(), std.mem.sliceAsBytes(&numbers));
 +    defer tray_buffer.deinit();
- 
++
      try stdout.print("The usual is a {f}.\n", .{usual_exe.output_shapes[0]});
  
      for ([_]i32{ 0, 1, 2 }) |thursday| {
@@ -58,7 +58,7 @@
 -        ???;
 +        var which_buffer: zml.Buffer = try .scalar(io, platform, thursday, .i32);
 +        defer which_buffer.deinit();
-+
+ 
 +        var usual_result: zml.Buffer = try usual_exe.eval(gpa, io, .{ tray_buffer, which_buffer });
 +        defer usual_result.deinit();
 +        var bill_result: zml.Buffer = try bill_exe.eval(gpa, io, .{ tray_buffer, which_buffer });
@@ -66,6 +66,7 @@
 +
 +        const bag = try usual_result.getValue([2][5]i32, io);
 +        const total = try bill_result.getValue([2]i32, io);
- 
++
          try stdout.print("pizza {d}: his box {any}, her sample {any}, bill {any}\n", .{ thursday, bag[0], bag[1], total });
      }
+     try stdout.flush();

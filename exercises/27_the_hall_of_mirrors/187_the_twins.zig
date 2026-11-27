@@ -4,7 +4,7 @@
 // Nobody can tell them apart. The removal men can: each has a
 // number chalked on its back.
 //
-// So does every Tensor. Open `zml/zml/tensor.zig`:
+// So does every Tensor. Open `zml/zml/core/tensor.zig`:
 //
 //     pub const Tensor = struct {
 //         pub const Id = enum(u64) { _ };

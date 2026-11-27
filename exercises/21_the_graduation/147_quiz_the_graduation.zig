@@ -63,7 +63,7 @@
 //     and no roll of `sampleTokens` can jump that far: the
 //     photographer asks for the speech again and gets the
 //     same one, to the token. That is not luck, and you can
-//     see why in zml/nn.zig and in `Rng.gumbel`.
+//     see why in zml/nn/nn.zig and in `Rng.gumbel`.
 //
 //  3. THE PARTY. `warm`: top 5, temperature 1. After the
 //     ceremony, Tiny improvises. Nobody can say what comes

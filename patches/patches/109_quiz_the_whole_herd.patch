@@ -57,7 +57,7 @@
 +        .heads = 2,
 +    };
 +    const x: zml.Tensor = .init(.{ .s = 4, .d = 4 }, .f32);
-+
+ 
 +    var exe = try platform.compile(gpa, io, layer, .forward, .{x}, .{});
 +    defer exe.deinit();
 +
@@ -86,7 +86,7 @@
 +        const after: zml.Buffer = try exe.eval(gpa, io, .{ layer_buffers, herd_buffer });
 +        herd_buffer.deinit();
 +        herd_buffer = after;
- 
++
 +        try printHerd(stdout, round, herd_buffer.shape(), try herd_buffer.getValue([4][4]f32, io));
 +    }
      try stdout.flush();

@@ -1,6 +1,6 @@
 --- exercises/25_the_petting_zoo/175_quiz_the_new_arrival.zig
 +++ answers/25_the_petting_zoo/175_quiz_the_new_arrival.zig
-@@ -81,11 +81,84 @@
+@@ -81,12 +81,85 @@
  const std = @import("std");
  const zml = @import("zml");
  
@@ -10,14 +10,16 @@
 +    gate_h: zml.nn.Linear,
 +    cand_x: zml.nn.Linear,
 +    cand_h: zml.nn.Linear,
-+
+ 
+-// TODO: `Clinic`.
 +    /// One token x and the mood h, both {.b, .d} -> the new mood.
 +    pub fn step(self: Cell, x: zml.Tensor, h: zml.Tensor) zml.Tensor {
 +        const z = self.gate_x.forward(x, x.dtype()).add(self.gate_h.forward(h, x.dtype())).sigmoid();
 +        const c = self.cand_x.forward(x, x.dtype()).add(self.cand_h.forward(h, x.dtype())).tanh();
 +        return h.add(z.mul(c.sub(h)).rename(.{ .dout = .d }));
 +    }
-+
+ 
+-// TODO: `Zoo`, its `forward`, and the struct `forward` returns.
 +    /// xs: {.b, .s, .d} -> the trail {.b, .s, .d}
 +    pub fn walk(self: Cell, xs: zml.Tensor) zml.Tensor {
 +        var h = zml.Tensor.zeroes(xs.shape().drop(.s));
@@ -30,7 +32,6 @@
 +    }
 +};
  
--// TODO: `Clinic`.
 +const Clinic = struct {
 +    router: zml.nn.Linear,
 +    up: zml.Tensor,
@@ -50,8 +51,7 @@
 +        return hidden.dot(down, .hid).dot(weights, .topk).rename(.{ .dout = .d });
 +    }
 +};
- 
--// TODO: `Zoo`, its `forward`, and the struct `forward` returns.
++
 +const Zoo = struct {
 +    words: zml.nn.TokenEmbedding,
 +    cell: Cell,
@@ -85,10 +85,11 @@
 +        };
 +    }
 +};
- 
++
  /// {.voc = 7, .d = 2}: (fluffy, loud)
  const words_weight = [7][2]f32{
-@@ -150,11 +223,76 @@
+     .{ 9, -9 }, // 0: the padding. Biscuit has been at it.
+@@ -150,12 +223,77 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -112,7 +113,7 @@
 +            .top_k = 2,
 +        },
 +    };
-+
+ 
 +    const tokens: zml.Tensor = .init(.{ .b = 4, .s = 3 }, .i32);
 +    const mask: zml.Tensor = .init(.{ .b = 4, .s = 3 }, .i32);
 +
@@ -167,6 +168,7 @@
 +    var verdict: zml.Bufferized(Zoo.Verdict) = undefined;
 +    runner.run(io, .{ weights, tokens_buffer, mask_buffer }, .{&verdict}, .{ .wait = true });
 +    defer zml.Buffer.deinitAll(Zoo.Verdict, &verdict);
- 
++
      try stdout.print("{f} sentences, {f} cosines\n", .{ tokens.shape(), verdict.scores.shape() });
      for (resident_names, try verdict.scores.getValue([3]f32, io)) |resident, score| {
+         try stdout.print("  like the {s:<8} {d:6.3}\n", .{ resident, score });

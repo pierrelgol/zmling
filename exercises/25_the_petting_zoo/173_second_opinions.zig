@@ -61,22 +61,44 @@
 // around. A serious backend sorts the tokens by expert and
 // runs each expert once on its group, with quantized weights
 // and a hand-written GPU kernel. ZML has a directory of those,
-// `zml/zml/moe/`, behind one function:
+// `zml/zml/kernels/moe/`, behind one function:
 //
 //     pub fn forwardMoe(
-//         input: zml.Tensor,          // {.b, .s, .d}
-//         topk_ids: zml.Tensor,       // {.b, .s, .topk}, i32
-//         topk_weights: zml.Tensor,   // {.b, .s, .topk}
+//         input: zml.Tensor,          // {.t, .d}
+//         topk_ids: zml.Tensor,       // {.t, .topk}, i32
+//         topk_weights: zml.Tensor,   // {.t, .topk}
 //         gate_up: zml.nn.Linear,     // weight: [expert, out, in]
 //         down: zml.nn.Linear,        // weight: [expert, out, in]
 //         backend: Backend,
+//         mesh: *const zml.Mesh,
+//         partitioning: Partitioning,
 //         opts: Options,
-//     ) zml.Tensor                    // {.b, .s, .d}
+//     ) zml.Tensor                    // {.t, .d}
 //
 // The routing stays yours (steps 1 to 3); it does steps 4 and
 // 5. The two Linears hold the STACKED rank 3 weights (it
 // retags them itself, the order of the axes is what counts).
-// `Options` has three fields and no defaults:
+//
+// It wants TOKENS, not a batch of sequences: one axis `.t`.
+// `merge(.{ .t = .{ .b, .s } })` flattens `{.b, .s, ...}`
+// into it, and a `reshape(x.shape())` on the result puts
+// `.b` and `.s` back.
+//
+// `mesh` and `partitioning` say how the work is spread over
+// several devices. You have one CPU, so every piece stays
+// whole on it. The mesh that means exactly that is the
+// platform's `replicated` one, which the compiler hands
+// out while `forward` is being traced:
+//
+//     zml.Compiler.current().mesh(.replicated)
+//
+// A `Partitioning` has a spec for each of the five inputs
+// (`.in_specs`: input, ids, weights, gate_up, down) and one
+// for the result (`.out_specs`). Here, all six are
+// `.replicated`.
+//
+// `Options` has three fields to fill (a fourth, for NVFP4
+// only, has a default):
 //
 //     .activation                .relu, .gelu, .silu, .swiglu, ...
 //     .quantize_input            false, unless you know
@@ -90,11 +112,12 @@
 // And `Backend`? `zml.moe.Backend.auto(platform, scheme, dtype)`
 // picks a kernel for CUDA, ROCm, Metal... and for a CPU it
 // returns an error: `main` prints which. One backend runs
-// everywhere, `.stablehlo`: the file `moe/stablehlo.zig` begins
+// everywhere, `.stablehlo`: the file `moe/stablehlo/stablehlo.zig` begins
 // with "Deliberately simple MoE reference". Open it: its
 // `project` function is your step 4. It is what you compare a
 // port against (ZML's Qwen 3.5 MoE example calls `forwardMoe`
-// exactly this way), and today it checks YOU.
+// the same way, with its experts spread over a mesh), and
+// today it checks YOU.
 //
 // The numbers. An animal is (limp, cough), a prescription is
 // (bandages, syrup). The pony limps, the goose coughs, the

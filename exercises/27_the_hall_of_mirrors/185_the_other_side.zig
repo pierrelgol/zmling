@@ -32,7 +32,7 @@
 //
 //     var weights = try zml.mem.bufferize(gpa, Hall, &hall);
 //
-// Open `zml/zml/mem.zig` and read `bufferizeInner`: it is forty
+// Open `zml/zml/core/mem.zig` and read `bufferizeInner`: it is forty
 // lines. It walks the model and its reflection side by side,
 // and
 //

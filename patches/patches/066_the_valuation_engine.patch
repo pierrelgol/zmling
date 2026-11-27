@@ -17,7 +17,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -93,9 +95,14 @@
+@@ -93,10 +95,15 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -27,14 +27,15 @@
 +    const x: zml.Tensor = .init(.{ .startup = 2, .d_in = 3 }, .f32);
 +    const w: zml.Tensor = .init(.{ .d_out = 2, .d_in = 3 }, .f32);
 +    const bias: zml.Tensor = .init(.{ .d_out = 2 }, .f32);
-+
+ 
 +    var exe = try platform.compileFn(gpa, io, valuation, .{ x, w, bias }, .{});
 +    defer exe.deinit();
 +    var runway_exe = try platform.compileFn(gpa, io, runway, .{ x, w, bias }, .{});
 +    defer runway_exe.deinit();
- 
++
      // Employees, foosball tables, mentions of "synergy".
      var x_buffer: zml.Buffer = try .fromBytes(io, platform, x.shape(), std.mem.sliceAsBytes(&[2][3]f32{
+         .{ 12, 1, 7 }, // PetRocks.com
 @@ -112,8 +119,10 @@
      var bias_buffer: zml.Buffer = try .fromBytes(io, platform, bias.shape(), std.mem.sliceAsBytes(&[_]f32{ 10, 0.5 }));
      defer bias_buffer.deinit();

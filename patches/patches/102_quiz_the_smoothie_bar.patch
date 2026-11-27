@@ -1,6 +1,6 @@
 --- exercises/14_heavy_lifting/102_quiz_the_smoothie_bar.zig
 +++ answers/14_heavy_lifting/102_quiz_the_smoothie_bar.zig
-@@ -99,9 +99,102 @@
+@@ -99,10 +99,103 @@
  
  const weights_path = "zmling/14_heavy_lifting/gym.safetensors";
  
@@ -14,11 +14,12 @@
 +        .d,
 +    );
 +}
-+
+ 
+-// TODO: `Coach`, `Blendtron` and `Gym`.
 +const Coach = struct {
 +    hunches: zml.nn.Linear,
 +    verdict: zml.nn.Linear,
-+
+ 
 +    /// `view` stands on the coach: its layers are "0" and "1".
 +    pub fn init(view: zml.io.TensorStore.View) Coach {
 +        return .{
@@ -91,8 +92,7 @@
 +        store: *const zml.io.TensorStore,
 +    ) !zml.Bufferized(Gym) {
 +        var buffers = try zml.mem.bufferize(gpa, Gym, self);
- 
--// TODO: `Coach`, `Blendtron` and `Gym`.
++
 +        var loader: zml.io.Loader = try .init(gpa, platform, .default);
 +        defer loader.deinit();
 +
@@ -102,10 +102,11 @@
 +        return buffers;
 +    }
 +};
- 
++
  const members = [_][]const u8{ "Olga", "Chad", "You" };
  
-@@ -136,14 +229,37 @@
+ //                            squat, bench, deadlift
+@@ -136,15 +229,38 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -119,7 +120,7 @@
 -    // TODO: the run. The two results go in `visit`.
 +    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
 +    defer gpa.free(path);
-+
+ 
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
 +    defer registry.deinit();
 +
@@ -148,6 +149,7 @@
 +    var visit: zml.Bufferized(Gym.Visit) = undefined;
 +    runner.run(io, .{ gym_buffers, lifts_buffer, cups_buffer }, .{&visit}, .{ .wait = true });
 +    defer zml.Buffer.deinitAll(Gym.Visit, &visit);
- 
++
      try stdout.print("verdicts {f}, receipts {f}\n", .{ visit.verdict.shape(), visit.receipt.shape() });
      const receipts = try visit.receipt.getValue([3][2]f32, io);
+     for (members, try visit.verdict.getValue([3]i32, io), member_cups, receipts) |member, verdict, order, receipt| {

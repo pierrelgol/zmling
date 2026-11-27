@@ -29,7 +29,7 @@
  
          const heard = zml.nn.sdpa(
              zml.nn.rope(q, positions, layout).rename(.{ .s = .q }),
-@@ -398,15 +405,28 @@
+@@ -398,16 +405,29 @@
      // One function, two Exes.
      const pos: zml.Tensor = .init(.{}, .i32);
  
@@ -40,12 +40,12 @@
 +    defer prefill.deinit();
 +    var prefill_runner = try prefill.runner(gpa);
 +    defer prefill_runner.deinit(gpa);
-+
+ 
 +    var decode = try platform.compile(gpa, io, model, .forward, .{ zml.Tensor.init(.{ .s = 1 }, .u32), pos, cache }, .{});
 +    defer decode.deinit();
 +    var decode_runner = try decode.runner(gpa);
 +    defer decode_runner.deinit(gpa);
- 
++
      // The prompt in one go, then one token at a time: the one that
      // just came out. Count in `positions_run` every position that
      // you feed to the model.
@@ -53,12 +53,13 @@
 -    ???;
 +    story[prompt_len] = try feed(io, platform, &prefill_runner, weights, &cache_buffers, story[0..prompt_len], 0);
 +    positions_run += prompt_len;
-+
+ 
 +    var len: usize = prompt_len + 1;
 +    while (len < story_len) : (len += 1) {
 +        story[len] = try feed(io, platform, &decode_runner, weights, &cache_buffers, story[len - 1 .. len], len - 1);
 +        positions_run += 1;
 +    }
- 
++
      var text = try decoder.decodeAlloc(gpa, &story);
      defer text.deinit(gpa);
+     try stdout.print("{s}\n", .{text.items});

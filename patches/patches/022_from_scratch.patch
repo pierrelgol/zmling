@@ -18,15 +18,16 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -113,6 +113,11 @@
+@@ -113,7 +113,12 @@
      // 1. Compile `tickets` and run it, cleaning up as you go. No
      //    input: an empty tuple of placeholders, and later an
      //    empty tuple of Buffers. The result is `tickets_result`.
 +    var tickets_exe = try platform.compileFn(gpa, io, tickets, .{}, .{});
 +    defer tickets_exe.deinit();
-+
+ 
 +    var tickets_result: zml.Buffer = try tickets_exe.eval(gpa, io, .{});
 +    defer tickets_result.deinit();
- 
++
      try stdout.print("Tickets: {any}\n", .{try tickets_result.getValue([5]i32, io)});
  
+     // 2.

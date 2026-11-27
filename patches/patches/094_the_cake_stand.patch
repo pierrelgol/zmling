@@ -37,7 +37,7 @@
          defer result.deinit();
  
          try stdout.print("{s}", .{day});
-@@ -173,8 +175,16 @@
+@@ -173,9 +175,17 @@
          try stdout.print("\n", .{});
      }
  
@@ -47,12 +47,13 @@
 +    // Buffers go in as they are.
 +    var gentle_cake = cake;
 +    gentle_cake.oven = .{ .leakyReLU = 0.5 };
-+
+ 
 +    var gentle_exe = try platform.compile(gpa, io, gentle_cake, .forward, .{x}, .{});
 +    defer gentle_exe.deinit();
 +
 +    var gentle: zml.Buffer = try gentle_exe.eval(gpa, io, .{ sunday, x_buffer });
 +    defer gentle.deinit();
- 
++
      try stdout.print("sunday, gentle oven", .{});
      for (try gentle.getValue([3]f32, io)) |v| try stdout.print(" {d:6.3}", .{v});
+     try stdout.print("\n", .{});

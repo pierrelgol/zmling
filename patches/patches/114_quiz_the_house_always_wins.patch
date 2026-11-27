@@ -54,7 +54,7 @@
      }
  };
  
-@@ -178,15 +192,81 @@
+@@ -178,16 +192,82 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -70,7 +70,7 @@
 +    // The weights: header, key cabinet, model.
 +    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
 +    defer gpa.free(path);
-+
+ 
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
 +    defer registry.deinit();
 +
@@ -142,6 +142,7 @@
 +            last_token = next_token;
 +        }
 +    }
- 
++
      // `on_script`: how many of the `night_shift` tokens followed the motto.
      try stdout.print("After a few drinks, the sign went off script: {}\n", .{on_script < night_shift});
+     try stdout.print("It still got the next word right more often than not: {}\n", .{2 * on_script > night_shift});

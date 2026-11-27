@@ -64,7 +64,7 @@
 // `error.InvalidArgument` ("Buffer has been deleted or donated").
 // What is left of it is a HANDLE, a small object on the PJRT
 // side, and somebody has to destroy that. Who? It depends on how
-// you called, and `zml/zml/exe.zig` says it in so many words:
+// you called, and `zml/zml/core/exe.zig` says it in so many words:
 //
 //     exe.call(io, args, &results, opts)
 //         The raw way of exercise 082. "The caller owns all input

@@ -14,7 +14,7 @@
 //
 //   - At run time, `exe.eval(gpa, io, .{ weights, x_buffer })`
 //     hands the tuple to `Exe.Arguments.set`, in
-//     `zml/zml/exe.zig`: a visit again, this time with a
+//     `zml/zml/core/exe.zig`: a visit again, this time with a
 //     `*const zml.Buffer` callback. The first Buffer it meets
 //     goes into slot 0, the next into slot 1, ...
 //

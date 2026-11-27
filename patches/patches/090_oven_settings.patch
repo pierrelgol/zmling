@@ -15,7 +15,7 @@
      }
  };
  
-@@ -125,17 +126,21 @@
+@@ -125,18 +126,22 @@
      var cake_buffer: zml.Buffer = try .fromBytes(io, platform, cake.shape(), std.mem.sliceAsBytes(&[2]f32{ 1, 2 }));
      defer cake_buffer.deinit();
  
@@ -36,9 +36,10 @@
 -        // TODO: `tier`, a Tier with this setting and a batter that
 -        // has a weight, no bias, and contracts `.d`. Then `exe`.
 +        const tier: Tier = .{ .batter = .init(weight, null, .d), .oven = setting };
-+
+ 
 +        var exe = try platform.compile(gpa, io, tier, .forward, .{cake}, .{});
 +        defer exe.deinit();
- 
++
          var result: zml.Buffer = try exe.eval(gpa, io, .{ tier_buffers, cake_buffer });
          defer result.deinit();
+ 

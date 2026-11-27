@@ -1,6 +1,6 @@
 --- exercises/11_time_loops/080_quiz_getting_out.zig
 +++ answers/11_time_loops/080_quiz_getting_out.zig
-@@ -71,11 +71,44 @@
+@@ -71,12 +71,45 @@
  const std = @import("std");
  const zml = @import("zml");
  
@@ -12,10 +12,12 @@
 +    const even = n.remainder(two).cmp(.EQ, zml.Tensor.scalar(0, .i32));
 +    return even.select(n.div(two), n.scale(3).addConstant(1));
 +}
-+
+ 
+-// TODO, part 1: `const Escape = struct { ... };` and
+-// `fn stepsToFreedom(start: zml.Tensor, patience: i32) zml.Tensor`.
 +const Escape = struct {
 +    patience: i32,
-+
+ 
 +    pub const State = struct {
 +        n: zml.Tensor,
 +        steps: zml.Tensor,
@@ -35,9 +37,7 @@
 +        };
 +    }
 +};
- 
--// TODO, part 1: `const Escape = struct { ... };` and
--// `fn stepsToFreedom(start: zml.Tensor, patience: i32) zml.Tensor`.
++
 +/// The number of steps taken from `start`, at most `patience`.
 +fn stepsToFreedom(start: zml.Tensor, patience: i32) zml.Tensor {
 +    const end = zml.ops.@"while"(Escape, .{ .patience = patience }, .{
@@ -46,10 +46,11 @@
 +    });
 +    return end.steps;
 +}
- 
++
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -88,13 +121,22 @@
+     const io = init.io;
+@@ -88,14 +121,23 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -57,27 +58,28 @@
 -    // `calm_exe` will try 1000 steps. `grumpy_exe`, Phil before
 -    // coffee, 20.
 +    const start: zml.Tensor = .init(.{}, .i32);
-+
+ 
 +    // Phil on a good day will try 1000 steps. Phil before coffee: 20.
 +    var calm_exe = try platform.compileFn(gpa, io, stepsToFreedom, .{ start, 1000 }, .{});
 +    defer calm_exe.deinit();
 +    var grumpy_exe = try platform.compileFn(gpa, io, stepsToFreedom, .{ start, 20 }, .{});
 +    defer grumpy_exe.deinit();
- 
++
      for ([_]i32{ 1, 6, 7, 27, 97 }) |n| {
 -        // TODO: `n` goes through both Exes. The results are
 -        // `calm` and `grumpy`.
 +        var start_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
 +        defer start_buffer.deinit();
-+
+ 
 +        var calm: zml.Buffer = try calm_exe.eval(gpa, io, .{start_buffer});
 +        defer calm.deinit();
 +        var grumpy: zml.Buffer = try grumpy_exe.eval(gpa, io, .{start_buffer});
 +        defer grumpy.deinit();
- 
++
          try stdout.print("Starting from {d}: free after {d} steps. Before coffee, Phil stops at {d}.\n", .{
              n,
-@@ -104,10 +146,22 @@
+             try calm.getValue(i32, io),
+@@ -104,11 +146,23 @@
      }
  
      // Part 2: one call per step, and Zig watches every number go by.
@@ -87,7 +89,7 @@
 -    // the highest number met on the way (27 counts).
 +    var step_exe = try platform.compileFn(gpa, io, nextNumber, .{start}, .{});
 +    defer step_exe.deinit();
-+
+ 
 +    var n_buffer: zml.Buffer = try .scalar(io, platform, 27, .i32);
 +    defer n_buffer.deinit();
 +
@@ -101,6 +103,7 @@
 +        calls += 1;
 +        highest = @max(highest, try n_buffer.getValue(i32, io));
 +    }
- 
++
      try stdout.print("By hand from 27: {d} calls to the Exe, and the highest number on the way was {d}.\n", .{ calls, highest });
      try stdout.flush();
+ }

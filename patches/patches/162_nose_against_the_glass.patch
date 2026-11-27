@@ -29,7 +29,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -157,9 +158,11 @@
+@@ -157,10 +158,12 @@
      var by_hand = try by_hand_exe.eval(gpa, io, .{ street_buffer, kernel_buffer });
      defer by_hand.deinit();
  
@@ -38,9 +38,10 @@
 -    ???;
 +    var conv_exe = try platform.compileFn(gpa, io, strollConv, .{ street, kernel }, .{});
 +    defer conv_exe.deinit();
-+
+ 
 +    var by_conv = try conv_exe.eval(gpa, io, .{ street_buffer, kernel_buffer });
 +    defer by_conv.deinit();
- 
++
      const hand = try by_hand.getValue([6]f32, io);
      const conv = try by_conv.getValue([6]f32, io);
+ 

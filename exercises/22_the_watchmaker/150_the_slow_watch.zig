@@ -33,7 +33,7 @@
 // Convert up, accumulate in .f32, convert the RESULT down
 // once. One rounding instead of a thousand. ZML does this for
 // you in the places that matter. Go and read them in
-// `zml/zml/tensor.zig` and `zml/zml/nn.zig`:
+// `zml/zml/core/tensor.zig` and `zml/zml/nn/nn.zig`:
 //
 //     softmax:   self.sub(max_val).convert(.f32).exp() ...
 //                                  ... .convert(self.dtype())

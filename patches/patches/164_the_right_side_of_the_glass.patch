@@ -33,7 +33,7 @@
  
      // One row of pixels: (red, green, blue) seven times.
      const row = [7][3]f32{ .{ 0, 5, 0 }, .{ 0, 5, 1 }, .{ 0, 5, 2 }, .{ 1, 5, 3 }, .{ 1, 5, 4 }, .{ 1, 5, 5 }, .{ 0, 5, 6 } };
-@@ -167,9 +174,15 @@
+@@ -167,10 +174,16 @@
      var careless_result = try careless_exe.eval(gpa, io, .{ photo_buffer, kernel_buffer });
      defer careless_result.deinit();
  
@@ -44,11 +44,12 @@
 +    defer options_exe.deinit();
 +    var options_result = try options_exe.eval(gpa, io, .{ photo_buffer, kernel_buffer });
 +    defer options_result.deinit();
-+
+ 
 +    var transpose_exe = try platform.compileFn(gpa, io, byTranspose, .{ photo, kernel }, .{});
 +    defer transpose_exe.deinit();
 +    var transpose_result = try transpose_exe.eval(gpa, io, .{ photo_buffer, kernel_buffer });
 +    defer transpose_result.deinit();
- 
++
      try stdout.print("the photo    {f}\n", .{photo.shape()});
      try stdout.print("careless     {f}: {any}\n", .{ careless_result.shape(), try careless_result.getValue([5]f32, io) });
+     try stdout.print("by options   {f}: {any}\n", .{ options_result.shape(), try options_result.getValue([5]f32, io) });

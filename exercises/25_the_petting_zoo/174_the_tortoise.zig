@@ -42,7 +42,7 @@
 // IN THE GRAPH: `zml.ops.@"while"` (exercise 078). One copy of
 // the cell, and the number of steps is a Tensor, decided at
 // each call: the REAL length of the sentence, when the batch
-// is padded. The contract, from `zml/ops.zig`:
+// is padded. The contract, from `zml/core/ops.zig`:
 //
 //     pub fn @"while"(
 //         While: type,
@@ -58,7 +58,7 @@
 //                                 keep its shape and dtype.
 //
 // What is new here is what goes in the two structs when the
-// loop is a model. Read `GatedDeltaNet` in `zml/nn.zig`: it is
+// loop is a model. Read `GatedDeltaNet` in `zml/nn/nn.zig`: it is
 // this exercise with more algebra in `body`.
 //
 //  - The CONTEXT holds the whole sequence `xs` {.s, .d}, the

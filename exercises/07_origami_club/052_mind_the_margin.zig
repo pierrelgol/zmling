@@ -59,7 +59,7 @@
 //
 //     error: expected type 'tensor.Tensor.Pad', found '...struct...'
 //
-// That first line points inside ZML (zml/shape.zig), where
+// That first line points inside ZML (zml/core/shape.zig), where
 // there is nothing for you to fix. Read on: a few lines below,
 // a `note: struct declared here` points at YOUR line.
 //

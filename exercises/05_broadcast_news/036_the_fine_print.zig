@@ -5,7 +5,7 @@
 // Here is what `a.add(b)` (and `sub`, `mul`, `div`, `pow`,
 // `maximum`, ... every two-tensor operation) really checks, in
 // this order. It is two dozen lines called `binaryOpHelper` in
-// zml/zml/tensor.zig; go and read them, they are short.
+// zml/zml/core/tensor.zig; go and read them, they are short.
 //
 //   0. Same dtype, or panic. You knew that.
 //

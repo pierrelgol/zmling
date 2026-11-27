@@ -9,7 +9,7 @@
 // who made it. Exercise 012: an op outside a compile call
 // panics in `Compiler.current`. Exercise 075: your function
 // runs ONCE, at trace time, and never again. This chapter opens
-// `zml/zml/Compiler.zig` and reads how. Nothing here is magic,
+// `zml/zml/core/Compiler.zig` and reads how. Nothing here is magic,
 // and it is about sixty lines.
 //
 // `platform.compileFn(gpa, io, func, args, opts)` is one line:

@@ -6,7 +6,7 @@
 //
 // `.default` and `.{}`. Two arguments you never opened. Gus has
 // a name for `.default`: "the hand truck". Here it is, from
-// `zml/io.zig`:
+// `zml/core/io.zig`:
 //
 //     pub const Opts = struct {
 //         pub const default: Opts = .{

@@ -1,13 +1,6 @@
 --- exercises/14_heavy_lifting/098_the_front_desk.zig
 +++ answers/14_heavy_lifting/098_the_front_desk.zig
-@@ -107,13 +107,13 @@
-     const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
-     defer gpa.free(path);
- 
--    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, weights_path);
-+    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
-     defer registry.deinit();
- 
+@@ -110,7 +110,7 @@
      try stdout.print("{d} tensors, {d} bytes of weights.\n\n", .{
          registry.tensors.count(),
          // The size of all the tensor data. Denise knows the total.
@@ -16,9 +9,9 @@
      });
  
      var coach_tensors: usize = 0;
-@@ -122,10 +122,12 @@
+@@ -119,10 +119,12 @@
      try stdout.print("name                 shape       bytes   at\n", .{});
-     var it = registry.iterator();
+     var it = registry.tensors.iterator();
      while (it.next()) |entry| {
 -        const name: []const u8 = ???;
 -        const locker: zml.safetensors.Tensor = ???;
@@ -33,7 +26,7 @@
          // A Shape is too proud to be padded by `print`, so we
          // format it into a small buffer first.
          var shape_buffer: [32]u8 = undefined;
-@@ -137,11 +139,11 @@
+@@ -134,11 +136,11 @@
  
      // In exercise 097 you computed where the plates start. Does
      // Denise agree?

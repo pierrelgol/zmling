@@ -25,7 +25,7 @@
 // checks their shapes and copies their handles into the argument
 // table. For 4 that change.
 //
-// `zml/zml/exe.zig` has an answer to both, and `inference.zig` of
+// `zml/zml/core/exe.zig` has an answer to both, and `inference.zig` of
 // the llama example is built on it:
 //
 //     pub fn FnExe(comptime function_: anytype) type

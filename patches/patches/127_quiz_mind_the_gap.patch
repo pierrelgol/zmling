@@ -1,6 +1,6 @@
 --- exercises/18_lost_in_translation/127_quiz_mind_the_gap.zig
 +++ answers/18_lost_in_translation/127_quiz_mind_the_gap.zig
-@@ -98,9 +98,190 @@
+@@ -98,10 +98,191 @@
      .{ .text = "The interpreter speaks English and [MASK].", .pytorch = "english" },
  };
  
@@ -15,7 +15,7 @@
 +    // Not in this config.json: the default of `BertConfig`.
 +    layer_norm_eps: f32 = 1e-12,
 +};
-+
+ 
 +/// A torch `nn.Linear`, with its bias: "weight" is {out, in}.
 +fn linear(view: zml.io.TensorStore.View) zml.nn.Linear {
 +    return .init(
@@ -191,10 +191,11 @@
 +    ids[ids.len - 1] = tokenizer.tokenId("[SEP]").?;
 +    return ids;
 +}
- 
++
  /// The whole file, as bytes. The caller frees them.
  fn readFile(gpa: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
-@@ -121,14 +302,63 @@
+     const file = try std.Io.Dir.cwd().openFile(io, path, .{});
+@@ -121,15 +302,64 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -206,7 +207,7 @@
 +    const parsed = try std.json.parseFromSlice(Config, gpa, config_bytes, .{ .ignore_unknown_fields = true });
 +    defer parsed.deinit();
 +    const config = parsed.value;
-+
+ 
 +    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, dir ++ "model.safetensors", gpa);
 +    defer gpa.free(path);
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
@@ -234,7 +235,7 @@
 +    defer encoder.deinit();
 +
 +    const mask_id = tokenizer.tokenId("[MASK]").?;
- 
++
      var agreed: usize = 0;
      for (sentences) |sentence| {
 -        // `word`: Bertie's guess for the [MASK] of `sentence.text`.
@@ -242,7 +243,7 @@
 +        const ids = try encodeForBert(gpa, &tokenizer, &encoder, sentence.text);
 +        defer gpa.free(ids);
 +        const where: i32 = @intCast(std.mem.indexOfScalar(u32, ids, mask_id).?);
-+
+ 
 +        // One Exe per sentence length.
 +        const tokens: zml.Tensor = .init(.{ .s = ids.len }, .i32);
 +        var exe = try platform.compile(gpa, io, model, .forward, .{ tokens, zml.Tensor.init(.{}, .i32) }, .{});
@@ -260,6 +261,7 @@
 +
 +        const best: u32 = @intCast(std.mem.indexOfMax(f32, scores.items(f32)));
 +        const word = tokenizer.decode(best).?;
- 
++
          if (std.mem.eql(u8, word, sentence.pytorch)) agreed += 1;
          try stdout.print("{s}\n  Bertie: {s}, PyTorch: {s}\n", .{ sentence.text, word, sentence.pytorch });
+     }

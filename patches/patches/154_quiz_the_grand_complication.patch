@@ -1,6 +1,6 @@
 --- exercises/22_the_watchmaker/154_quiz_the_grand_complication.zig
 +++ answers/22_the_watchmaker/154_quiz_the_grand_complication.zig
-@@ -80,7 +80,55 @@
+@@ -80,8 +80,56 @@
  /// Where the eight hands start.
  const noon: [d]f32 = .{ 3.0, 3.4, 3.8, 4.2, 4.6, 5.0, 5.4, 5.8 };
  
@@ -14,7 +14,7 @@
 +        else => @panic("asSeenBy: f32, f16 or bf16"),
 +    };
 +}
-+
+ 
 +/// w: {.dout, .d}, hands: {.d} -> {.wheel, .d}
 +fn movement(w: zml.Tensor, hands: zml.Tensor, weights_dtype: zml.DataType, stream_dtype: zml.DataType) zml.Tensor {
 +    const gears = asSeenBy(w, weights_dtype);
@@ -54,10 +54,11 @@
 +    }
 +    return null;
 +}
- 
++
  pub fn main(init: std.process.Init) !void {
      const gpa = init.gpa;
-@@ -93,9 +141,29 @@
+     const io = init.io;
+@@ -93,10 +141,30 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -70,7 +71,7 @@
 +    defer w_buffer.deinit();
 +    var hands_buffer: zml.Buffer = try .fromBytes(io, platform, hands.shape(), std.mem.sliceAsBytes(&noon));
 +    defer hands_buffer.deinit();
-+
+ 
 +    var results: [3]zml.Slice = undefined;
 +    inline for (.{ reference, cheap, mixed }, &results) |func, *result| {
 +        var exe = try platform.compileFn(gpa, io, func, .{ w, hands }, .{});
@@ -87,6 +88,7 @@
 +
 +    const cheap_leaves = leavesAt(cheap_hands, ref);
 +    const mixed_leaves = leavesAt(mixed_hands, ref);
- 
++
      try stdout.print("Wheels: {d}\n", .{wheels});
      if (cheap_leaves) |wheel| {
+         try stdout.print("The cheap movement leaves the reference at wheel: {d}\n", .{wheel});

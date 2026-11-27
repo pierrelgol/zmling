@@ -48,7 +48,7 @@
  
      const names = [_][]const u8{ "plain", "strawberry", "olive", "salted caramel" };
      //                          sweet, salty
-@@ -173,9 +181,13 @@
+@@ -173,10 +181,14 @@
      var fillings_buffer: zml.Buffer = try .fromBytes(io, platform, fillings.shape(), std.mem.sliceAsBytes(&flavors));
      defer fillings_buffer.deinit();
  
@@ -58,10 +58,11 @@
 +    // Two outputs: a runner, and a struct of Buffers for it to fill.
 +    var runner = try exe.runner(gpa);
 +    defer runner.deinit(gpa);
-+
+ 
 +    var verdicts: zml.Bufferized(Taster.Verdict) = undefined;
 +    runner.run(io, .{ taster_buffers, fillings_buffer }, .{&verdicts}, .{ .wait = true });
 +    defer zml.Buffer.deinitAll(Taster.Verdict, &verdicts);
- 
++
      try stdout.print("verdicts {f}, confidence {f}\n", .{ verdicts.class.shape(), verdicts.confidence.shape() });
      const classes = [_][]const u8{ "rejected", "served" };
+     const confidences = try verdicts.confidence.getValue([4]f32, io);

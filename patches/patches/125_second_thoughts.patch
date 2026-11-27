@@ -24,7 +24,7 @@
      }
  };
  
-@@ -278,12 +287,16 @@
+@@ -278,13 +287,17 @@
      defer acts.deinit();
  
      const model: Encoder = try .init(gpa, store.view().withPrefix("bert"), config);
@@ -38,14 +38,15 @@
 +    var weights = try zml.mem.bufferize(gpa, Encoder, &model);
 +    defer gpa.free(weights.layers);
 +    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Encoder, &weights);
-+
+ 
 +    var loader: zml.io.Loader = try .init(gpa, platform, .default);
 +    defer loader.deinit();
 +    try loader.load(io, Encoder, &model, &weights, &store, .{});
 +    try loader.await(io);
- 
++
      try stdout.print("layers on the resume: {d}\n", .{config.num_hidden_layers});
      try stdout.print("layers in the model: {d}, in the weights: {d}\n", .{ model.layers.len, weights.layers.len });
+ 
 @@ -293,7 +306,7 @@
  
      // The output of the last layer, whichever it is.

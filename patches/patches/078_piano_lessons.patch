@@ -35,7 +35,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -167,19 +173,33 @@
+@@ -167,20 +173,34 @@
          var days_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
          defer days_buffer.deinit();
  
@@ -55,7 +55,7 @@
 -    // `day_exe`. What comes out is the next `total`.
 +    const minutes: zml.Tensor = .init(.{}, .i32);
 +    const day: zml.Tensor = .init(.{}, .i32);
-+
+ 
 +    var day_exe = try platform.compileFn(gpa, io, practiceDay, .{ minutes, day }, .{});
 +    defer day_exe.deinit();
 +
@@ -73,6 +73,7 @@
 +        total = next;
 +        calls += 1;
 +    }
- 
++
      try stdout.print("By hand, 100 days: {d} minutes, in {d} calls. The loop Exe needs 1.\n", .{ try total.getValue(i32, io), calls });
      try stdout.flush();
+ }

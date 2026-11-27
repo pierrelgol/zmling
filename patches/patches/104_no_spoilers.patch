@@ -30,7 +30,7 @@
  }
  
  const names = [_][]const u8{ "Tina ", "Kuzco", "Paca ", "Dolly" };
-@@ -163,10 +170,19 @@
+@@ -163,11 +170,20 @@
  
      // `window` is a plain Zig value: it is baked into each Exe.
      for ([_]?u32{ null, 2 }) |window| {
@@ -44,13 +44,14 @@
 +        defer official_exe.deinit();
 +        var weights_exe = try platform.compileFn(gpa, io, causalWeights, .{ q, k, window }, .{});
 +        defer weights_exe.deinit();
-+
+ 
 +        var mask: zml.Buffer = try mask_exe.eval(gpa, io, .{});
 +        defer mask.deinit();
 +        var official: zml.Buffer = try official_exe.eval(gpa, io, .{});
 +        defer official.deinit();
 +        var weights: zml.Buffer = try weights_exe.eval(gpa, io, .{ q_buffer, k_buffer });
 +        defer weights.deinit();
- 
++
          if (window) |w| {
              try stdout.print("a memory of {d} llamas:\n", .{w});
+         } else {

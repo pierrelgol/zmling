@@ -10,7 +10,7 @@
 // thing to know is that the numbers may not be there yet.
 //
 // Exercise 082 said it in one paragraph. Here is the option again,
-// from `zml/zml/exe.zig`:
+// from `zml/zml/core/exe.zig`:
 //
 //     pub const CallOpts = struct {
 //         /// Waits for execution to complete before returning.
@@ -24,7 +24,7 @@
 //
 // works. What you hold is not the umbrella, it is a CLAIM TICKET:
 // a handle that PJRT made at once, for a result that will exist.
-// Look at what a `zml.Buffer` is made of, in `zml/zml/buffer.zig`:
+// Look at what a `zml.Buffer` is made of, in `zml/zml/core/buffer.zig`:
 // a platform, a Shape, and `_shards`, a small array of handles.
 // No numbers. The numbers stay on the device.
 //

@@ -29,7 +29,7 @@
          );
  
          const merged = heard.merge(.{ .d = .{ .h, .hd } }).rename(.{ .q = .s });
-@@ -223,9 +234,20 @@
+@@ -223,10 +234,21 @@
      // reference input, and our names.
      const x: zml.Tensor = .init(.{ .s = x_buffer.shape().dim(0), .d = x_buffer.shape().dim(1) }, .f32);
  
@@ -38,7 +38,7 @@
 -    ???;
 +    const block = store.view().withPrefix("transformer").withPrefix("h").withLayer(layer);
 +    const model: Attention = .init(block, config, config.attention_layers[layer]);
-+
+ 
 +    var weights = try zml.mem.bufferize(gpa, Attention, &model);
 +    defer zml.Buffer.freeDeviceMemoryButKeepHostMetadataMemory(Attention, &weights);
 +    var loader: zml.io.Loader = try .init(gpa, platform, .default);
@@ -50,6 +50,7 @@
 +    defer exe.deinit();
 +    var got: zml.Buffer = try exe.eval(gpa, io, .{ weights, x_buffer });
 +    defer got.deinit();
- 
++
      return matches(io, want, got);
  }
+ 

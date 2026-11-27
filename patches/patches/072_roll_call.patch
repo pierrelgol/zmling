@@ -22,7 +22,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -112,10 +112,24 @@
+@@ -112,11 +112,25 @@
      const loot_data = [_]i32{ 30, 80, 5, 80, 12 };
      const age_data = [_]i32{ 41, 19, 63, 27, 35 };
  
@@ -36,7 +36,7 @@
 +    defer ages_exe.deinit();
 +    var average_exe = try platform.compileFn(gpa, io, ageOfTheTopThree, .{ loot, age }, .{});
 +    defer average_exe.deinit();
-+
+ 
 +    var loot_buffer: zml.Buffer = try .fromBytes(io, platform, loot.shape(), std.mem.sliceAsBytes(&loot_data));
 +    defer loot_buffer.deinit();
 +    var age_buffer: zml.Buffer = try .fromBytes(io, platform, age.shape(), std.mem.sliceAsBytes(&age_data));
@@ -48,6 +48,7 @@
 +    defer ages.deinit();
 +    var average: zml.Buffer = try average_exe.eval(gpa, io, .{ loot_buffer, age_buffer });
 +    defer average.deinit();
- 
++
      try stdout.print("the pay line {f}: {any}\n", .{ richest.shape(), try richest.getValue([5]i32, io) });
      try stdout.print("their ages   {f}: {any}\n", .{ ages.shape(), try ages.getValue([5]i32, io) });
+     try stdout.print("the first three are {d:.1} years old on average.\n", .{try average.getValue(f32, io)});

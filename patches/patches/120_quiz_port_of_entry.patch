@@ -6,14 +6,13 @@
  const Register = struct {
 -    // How many images, their size, and the pixels.
 -    ???,
--
--    /// Reads the header of `bytes` (the whole file), and checks it.
 +    count: usize,
 +    rows: usize,
 +    cols: usize,
 +    /// Everything after the header.
 +    pixels: []const u8,
-+
+ 
+-    /// Reads the header of `bytes` (the whole file), and checks it.
 +    /// Reads the header of `bytes` (the whole file), and checks it:
 +    /// `error.NotAnImageFile` if the magic number is not 2051,
 +    /// `error.TruncatedFile` if the pixels are not all there.
@@ -28,13 +27,13 @@
 +        };
 +        if (register.pixels.len != register.count * register.rows * register.cols) return error.TruncatedFile;
 +        return register;
-+    }
+     }
 +
 +    /// The `rows * cols` pixels of image `i`.
 +    pub fn image(self: Register, i: usize) []const u8 {
 +        const size = self.rows * self.cols;
 +        return self.pixels[i * size ..][0..size];
-     }
++    }
  };
  
 +/// A `nn.Linear` with a bias, from the tensors found under `view`.
@@ -99,7 +98,7 @@
      }
  };
  
-@@ -154,13 +195,80 @@
+@@ -154,14 +195,81 @@
      const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
      defer platform.deinit(gpa, io);
  
@@ -113,12 +112,12 @@
 +    // 1. Inspect.
 +    const path = try std.Io.Dir.cwd().realPathFileAlloc(io, checkpoint_path, gpa);
 +    defer gpa.free(path);
-+
+ 
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
 +    defer registry.deinit();
 +
 +    var parameters: usize = 0;
-+    var it = registry.iterator();
++    var it = registry.tensors.iterator();
 +    while (it.next()) |entry| parameters += entry.value_ptr.shape.count();
 +
 +    // 2. Declare.
@@ -184,6 +183,7 @@
 +            if (digit == labels.items(u8)[first + i]) like_label += 1;
 +        }
 +    }
- 
++
      try stdout.print("In the suitcase: {d} tensors, {d} parameters\n", .{ registry.tensors.count(), parameters });
      try stdout.print("The register: {d} parcels of {d} x {d} pixels\n", .{ register.count, register.rows, register.cols });
+     try stdout.print("Scores like PyTorch on the first {d} parcels: {}\n", .{ batch, scores_like_pytorch });

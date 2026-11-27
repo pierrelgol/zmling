@@ -70,7 +70,7 @@
              .{ .day = zml.Tensor.scalar(0, .i32), .depth = depth },
          );
          return end.depth;
-@@ -219,8 +221,16 @@
+@@ -219,9 +221,17 @@
      }
  
      // 6 days, and the storm on day 2 (the third day: days start at 0).
@@ -81,11 +81,12 @@
 +        defer days_buffer.deinit();
 +        var storm_buffer: zml.Buffer = try .scalar(io, platform, 2, .i32);
 +        defer storm_buffer.deinit();
-+
+ 
 +        var left: zml.Buffer = try exe.eval(gpa, io, .{ weights, depth_buffer, days_buffer, storm_buffer });
 +        defer left.deinit();
 +        try stdout.print("6 days, storm on day 2:  {any}\n", .{try left.getValue([4]f32, io)});
 +    }
- 
++
      try stdout.print("after 9 days in the cave, body was traced {d} time\n", .{traced.body});
      try stdout.flush();
+ }

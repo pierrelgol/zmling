@@ -39,7 +39,7 @@
 -    ???;
 +    const platform: *zml.Platform = try .init(gpa, io, .cpu, .{});
 +    defer platform.deinit(gpa, io);
-+
+ 
 +    const model: Appraiser = .{
 +        .weight = .init(.{ .out = 2, .d = 3 }, .i32),
 +        .bias = .init(.{ .out = 2 }, .i32),
@@ -55,7 +55,7 @@
 +    };
 +
 +    var runner = try exe.runner(counted);
- 
++
      // What goes in, and the tickets for what comes out.
      var inputs: [requests.len]zml.Buffer = undefined;
      var tickets: [requests.len]zml.Buffer = undefined;
@@ -67,12 +67,12 @@
 +        var padded: [batch][3]i32 = @splat(@splat(0));
 +        @memcpy(padded[0..count], objects[first..][0..count]);
 +        first += count;
-+
+ 
 +        inputs[i] = ledger.issue(try .fromBytes(io, platform, batch_shape, std.mem.sliceAsBytes(&padded)));
 +        runner.run(io, .{ weights, inputs[i] }, .{&tickets[i]}, .{});
 +        tickets[i] = ledger.issue(tickets[i]);
 +    }
- 
++
      try stdout.print("17:59. {d} requests fired, none read. handles out: {d}, host allocations out: {d}\n", .{ requests.len, ledger.out, turnstile.out });
  
      // The collection, in the order of the queue.

@@ -81,18 +81,18 @@
 // One trap. A Dir or a File opened through `vfs.io()` is a
 // ticket number in the VFS's own table, not a real file
 // descriptor. Use it with `vfs.io()` only: handed to `init.io`
-// it means some other open file, or nothing. It cuts both
-// ways. `std.Io.File.stdout()` is the real descriptor 1, and
-// at this commit ticket 1 of the table is stdin: print through
-// `vfs.io()` under the runner, and `flush` answers
-// `error.WriteFailed`. Hence stdout on `init.io`, below.
+// it means some other open file, or nothing. (Tickets 0, 1
+// and 2 are kept for stdin, stdout and stderr, so
+// `std.Io.File.stdout()` means the same thing on both sides.)
+// Below, stdout stays on `init.io` anyway: the terminal is
+// not a parcel.
 //
 // Gus points at the hatch in the wall. "Loading dock. Parcels
 // come through there now. All of them."
 //
 //  1. Build the dock: the VFS, with the `file` backend.
 //  2. `knock`: is there a model at this address? It returns
-//     the name of the entry point (exercise 178), and closes
+//     the kind of its entry point (exercise 178), and closes
 //     what it opened.
 //  3. The parcel of the 14th floor comes in through
 //     `file://`. It holds a CHUTE, the simplest router there
@@ -134,8 +134,8 @@ const Chute = struct {
     }
 };
 
-/// The name of the entry point of the repository at `address`.
-fn knock(io: std.Io, address: []const u8) ![]const u8 {
+/// The kind of entry point of the repository at `address`.
+fn knock(io: std.Io, address: []const u8) !zml.safetensors.FileType {
     return ???;
 }
 
@@ -161,7 +161,7 @@ pub fn main(init: std.process.Init) !void {
     };
     for (addresses) |address| {
         if (knock(io, address)) |entry_point| {
-            try stdout.print("{s}\n  {s}\n", .{ address, entry_point });
+            try stdout.print("{s}\n  {s}\n", .{ address, @tagName(entry_point) });
         } else |err| {
             try stdout.print("{s}\n  {}\n", .{ address, err });
         }

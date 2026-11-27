@@ -21,27 +21,29 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -113,9 +113,8 @@
+@@ -113,10 +113,9 @@
      defer revenue_exe.deinit();
      var synergy_exe = try platform.compileFn(gpa, io, synergyMatrix, .{prices}, .{});
      defer synergy_exe.deinit();
--
--    // The accountants are waiting: `officeTotals` needs an Exe too.
--    ???;
 +    var totals_exe = try platform.compileFn(gpa, io, officeTotals, .{ orders, prices }, .{});
 +    defer totals_exe.deinit();
  
+-    // The accountants are waiting: `officeTotals` needs an Exe too.
+-    ???;
+-
      var orders_buffer: zml.Buffer = try .fromBytes(io, platform, orders.shape(), std.mem.sliceAsBytes(&[2][3][4]f32{
          // San Francisco
-@@ -134,9 +133,8 @@
+         .{ .{ 10, 2, 0, 0 }, .{ 20, 5, 1, 0 }, .{ 40, 10, 2, 1 } },
+@@ -134,10 +133,9 @@
      defer revenue.deinit();
      var synergy: zml.Buffer = try synergy_exe.eval(gpa, io, .{prices_buffer});
      defer synergy.deinit();
--
--    // Run it. The second print reads a Buffer called `totals`.
--    ???;
 +    var totals: zml.Buffer = try totals_exe.eval(gpa, io, .{ orders_buffer, prices_buffer });
 +    defer totals.deinit();
  
+-    // Run it. The second print reads a Buffer called `totals`.
+-    ???;
+-
      try stdout.print("revenue {f}: {any}\n", .{ revenue.shape(), try revenue.getValue([2][3]f32, io) });
      try stdout.print("totals {f}: {any}\n", .{ totals.shape(), try totals.getValue([2]f32, io) });
+     try stdout.print("synergy {f}:\n", .{synergy.shape()});

@@ -25,15 +25,16 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -157,7 +157,10 @@
+@@ -157,8 +157,11 @@
  
      // Run `shares_exe` on the same strips, and read the answer
      // back as a nested array called `share`: one row per member.
 -    ???;
 +    var shares_result: zml.Buffer = try shares_exe.eval(gpa, io, .{strips_buffer});
 +    defer shares_result.deinit();
-+
-+    const share = try shares_result.getValue([3][2]f32, io);
  
++    const share = try shares_result.getValue([3][2]f32, io);
++
      try stdout.print("shares {f}\n", .{shares_exe.output_shapes[0]});
      for ([_][]const u8{ "Ingrid", "Coach's nephew", "Timmy" }, share) |member, row| {
+         try stdout.print("  {s}: {d:.3} {d:.3}\n", .{ member, row[0], row[1] });

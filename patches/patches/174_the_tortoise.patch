@@ -55,7 +55,7 @@
      }
  
      /// xs: {.s, .d} -> the last mood {.d}. The loop is in Zig.
-@@ -229,12 +248,19 @@
+@@ -229,13 +248,20 @@
      defer xs_buffer.deinit();
  
      // The loop in the graph: one Exe, any number of signs.
@@ -71,10 +71,11 @@
 -        ???;
 +        var length_buffer: zml.Buffer = try .scalar(io, platform, n, .i32);
 +        defer length_buffer.deinit();
-+
+ 
 +        var memory: zml.Bufferized(Tortoise.Memory) = undefined;
 +        runner.run(io, .{ weights, xs_buffer, length_buffer }, .{&memory}, .{ .wait = true });
 +        defer zml.Buffer.deinitAll(Tortoise.Memory, &memory);
- 
++
          last_mood = try memory.h.getValue([2]f32, io);
          try stdout.print("asked for {d} signs, his mood: curious {d:.3}, grumpy {d:.3}\n", .{ n, last_mood[0], last_mood[1] });
+         if (n == 9) {

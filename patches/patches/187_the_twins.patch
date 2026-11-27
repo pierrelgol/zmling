@@ -39,7 +39,7 @@
  }
  
  pub fn main(init: std.process.Init) !void {
-@@ -160,8 +158,11 @@
+@@ -160,9 +158,12 @@
      const path = try std.Io.Dir.cwd().realPathFileAlloc(io, weights_path, gpa);
      defer gpa.free(path);
  
@@ -47,12 +47,13 @@
 -    ???;
 +    var registry: zml.safetensors.TensorRegistry = try .fromPath(gpa, io, path);
 +    defer registry.deinit();
-+
+ 
 +    var store: zml.io.TensorStore = .fromRegistry(gpa, &registry, &.{platform.replicated_mesh});
 +    defer store.deinit();
- 
++
      const view = store.view().withPrefix("bar");
  
+     // The Twins: the same key, asked for twice.
 @@ -193,8 +194,10 @@
      var weights = try zml.mem.bufferize(gpa, Hall, &hall);
      defer zml.Buffer.deinitAll(Hall, &weights);
